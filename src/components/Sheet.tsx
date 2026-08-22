@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 // Sheets stack (Add → Tags); the page behind stays frozen while any are up.
 const bodyLock = { count: 0 }
@@ -92,7 +93,10 @@ export function Sheet({
 
   if (phase === 'closed') return null
   const out = phase === 'out'
-  return (
+  // portal to <body>: a sheet nested inside another sheet (tags, currency,
+  // PIN, loan detail) must not inherit its parent's scroll or transform —
+  // fixed positioning inside a transformed scrollable ancestor breaks both
+  return createPortal(
     <>
       <div className={`scrim${out ? ' scrim-out' : ''}`} onClick={onClose} />
       <div
@@ -113,6 +117,7 @@ export function Sheet({
         </div>
         {children}
       </div>
-    </>
+    </>,
+    document.body
   )
 }

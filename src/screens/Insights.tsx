@@ -5,7 +5,6 @@ import { txnsBetween } from '../db/repo'
 import { byCategory, incomeSum, isOut, projectMonth, sum } from '../db/stats'
 import { currencySymbol, formatMinor } from '../lib/money'
 import { adviceFor, smartNotes } from '../lib/smart'
-import { Donut } from '../components/Donut'
 import { LoansSheet } from '../components/LoansSheet'
 import { Sheet } from '../components/Sheet'
 import {
@@ -188,21 +187,30 @@ export function Insights({ currency }: { currency: string }) {
             )}
           </div>
 
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '15px 20px' }}>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 13, padding: '15px 20px' }}>
             <span className="label">Where it went</span>
-            <Donut
-              segments={[
-                ...breakdown.top.map((r) => ({ color: r.color, value: r.total })),
-                ...(breakdown.restTotal > 0 ? [{ color: 'var(--faint-future)', value: breakdown.restTotal }] : [])
-              ]}
-              centerTop={formatMinor(spent, currency)}
-              centerBottom={monthLabel(monthKey)}
-            />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {breakdown.top.map((r) => (
-                <div key={String(r.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '3px 0' }}>
+            {[
+              ...breakdown.top,
+              ...(breakdown.restTotal > 0
+                ? [{ id: '__rest', total: breakdown.restTotal, name: 'Everything else', color: 'var(--faint-future)' }]
+                : [])
+            ].map((r) => (
+              <div key={String(r.id)} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ width: 8, height: 8, borderRadius: 4, background: r.color, flexShrink: 0 }} />
-                  <span style={{ flex: 1, fontWeight: 500, fontSize: 14 }}>{r.name}</span>
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontWeight: 500,
+                      fontSize: 14,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {r.name}
+                  </span>
                   <span className="mono" style={{ fontWeight: 600, fontSize: 13.5 }}>
                     {formatMinor(r.total, currency)}
                   </span>
@@ -210,8 +218,14 @@ export function Insights({ currency }: { currency: string }) {
                     {Math.round((r.total / spent) * 100)}%
                   </span>
                 </div>
-              ))}
-            </div>
+                <div className="bar-track" style={{ height: 6 }}>
+                  <div
+                    className="bar-fill"
+                    style={{ width: `${Math.max(2, (r.total / spent) * 100)}%`, background: r.color }}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
 
           {notes.length > 0 && (

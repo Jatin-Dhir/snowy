@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../db/db'
+import { db, type Goal } from '../db/db'
+import { addGoal, addToGoal, deleteGoal, updateGoal } from '../db/goals'
 import { txnsForMonth } from '../db/repo'
 import { byCategory, pace, projectMonth, sum } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
@@ -11,7 +12,7 @@ import { Icon } from '../components/Icon'
 import { Sheet } from '../components/Sheet'
 import { TagManager } from '../components/TagManager'
 import { RecurringManager } from '../components/RecurringManager'
-import { useUi } from '../state/ui'
+import { haptic, useUi } from '../state/ui'
 
 function BudgetDialog({
   title,
@@ -62,6 +63,132 @@ function BudgetDialog({
   )
 }
 
+/** Create or manage one savings goal: rename, retarget, add or take out money. */
+function GoalDialog({
+  goal,
+  currency,
+  onClose
+}: {
+  goal: Goal | null
+  currency: string
+  onClose: () => void
+}) {
+  const { showToast } = useUi()
+  const [name, setName] = useState(goal?.name ?? '')
+  const [target, setTarget] = useState(goal ? String(Math.round(goal.targetMinor / 100)) : '')
+  const [amount, setAmount] = useState('')
+  const targetMinor = (parseInt(target, 10) || 0) * 100
+  const amountMinor = Math.round(parseFloat(amount) * 100) || 0
+  const canSave = name.trim().length > 0 && targetMinor > 0
+
+  async function save() {
+    if (!canSave) return
+    if (goal) {
+      await updateGoal(goal.id, { name: name.trim(), targetMinor })
+      showToast('Goal updated')
+    } else {
+      await addGoal(name.trim(), targetMinor)
+      showToast(`Saving for ${name.trim()} — add to it any time`)
+    }
+    haptic('success')
+    onClose()
+  }
+
+  async function move(sign: 1 | -1) {
+    if (!goal || amountMinor <= 0) return
+    await addToGoal(goal.id, sign * amountMinor)
+    haptic('success')
+    const g = await db.goals.get(goal.id)
+    if (g && sign === 1) {
+      showToast(
+        g.savedMinor >= g.targetMinor
+          ? `${g.name} fully funded — you did it!`
+          : `Added — ${formatMinor(Math.max(0, g.targetMinor - g.savedMinor), currency)} to go`
+      )
+    } else if (g) {
+      showToast(`Took out ${formatMinor(amountMinor, currency)}`)
+    }
+    setAmount('')
+    onClose()
+  }
+
+  return (
+    <Sheet open onClose={onClose} label={goal ? goal.name : 'New goal'} style={{ gap: 12 }}>
+      <div className="row-between">
+        <span className="label" style={{ letterSpacing: '0.14em' }}>
+          {goal ? 'Edit goal' : 'Saving for…'}
+        </span>
+        <button className="icon-btn" onClick={onClose} aria-label="Close">
+          <Icon name="x" size={14} strokeWidth={2.2} />
+        </button>
+      </div>
+
+      {goal && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span className="label" style={{ fontSize: 10 }}>Add or take out money</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              className="field mono"
+              type="number"
+              inputMode="decimal"
+              placeholder="Amount"
+              value={amount}
+              min={0}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            <button className="btn" style={{ width: 96 }} disabled={amountMinor <= 0} onClick={() => void move(1)}>
+              Add
+            </button>
+            <button
+              className="btn ghost"
+              style={{ width: 96 }}
+              disabled={amountMinor <= 0 || goal.savedMinor <= 0}
+              onClick={() => void move(-1)}
+            >
+              Take out
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <span className="label" style={{ fontSize: 10 }}>{goal ? 'Rename or retarget' : 'What and how much?'}</span>
+        <input
+          className="field"
+          placeholder="What for? — e.g. iPhone, Goa trip, emergency fund"
+          value={name}
+          maxLength={40}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <input
+          className="field mono"
+          type="number"
+          inputMode="numeric"
+          placeholder="Target amount"
+          value={target}
+          min={0}
+          onChange={(e) => setTarget(e.target.value)}
+        />
+        <button className="btn" disabled={!canSave} onClick={() => void save()}>
+          {goal ? 'Save changes' : 'Start saving'}
+        </button>
+        {goal && (
+          <button
+            className="btn danger"
+            onClick={() => {
+              void deleteGoal(goal.id)
+              showToast(`${goal.name} removed`)
+              onClose()
+            }}
+          >
+            Delete this goal
+          </button>
+        )}
+      </div>
+    </Sheet>
+  )
+}
+
 export function Budgets({ currency }: { currency: string }) {
   const { showToast } = useUi()
   const monthKey = currentMonthKey()
@@ -69,9 +196,11 @@ export function Budgets({ currency }: { currency: string }) {
   const [dialog, setDialog] = useState<{ id: string; title: string; amount: number | null } | null>(null)
   const [pickingCategory, setPickingCategory] = useState(false)
   const [manageTags, setManageTags] = useState(false)
+  const [goalDialog, setGoalDialog] = useState<{ goal: Goal | null } | null>(null)
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const budgets = useLiveQuery(() => db.budgets.toArray(), []) ?? []
+  const goals = useLiveQuery(() => db.goals.toArray(), []) ?? []
   const monthTxns = useLiveQuery(() => txnsForMonth(monthKey), [monthKey]) ?? []
   const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
 
@@ -202,6 +331,57 @@ export function Budgets({ currency }: { currency: string }) {
         </button>
       )}
 
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <span className="label">Saving for</span>
+        {[...goals]
+          .sort((a, b) => a.createdAt - b.createdAt)
+          .map((g) => {
+            const frac = g.targetMinor > 0 ? g.savedMinor / g.targetMinor : 0
+            const done = g.savedMinor >= g.targetMinor
+            return (
+              <button
+                key={g.id}
+                className="card"
+                style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left', borderRadius: 16, padding: '13px 18px' }}
+                onClick={() => setGoalDialog({ goal: g })}
+              >
+                <div className="row-between">
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 15,
+                      minWidth: 0,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {done ? '🎉 ' : ''}
+                    {g.name}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexShrink: 0 }}>
+                    <span className="mono" style={{ fontWeight: 600, fontSize: 15, color: done ? 'var(--pos)' : 'var(--ink)' }}>
+                      {formatMinor(g.savedMinor, currency)}
+                    </span>
+                    <span className="mono faint" style={{ fontSize: 12, fontWeight: 500 }}>
+                      / {formatMinor(g.targetMinor, currency)}
+                    </span>
+                  </span>
+                </div>
+                <Progress fraction={Math.min(1, frac)} color={done ? 'var(--pos)' : 'var(--accent)'} />
+                <span className="caption" style={{ fontSize: 12 }}>
+                  {done
+                    ? 'Fully funded — go get it'
+                    : `${Math.round(frac * 100)}% there · ${formatMinor(g.targetMinor - g.savedMinor, currency)} to go`}
+                </span>
+              </button>
+            )
+          })}
+        <button className="btn ghost" onClick={() => setGoalDialog({ goal: null })}>
+          <Icon name="plus" size={16} strokeWidth={2.2} /> Start saving for something
+        </button>
+      </div>
+
       <RecurringManager currency={currency} />
 
       {bills.length > 0 && (
@@ -256,6 +436,8 @@ export function Budgets({ currency }: { currency: string }) {
             </button>
         </Sheet>
       )}
+
+      {goalDialog && <GoalDialog goal={goalDialog.goal} currency={currency} onClose={() => setGoalDialog(null)} />}
 
       <TagManager open={manageTags} onClose={() => setManageTags(false)} />
     </div>

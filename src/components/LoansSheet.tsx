@@ -162,16 +162,9 @@ export function LoansSheet({
     <Sheet open={open} onClose={onClose} label="Lent & borrowed" style={{ gap: 12 }}>
       <div className="row-between">
         <span className="label" style={{ letterSpacing: '0.14em' }}>Lent &amp; borrowed</span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {!adding && (
-            <button style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 13 }} onClick={startAdding}>
-              + Add
-            </button>
-          )}
-          <button className="icon-btn" onClick={adding ? stopAdding : onClose} aria-label="Close">
-            <Icon name="x" size={14} strokeWidth={2.2} />
-          </button>
-        </div>
+        <button className="icon-btn" onClick={adding ? stopAdding : onClose} aria-label={adding ? 'Back' : 'Close'}>
+          <Icon name={adding ? 'chevronLeft' : 'x'} size={14} strokeWidth={2.2} />
+        </button>
       </div>
 
       {adding ? (
@@ -300,6 +293,10 @@ export function LoansSheet({
         </>
       ) : (
         <>
+          <button className="btn" onClick={startAdding}>
+            <Icon name="plus" size={17} strokeWidth={2.4} /> Add — lent or borrowed
+          </button>
+
           {outstanding.length === 0 && settled.length === 0 && (
             <div className="empty">
               Lent someone money? Note it here and Taily reminds you to collect it — and keeps the record when
@@ -325,15 +322,42 @@ export function LoansSheet({
 
       {active && (
         <Sheet open onClose={() => setActive(null)} label={active.person} style={{ gap: 10 }}>
-          <div className="row-between">
-            <span style={{ fontWeight: 700, fontSize: 16 }}>
-              {active.person} · {formatMinor(active.amountMinor, active.currency)}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span
+                style={{
+                  display: 'block',
+                  fontWeight: 700,
+                  fontSize: 17,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                {active.person}
+              </span>
+              <span
+                className="mono"
+                style={{
+                  display: 'block',
+                  fontWeight: 700,
+                  fontSize: 15,
+                  color: active.settledISO
+                    ? 'var(--faint)'
+                    : active.direction === 'lent'
+                      ? 'var(--pos)'
+                      : 'var(--amber)'
+                }}
+              >
+                {active.settledISO ? 'settled · ' : active.direction === 'lent' ? 'owes you ' : 'you owe '}
+                {formatMinor(active.amountMinor, active.currency)}
+              </span>
             </span>
             <button className="icon-btn" onClick={() => setActive(null)} aria-label="Close">
               <Icon name="x" size={14} strokeWidth={2.2} />
             </button>
           </div>
-          <span className="caption">
+          <span className="caption" style={{ overflowWrap: 'anywhere' }}>
             {active.direction === 'lent' ? 'They took it' : 'You took it'} on {shortDate(active.lentISO)}
             {active.settledISO ? ` · settled ${shortDate(active.settledISO)}` : ''}
           </span>

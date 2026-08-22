@@ -57,6 +57,15 @@ export interface Loan {
   updatedAt: number
 }
 
+export interface Goal {
+  id: string
+  name: string
+  targetMinor: number
+  savedMinor: number
+  createdAt: number
+  updatedAt: number
+}
+
 export interface KV {
   key: string
   value: unknown
@@ -92,6 +101,7 @@ class TallyDB extends Dexie {
   budgets!: Table<Budget, string>
   rules!: Table<Rule, string>
   loans!: Table<Loan, string>
+  goals!: Table<Goal, string>
   kv!: Table<KV, string>
 
   constructor() {
@@ -105,6 +115,9 @@ class TallyDB extends Dexie {
     })
     this.version(2).stores({
       loans: 'id, settledISO'
+    })
+    this.version(3).stores({
+      goals: 'id'
     })
   }
 }

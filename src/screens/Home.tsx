@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
-import { txnsForMonth, txnsBetween, recentTxns, addTxn, removeTxnPermanently } from '../db/repo'
+import { txnsForMonth, txnsBetween, recentTxns, addTxn, removeTxnPermanently, softDeleteTxn, restoreTxn } from '../db/repo'
 import { learnFrequents } from '../db/suggest'
 import { safeToSpend, weekBars, sum, onDay, byCategory } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
@@ -64,6 +64,41 @@ export function Home({
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(
     () => new Set(JSON.parse(localStorage.getItem('tally.alerts.dismissed') ?? '[]'))
   )
+
+  // hold a row in Today to select several, then delete them together
+  const [selecting, setSelecting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  function enterSelect(id: string) {
+    setSelecting(true)
+    setSelectedIds(new Set([id]))
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((s) => {
+      const next = new Set(s)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      if (next.size === 0) setSelecting(false)
+      return next
+    })
+  }
+
+  function exitSelect() {
+    setSelecting(false)
+    setSelectedIds(new Set())
+  }
+
+  async function deleteSelected() {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+    await Promise.all(ids.map((id) => softDeleteTxn(id)))
+    haptic('medium')
+    showToast(`Deleted ${ids.length} ${ids.length === 1 ? 'entry' : 'entries'}`, () => {
+      for (const id of ids) void restoreTxn(id)
+    })
+    exitSelect()
+  }
 
   const alerts = useMemo(() => {
     const catSpend = byCategory(monthTxns)
@@ -338,12 +373,31 @@ export function Home({
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <div className="row-between" style={{ paddingBottom: 6 }}>
-          <span className="label">Today</span>
-          <span className="mono muted" style={{ fontWeight: 600, fontSize: 13 }}>
-            {formatMinor(sts.spentToday, currency)}
-          </span>
-        </div>
+        {selecting ? (
+          <div className="row-between" style={{ paddingBottom: 6 }}>
+            <span className="label">{selectedIds.size} selected</span>
+            <span style={{ display: 'flex', gap: 8 }}>
+              <button
+                className="icon-btn"
+                style={{ color: 'var(--red)' }}
+                onClick={() => void deleteSelected()}
+                aria-label="Delete selected"
+              >
+                <Icon name="trash" size={16} />
+              </button>
+              <button className="icon-btn" onClick={exitSelect} aria-label="Cancel selection">
+                <Icon name="x" size={14} strokeWidth={2.2} />
+              </button>
+            </span>
+          </div>
+        ) : (
+          <div className="row-between" style={{ paddingBottom: 6 }}>
+            <span className="label">Today</span>
+            <span className="mono muted" style={{ fontWeight: 600, fontSize: 13 }}>
+              {formatMinor(sts.spentToday, currency)}
+            </span>
+          </div>
+        )}
         {todayTxns.length === 0 ? (
           <div className="empty">
             Nothing logged yet today.
@@ -353,7 +407,16 @@ export function Home({
             </button>
           </div>
         ) : (
-          todayTxns.map((t) => <TransactionRow key={t.id} txn={t} categories={categories} onClick={() => onEdit(t)} />)
+          todayTxns.map((t) => (
+            <TransactionRow
+              key={t.id}
+              txn={t}
+              categories={categories}
+              selected={selectedIds.has(t.id)}
+              onLongPress={() => enterSelect(t.id)}
+              onClick={() => (selecting ? toggleSelect(t.id) : onEdit(t))}
+            />
+          ))
         )}
       </div>
 

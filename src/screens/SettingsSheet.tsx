@@ -3,7 +3,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, saveSettings, type Settings } from '../db/db'
 import { allLiveTxns } from '../db/repo'
 import { txnsToCsv, downloadCsv } from '../lib/csv'
-import { CURRENCIES } from '../lib/money'
+import { CURRENCIES, formatMinor } from '../lib/money'
+import { fetchRate, type RateInfo } from '../lib/rates'
+import { convertEverything } from '../db/convert'
 import { APP_VERSION, checkForUpdate, type UpdateCheck } from '../lib/updater'
 import { applyCustomAccent } from '../lib/theme'
 import { hashPin } from '../lib/pin'
@@ -73,6 +75,8 @@ export function SettingsSheet({
   const [pinShake, setPinShake] = useState(0)
   const [pinError, setPinError] = useState('')
   const [currencyOpen, setCurrencyOpen] = useState(false)
+  const [convert, setConvert] = useState<{ code: string; state: 'loading' | 'error' | RateInfo } | null>(null)
+  const [convertBusy, setConvertBusy] = useState(false)
   const hueBar = useRef<HTMLDivElement | null>(null)
   const [dragHue, setDragHue] = useState<number | null>(null)
   const dragHueRef = useRef<number | null>(null)
@@ -87,6 +91,7 @@ export function SettingsSheet({
     setPinError('')
     setPinShake(0)
     setCurrencyOpen(false)
+    setConvert(null)
   }, [open])
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
@@ -202,6 +207,43 @@ export function SettingsSheet({
     haptic('success')
     setPinMode(null)
     showToast('App lock is off')
+  }
+
+  function pickCurrency(code: string) {
+    haptic('selection')
+    if (code === settings.currency) {
+      setCurrencyOpen(false)
+      return
+    }
+    setConvert({ code, state: 'loading' })
+    void fetchRate(settings.currency, code).then((info) => {
+      setConvert((c) => (c && c.code === code ? { code, state: info ?? 'error' } : c))
+    })
+  }
+
+  /** e.g. 0.01138 → "0.0114", 91.2334 → "91.23" */
+  function fmtRate(r: number): string {
+    return String(parseFloat(r >= 1 ? r.toFixed(2) : r.toPrecision(3)))
+  }
+
+  async function applyCurrency(code: string, rate: number | null) {
+    setConvertBusy(true)
+    try {
+      if (rate !== null) {
+        const n = await convertEverything(rate, code)
+        await saveSettings({ currency: code })
+        haptic('success')
+        showToast(`Converted ${n} ${n === 1 ? 'entry' : 'entries'} to ${code}`)
+      } else {
+        await saveSettings({ currency: code })
+        haptic('success')
+        showToast(`Switched to ${code} — numbers unchanged`)
+      }
+      setConvert(null)
+      setCurrencyOpen(false)
+    } finally {
+      setConvertBusy(false)
+    }
   }
 
   const displayHue = dragHue ?? settings.accentHue
@@ -406,15 +448,7 @@ export function SettingsSheet({
               </button>
             </div>
             {CURRENCIES.map((c) => (
-              <button
-                key={c.code}
-                className="action-row"
-                onClick={() => {
-                  haptic('selection')
-                  void saveSettings({ currency: c.code })
-                  setCurrencyOpen(false)
-                }}
-              >
+              <button key={c.code} className="action-row" onClick={() => pickCurrency(c.code)}>
                 <span
                   className="txn-icon"
                   style={{
@@ -439,6 +473,77 @@ export function SettingsSheet({
                 )}
               </button>
             ))}
+          </Sheet>
+        )}
+
+        {convert && (
+          <Sheet open onClose={() => !convertBusy && setConvert(null)} label="Switch currency" style={{ gap: 12 }}>
+            <div className="row-between">
+              <span className="label" style={{ letterSpacing: '0.14em' }}>
+                {settings.currency} → {convert.code}
+              </span>
+              <button
+                className="icon-btn"
+                onClick={() => setConvert(null)}
+                disabled={convertBusy}
+                aria-label="Close"
+              >
+                <Icon name="x" size={14} strokeWidth={2.2} />
+              </button>
+            </div>
+
+            {convert.state === 'loading' ? (
+              <span className="caption" style={{ fontSize: 13, padding: '8px 0 14px' }}>
+                Getting the live rate…
+              </span>
+            ) : convert.state === 'error' ? (
+              <>
+                <span className="caption" style={{ fontSize: 13 }}>
+                  Couldn't get a live rate — you might be offline. You can still switch; your numbers stay
+                  exactly as they are.
+                </span>
+                <button className="btn" disabled={convertBusy} onClick={() => pickCurrency(convert.code)}>
+                  Try the rate again
+                </button>
+                <button
+                  className="btn ghost"
+                  disabled={convertBusy}
+                  onClick={() => void applyCurrency(convert.code, null)}
+                >
+                  Switch without converting
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="well" style={{ alignItems: 'center' }}>
+                  <span className="label" style={{ fontSize: 9.5 }}>Live rate · {convert.state.asOf}</span>
+                  <span className="well-num">
+                    1 {settings.currency} = {fmtRate(convert.state.rate)} {convert.code}
+                  </span>
+                  <span className="caption" style={{ fontSize: 11.5 }}>
+                    {formatMinor(100000, settings.currency)} becomes{' '}
+                    {formatMinor(Math.round(100000 * convert.state.rate), convert.code)}
+                  </span>
+                </div>
+                <button
+                  className="btn"
+                  disabled={convertBusy}
+                  onClick={() => {
+                    const s = convert.state as RateInfo
+                    void applyCurrency(convert.code, s.rate)
+                  }}
+                >
+                  {convertBusy ? 'Converting…' : 'Convert everything at this rate'}
+                </button>
+                <button
+                  className="btn ghost"
+                  disabled={convertBusy}
+                  onClick={() => void applyCurrency(convert.code, null)}
+                >
+                  Just switch the symbol
+                </button>
+              </>
+            )}
           </Sheet>
         )}
 
