@@ -10,6 +10,7 @@ import { Progress } from '../components/Progress'
 import { Icon } from '../components/Icon'
 import { Sheet } from '../components/Sheet'
 import { TagManager } from '../components/TagManager'
+import { RecurringManager } from '../components/RecurringManager'
 import { useUi } from '../state/ui'
 
 function BudgetDialog({
@@ -200,6 +201,8 @@ export function Budgets({ currency }: { currency: string }) {
           <Icon name="plus" size={16} strokeWidth={2.2} /> Add a category budget
         </button>
       )}
+
+      <RecurringManager currency={currency} />
 
       {bills.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

@@ -67,10 +67,10 @@ export interface Settings {
   currency: string
   theme: 'light' | 'dark' | 'system'
   accent: string
-  styleMode: 'soft' | 'candy'
+  accentHue: number
   haptics: boolean
   sounds: boolean
-  soundPack: 'click' | 'pop' | 'chime'
+  pinHash: string | null
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -78,10 +78,10 @@ export const DEFAULT_SETTINGS: Settings = {
   currency: 'INR',
   theme: 'light',
   accent: 'blue',
-  styleMode: 'soft',
+  accentHue: 222,
   haptics: true,
   sounds: true,
-  soundPack: 'click'
+  pinHash: null
 }
 
 class TallyDB extends Dexie {

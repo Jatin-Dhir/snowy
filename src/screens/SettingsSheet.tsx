@@ -1,24 +1,27 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, saveSettings, type Settings } from '../db/db'
 import { allLiveTxns } from '../db/repo'
-import { addRule, deleteRule, togglePauseRule } from '../db/recurring'
 import { txnsToCsv, downloadCsv } from '../lib/csv'
-import { CURRENCIES, formatMinor } from '../lib/money'
+import { CURRENCIES } from '../lib/money'
 import { APP_VERSION, checkForUpdate, type UpdateCheck } from '../lib/updater'
+import { applyCustomAccent } from '../lib/theme'
+import { hashPin } from '../lib/pin'
 import { todayISO } from '../lib/dates'
 import { Icon } from '../components/Icon'
+import { PinPad } from '../components/PinPad'
 import { Sheet } from '../components/Sheet'
 import { haptic, useUi } from '../state/ui'
 
-const ACCENTS = [
-  { id: 'blue', name: 'Blue' },
-  { id: 'lavender', name: 'Lavender' },
-  { id: 'pink', name: 'Pink' },
-  { id: 'green', name: 'Green' },
-  { id: 'mono', name: 'White' },
-  { id: 'cream', name: 'Creamy' }
+const BASE_COLORS = [
+  { id: 'blue', name: 'Blue', swatch: '#2B5FE3' },
+  { id: 'lavender', name: 'Lavender', swatch: '#7B61D6' },
+  { id: 'pink', name: 'Pink', swatch: '#DD4F97' },
+  { id: 'green', name: 'Green', swatch: '#2C9A67' },
+  { id: 'mono', name: 'White', swatch: '#222A35' }
 ]
+
+type PinMode = 'set' | 'confirm' | 'verify-remove' | null
 
 export function SettingsSheet({
   open,
@@ -30,20 +33,20 @@ export function SettingsSheet({
   onClose: () => void
 }) {
   const { showToast } = useUi()
-  const [addingRule, setAddingRule] = useState(false)
-  const [ruleName, setRuleName] = useState('')
-  const [ruleAmount, setRuleAmount] = useState('')
-  const [ruleDay, setRuleDay] = useState(String(parseInt(todayISO().slice(8, 10), 10)))
-  const [ruleCat, setRuleCat] = useState<string>('home')
   const [update, setUpdate] = useState<'idle' | 'checking' | UpdateCheck>('idle')
+  const [pinMode, setPinMode] = useState<PinMode>(null)
+  const [firstPin, setFirstPin] = useState('')
+  const [pinShake, setPinShake] = useState(0)
+  const hueBar = useRef<HTMLDivElement | null>(null)
+  const [dragHue, setDragHue] = useState<number | null>(null)
+  const dragHueRef = useRef<number | null>(null)
+
+  const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
 
   async function runUpdateCheck() {
     setUpdate('checking')
     setUpdate(await checkForUpdate())
   }
-
-  const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
-  const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
 
   async function exportCsv() {
     const txns = await allLiveTxns()
@@ -51,20 +54,83 @@ export function SettingsSheet({
       showToast('Nothing to export yet')
       return
     }
-    downloadCsv(txnsToCsv(txns, categories), `snowy-${todayISO()}.csv`)
-    showToast(`Exported ${txns.length} expenses`)
+    const csv = txnsToCsv(txns, categories)
+    const filename = `snowy-${todayISO()}.csv`
+    try {
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.isNativePlatform()) {
+        const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
+        const res = await Filesystem.writeFile({
+          path: filename,
+          data: csv,
+          directory: Directory.Cache,
+          encoding: Encoding.UTF8
+        })
+        const { Share } = await import('@capacitor/share')
+        await Share.share({ title: filename, files: [res.uri] })
+        showToast(`Exported ${txns.length} entries`)
+        return
+      }
+    } catch {
+      /* fall back to the browser download below */
+    }
+    downloadCsv(csv, filename)
+    showToast(`Exported ${txns.length} entries`)
   }
 
-  async function saveRule() {
-    const minor = Math.round(parseFloat(ruleAmount) * 100) || 0
-    const day = Math.min(31, Math.max(1, parseInt(ruleDay, 10) || 1))
-    if (!ruleName.trim() || minor <= 0) return
-    await addRule({ name: ruleName.trim(), amountMinor: minor, categoryId: ruleCat, dayOfMonth: day })
-    setAddingRule(false)
-    setRuleName('')
-    setRuleAmount('')
-    showToast(`${ruleName.trim()} will log itself on day ${day}`)
+  function hueFromEvent(clientX: number): number {
+    const r = hueBar.current?.getBoundingClientRect()
+    if (!r) return settings.accentHue
+    const t = Math.min(1, Math.max(0, (clientX - r.left) / r.width))
+    return Math.round(t * 359)
   }
+
+  function previewHue(clientX: number) {
+    const hue = hueFromEvent(clientX)
+    dragHueRef.current = hue
+    setDragHue(hue)
+    applyCustomAccent(hue, document.documentElement.dataset.theme === 'dark')
+  }
+
+  function commitHue() {
+    const hue = dragHueRef.current
+    if (hue === null) return
+    haptic('selection')
+    void saveSettings({ accent: 'custom', accentHue: hue })
+    dragHueRef.current = null
+    setDragHue(null)
+  }
+
+  async function handlePin(pin: string) {
+    if (pinMode === 'set') {
+      setFirstPin(pin)
+      setPinMode('confirm')
+    } else if (pinMode === 'confirm') {
+      if (pin === firstPin) {
+        await saveSettings({ pinHash: await hashPin(pin) })
+        haptic('success')
+        setPinMode(null)
+        showToast('App lock is on')
+      } else {
+        haptic('heavy')
+        setPinShake((k) => k + 1)
+        setPinMode('set')
+        showToast("PINs didn't match — try again")
+      }
+    } else if (pinMode === 'verify-remove') {
+      if ((await hashPin(pin)) === settings.pinHash) {
+        await saveSettings({ pinHash: null })
+        haptic('success')
+        setPinMode(null)
+        showToast('App lock removed')
+      } else {
+        haptic('heavy')
+        setPinShake((k) => k + 1)
+      }
+    }
+  }
+
+  const displayHue = dragHue ?? settings.accentHue
 
   return (
     <Sheet open={open} onClose={onClose} label="Settings" style={{ gap: 18 }}>
@@ -91,54 +157,83 @@ export function SettingsSheet({
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <span className="label" style={{ fontSize: 10.5 }}>Color</span>
-          <select
-            className="field"
-            value={ACCENTS.some((a) => a.id === settings.accent) ? settings.accent : 'blue'}
-            onChange={(e) => {
-              haptic('selection')
-              void saveSettings({ accent: e.target.value })
-            }}
-          >
-            {ACCENTS.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
+          <div style={{ display: 'flex', gap: 12 }}>
+            {BASE_COLORS.map((a) => (
+              <button
+                key={a.id}
+                aria-label={`${a.name} color`}
+                title={a.name}
+                onClick={() => {
+                  haptic('selection')
+                  void saveSettings({ accent: a.id })
+                }}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  background: a.swatch,
+                  boxShadow:
+                    settings.accent === a.id
+                      ? `0 0 0 3px var(--bg), 0 0 0 5px ${a.swatch}`
+                      : 'var(--raise-sm)',
+                  transition: 'box-shadow 200ms ease'
+                }}
+              />
             ))}
-          </select>
+          </div>
+          <div
+            ref={hueBar}
+            className="hue-bar"
+            role="slider"
+            aria-label="Custom color"
+            aria-valuemin={0}
+            aria-valuemax={359}
+            aria-valuenow={displayHue}
+            onPointerDown={(e) => {
+              try {
+                e.currentTarget.setPointerCapture(e.pointerId)
+              } catch {
+                /* capture unavailable */
+              }
+              previewHue(e.clientX)
+            }}
+            onPointerMove={(e) => {
+              if (e.buttons > 0) previewHue(e.clientX)
+            }}
+            onPointerUp={commitHue}
+            onPointerCancel={commitHue}
+          >
+            <div
+              className="hue-thumb"
+              style={{
+                left: `${(displayHue / 359) * 100}%`,
+                background: `hsl(${displayHue} 68% 50%)`,
+                opacity: settings.accent === 'custom' || dragHue !== null ? 1 : 0.55
+              }}
+            />
+          </div>
+          <span className="caption" style={{ fontSize: 11.5 }}>
+            Or slide anywhere on the bar to make it exactly your color.
+          </span>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span className="label" style={{ fontSize: 10.5 }}>Theme style</span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              className={`pill${settings.styleMode !== 'candy' ? ' active' : ''}`}
-              style={{ flex: 1, justifyContent: 'center' }}
-              onClick={() => {
-                haptic('selection')
-                void saveSettings({ styleMode: 'soft' })
-              }}
-            >
-              Simple
-            </button>
-            <button
-              className={`pill${settings.styleMode === 'candy' ? ' active' : ''}`}
-              style={{ flex: 1, justifyContent: 'center' }}
-              onClick={() => {
-                haptic('selection')
-                void saveSettings({
-                  styleMode: 'candy',
-                  ...(settings.accent === 'blue' ? { accent: 'pink' } : {})
-                })
-              }}
-            >
-              Candy
-            </button>
-          </div>
-          <span className="caption" style={{ fontSize: 11.5 }}>
-            Candy: polka dots, bows, striped bars and glossy pills — pure girlish energy.
-          </span>
+          <span className="label" style={{ fontSize: 10.5 }}>Currency</span>
+          <select
+            className="field"
+            value={settings.currency}
+            onChange={(e) => {
+              if (e.target.value) void saveSettings({ currency: e.target.value })
+            }}
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.symbol} — {c.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -159,115 +254,35 @@ export function SettingsSheet({
               Sounds {settings.sounds ? 'on' : 'off'}
             </button>
           </div>
-          {settings.sounds && (
-            <select
-              className="field"
-              value={settings.soundPack}
-              onChange={(e) => {
-                void saveSettings({ soundPack: e.target.value as 'click' | 'pop' | 'chime' })
-                window.setTimeout(() => haptic('success'), 120)
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span className="label" style={{ fontSize: 10.5 }}>App lock</span>
+          {settings.pinHash ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                className="btn ghost"
+                onClick={() => {
+                  setFirstPin('')
+                  setPinMode('set')
+                }}
+              >
+                Change PIN
+              </button>
+              <button className="btn danger" onClick={() => setPinMode('verify-remove')}>
+                Remove lock
+              </button>
+            </div>
+          ) : (
+            <button
+              className="btn ghost"
+              onClick={() => {
+                setFirstPin('')
+                setPinMode('set')
               }}
             >
-              <option value="click">Click — soft mechanical taps</option>
-              <option value="pop">Pop — watery little pops</option>
-              <option value="chime">Chime — gentle musical notes</option>
-            </select>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span className="label" style={{ fontSize: 10.5 }}>Currency</span>
-          <select
-            className="field"
-            value={settings.currency}
-            onChange={(e) => {
-              if (e.target.value) void saveSettings({ currency: e.target.value })
-            }}
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.symbol} — {c.name}
-              </option>
-            ))}
-          </select>
-          <span className="caption" style={{ fontSize: 11.5 }}>
-            New expenses use this currency. Existing ones keep theirs.
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div className="row-between">
-            <span className="label" style={{ fontSize: 10.5 }}>Recurring · logs itself monthly</span>
-            {!addingRule && (
-              <button style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 13 }} onClick={() => setAddingRule(true)}>
-                + Add
-              </button>
-            )}
-          </div>
-          {rules.length === 0 && !addingRule && (
-            <span className="caption">Rent, Netflix, gym — add them once, they log themselves on schedule.</span>
-          )}
-          {rules.map((r) => (
-            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: r.paused ? 0.5 : 1 }}>
-              <span style={{ flex: 1, fontWeight: 500, fontSize: 14 }}>{r.name}</span>
-              <span className="caption" style={{ fontSize: 11.5 }}>day {r.dayOfMonth}</span>
-              <span className="mono" style={{ fontWeight: 600, fontSize: 13.5 }}>
-                {formatMinor(r.amountMinor, settings.currency)}
-              </span>
-              <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => void togglePauseRule(r.id)} aria-label={r.paused ? 'Resume' : 'Pause'}>
-                <Icon name={r.paused ? 'play' : 'pause'} size={13} />
-              </button>
-              <button
-                className="icon-btn"
-                style={{ width: 28, height: 28, color: 'var(--red)' }}
-                onClick={() => void deleteRule(r.id)}
-                aria-label="Delete rule"
-              >
-                <Icon name="trash" size={13} />
-              </button>
-            </div>
-          ))}
-          {addingRule && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--surface-2)', borderRadius: 14, padding: 12 }}>
-              <input className="field" style={{ background: 'var(--card)' }} placeholder="Name — e.g. Rent, Netflix" value={ruleName} onChange={(e) => setRuleName(e.target.value)} />
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  className="field mono"
-                  style={{ background: 'var(--card)' }}
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="Amount"
-                  value={ruleAmount}
-                  onChange={(e) => setRuleAmount(e.target.value)}
-                />
-                <input
-                  className="field mono"
-                  style={{ background: 'var(--card)', width: 90 }}
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={31}
-                  placeholder="Day"
-                  value={ruleDay}
-                  onChange={(e) => setRuleDay(e.target.value)}
-                />
-              </div>
-              <select className="field" style={{ background: 'var(--card)' }} value={ruleCat} onChange={(e) => setRuleCat(e.target.value)}>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn ghost" style={{ background: 'var(--card)' }} onClick={() => setAddingRule(false)}>
-                  Cancel
-                </button>
-                <button className="btn" onClick={() => void saveRule()}>
-                  Add rule
-                </button>
-              </div>
-            </div>
+              <Icon name="gauge" size={15} /> Set up a 4-digit PIN
+            </button>
           )}
         </div>
 
@@ -302,13 +317,35 @@ export function SettingsSheet({
             <Icon name="download" size={16} /> Export everything as CSV
           </button>
           <span className="caption" style={{ fontSize: 11.5 }}>
-            Everything lives on this device. No account, no cloud, no ads — export any time.
+            Everything lives on this device. No account, no cloud, no ads.
           </span>
         </div>
 
         <span className="caption faint" style={{ textAlign: 'center', fontSize: 11 }}>
           Snowy v{APP_VERSION} · made for three-second logging
         </span>
+
+        {pinMode && (
+          <Sheet open onClose={() => setPinMode(null)} label="App lock" style={{ gap: 14 }}>
+            <div className="row-between">
+              <span className="label" style={{ letterSpacing: '0.14em' }}>App lock</span>
+              <button className="icon-btn" onClick={() => setPinMode(null)} aria-label="Close">
+                <Icon name="x" size={14} strokeWidth={2.2} />
+              </button>
+            </div>
+            <PinPad
+              label={
+                pinMode === 'set'
+                  ? 'Choose a 4-digit PIN'
+                  : pinMode === 'confirm'
+                    ? 'Type it once more'
+                    : 'Enter your current PIN'
+              }
+              shakeKey={pinShake}
+              onComplete={(p) => void handlePin(p)}
+            />
+          </Sheet>
+        )}
     </Sheet>
   )
 }

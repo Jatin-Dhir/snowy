@@ -5,6 +5,8 @@ import { ensureSeeded } from './db/seed'
 import { runDueRules } from './db/recurring'
 import { formatMinor } from './lib/money'
 import { autoCheckForUpdate } from './lib/updater'
+import { applyCustomAccent, clearCustomAccent } from './lib/theme'
+import { LockScreen } from './components/LockScreen'
 import { TabBar, type Tab } from './components/TabBar'
 import { Toast } from './components/Toast'
 import { AddSheet } from './components/AddSheet'
@@ -32,6 +34,7 @@ export default function App() {
   const [editTxn, setEditTxn] = useState<Txn | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ready, setReady] = useState(false)
+  const [unlocked, setUnlocked] = useState(false)
 
   const settingsRow = useLiveQuery(() => db.kv.get('settings'), [])
   const settings: Settings = { ...DEFAULT_SETTINGS, ...((settingsRow?.value as Partial<Settings>) ?? {}) }
@@ -64,11 +67,9 @@ export default function App() {
       const root = document.documentElement
       root.dataset.theme = resolved
       root.dataset.accent = settings.accent
-      root.dataset.style = settings.styleMode === 'candy' ? 'candy' : 'soft'
-      localStorage.setItem(
-        'tally.fx',
-        JSON.stringify({ haptics: settings.haptics, sounds: settings.sounds, soundPack: settings.soundPack })
-      )
+      if (settings.accent === 'custom') applyCustomAccent(settings.accentHue, resolved === 'dark')
+      else clearCustomAccent()
+      localStorage.setItem('tally.fx', JSON.stringify({ haptics: settings.haptics, sounds: settings.sounds }))
       const meta = document.querySelector('meta[name="theme-color"]')
       if (meta) {
         requestAnimationFrame(() => {
@@ -79,9 +80,23 @@ export default function App() {
     apply()
     media.addEventListener('change', apply)
     return () => media.removeEventListener('change', apply)
-  }, [settings.theme, settings.accent, settings.styleMode, settings.haptics, settings.sounds, settings.soundPack])
+  }, [settings.theme, settings.accent, settings.accentHue, settings.haptics, settings.sounds])
+
+  useEffect(() => {
+    let hiddenAt = 0
+    function onVis() {
+      if (document.hidden) hiddenAt = Date.now()
+      else if (hiddenAt && Date.now() - hiddenAt > 120000) setUnlocked(false)
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [])
 
   if (!settingsLoaded || !ready) return null
+
+  if (settings.initialized && settings.pinHash && !unlocked) {
+    return <LockScreen pinHash={settings.pinHash} onUnlock={() => setUnlocked(true)} />
+  }
 
   if (!settings.initialized) {
     return (
