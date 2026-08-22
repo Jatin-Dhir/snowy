@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Loan } from '../db/db'
 import { addLoan, settleLoan, unsettleLoan, updateLoanReminder, deleteLoan } from '../db/loans'
@@ -47,6 +47,20 @@ export function LoansSheet({
   const [customDate, setCustomDate] = useState(addDaysISO(todayISO(), 7))
   const [active, setActive] = useState<Loan | null>(null)
   const [editingReminder, setEditingReminder] = useState(false)
+
+  // scrim taps and swipe-down bypass the header X, so reset the add form and
+  // detail view whenever the sheet is dismissed — reopening starts clean
+  useEffect(() => {
+    if (open) return
+    setAdding(false)
+    setPerson('')
+    setTypingPerson(false)
+    setRemindDays(7)
+    setActive(null)
+    setEditingReminder(false)
+    amt.reset()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const loans = useLiveQuery(() => db.loans.toArray(), []) ?? []
   const outstanding = loans.filter((l) => !l.settledISO).sort((a, b) => b.createdAt - a.createdAt)
@@ -183,25 +197,14 @@ export function LoansSheet({
             </button>
           </span>
 
-          <div className="amount-display" style={{ padding: '4px 0 0' }}>
-            <span className="amount-cur" style={{ fontSize: 22 }}>{currencySymbol(currency)}</span>
-            <span
-              key={`${amt.entry.r}.${amt.entry.p ?? ''}`}
-              className={`amount-num amount-pop${amt.minor > 0 ? '' : ' zero'}`}
-              style={{ fontSize: 40 }}
-            >
-              {formatEntry(amt.entry.r, amt.entry.p, currency)}
-            </span>
-            <span className="caret" style={{ height: 28 }} />
-          </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span className="label" style={{ fontSize: 10 }}>Who?</span>
-            <div className="chip-row">
+            <div className="chip-row" style={{ flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
               {people.map((p) => (
                 <button
                   key={p}
                   className={`chip${person === p && !typingPerson ? ' selected' : ''}`}
+                  style={{ flexShrink: 0 }}
                   onClick={() => {
                     haptic('selection')
                     setPerson(p)
@@ -213,7 +216,7 @@ export function LoansSheet({
               ))}
               <button
                 className={`chip${typingPerson ? ' selected' : ''}`}
-                style={{ color: 'var(--accent)', fontWeight: 700 }}
+                style={{ color: 'var(--accent)', fontWeight: 700, flexShrink: 0 }}
                 onClick={() => {
                   setTypingPerson(true)
                   setPerson('')
@@ -228,19 +231,31 @@ export function LoansSheet({
                 placeholder="Their name"
                 value={person}
                 maxLength={40}
-                autoFocus
                 onChange={(e) => setPerson(e.target.value)}
               />
             )}
           </div>
 
+          <div className="amount-display" style={{ padding: 0 }}>
+            <span className="amount-cur" style={{ fontSize: 20 }}>{currencySymbol(currency)}</span>
+            <span
+              key={`${amt.entry.r}.${amt.entry.p ?? ''}`}
+              className={`amount-num amount-pop${amt.minor > 0 ? '' : ' zero'}`}
+              style={{ fontSize: 36 }}
+            >
+              {formatEntry(amt.entry.r, amt.entry.p, currency)}
+            </span>
+            <span className="caret" style={{ height: 26 }} />
+          </div>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span className="label" style={{ fontSize: 10 }}>Remind me</span>
-            <div className="chip-row">
+            <div className="chip-row" style={{ flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
               {REMIND_CHIPS.map((o) => (
                 <button
                   key={o.days}
                   className={`chip${remindDays === o.days ? ' selected' : ''}`}
+                  style={{ flexShrink: 0 }}
                   onClick={() => {
                     haptic('selection')
                     setRemindDays(o.days)
@@ -251,6 +266,7 @@ export function LoansSheet({
               ))}
               <button
                 className={`chip${remindDays === -1 ? ' selected' : ''}`}
+                style={{ flexShrink: 0 }}
                 onClick={() => {
                   haptic('selection')
                   setRemindDays(-1)

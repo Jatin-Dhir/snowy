@@ -5,10 +5,12 @@ import { haptic } from '../state/ui'
 /** Four dots + numpad. Calls onComplete with the 4-digit pin; parent decides what's next. */
 export function PinPad({
   label,
+  error,
   shakeKey,
   onComplete
 }: {
   label: string
+  error?: string
   shakeKey: number
   onComplete: (pin: string) => void
 }) {
@@ -33,20 +35,26 @@ export function PinPad({
     <div
       key={shakeKey}
       className={`pin-wrap${shakeKey > 0 ? ' pin-shake' : ''}`}
-      style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
     >
-      <span className="label" style={{ textAlign: 'center', fontSize: 11 }}>{label}</span>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 14 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+        <span style={{ fontWeight: 700, fontSize: 15 }}>{label}</span>
+        <span className="caption" style={{ fontSize: 12, color: 'var(--red)', minHeight: 16 }}>
+          {error && shakeKey > 0 ? error : ''}
+        </span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 18 }}>
         {[0, 1, 2, 3].map((i) => (
           <span
             key={i}
             style={{
-              width: 14,
-              height: 14,
-              borderRadius: 7,
+              width: 17,
+              height: 17,
+              borderRadius: 9,
               background: i < entry.length ? 'var(--accent)' : 'var(--bar-idle)',
               boxShadow: i < entry.length ? 'var(--raise-sm)' : 'var(--inset-sm)',
-              transition: 'background 150ms ease'
+              transform: i < entry.length ? 'scale(1.08)' : 'scale(1)',
+              transition: 'background 150ms ease, transform 150ms var(--ease-spring)'
             }}
           />
         ))}

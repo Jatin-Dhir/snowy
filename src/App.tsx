@@ -34,7 +34,9 @@ export default function App() {
   const [editTxn, setEditTxn] = useState<Txn | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ready, setReady] = useState(false)
-  const [unlocked, setUnlocked] = useState(false)
+  // decided once at cold start — setting or changing a PIN mid-session must
+  // never throw the user back to the lock screen
+  const [locked, setLocked] = useState(false)
   const [pendingAdd, setPendingAdd] = useState(false)
 
   const settingsRow = useLiveQuery(() => db.kv.get('settings'), [])
@@ -46,6 +48,7 @@ export default function App() {
       await ensureSeeded()
       const row = await db.kv.get('settings')
       const s: Settings = { ...DEFAULT_SETTINGS, ...((row?.value as Partial<Settings>) ?? {}) }
+      if (s.initialized && s.pinHash) setLocked(true)
       if (s.initialized) {
         const logged = await runDueRules(s.currency)
         if (logged.length === 1) {
@@ -73,10 +76,7 @@ export default function App() {
       if (settings.accent === 'custom') applyCustomAccent(settings.accentHue, resolved === 'dark')
       else if (settings.accent in PRESET_HUES) applyCustomAccent(PRESET_HUES[settings.accent], resolved === 'dark')
       else clearCustomAccent()
-      localStorage.setItem(
-        'tally.fx',
-        JSON.stringify({ haptics: settings.haptics, sounds: settings.sounds, soundPack: settings.soundPack })
-      )
+      localStorage.setItem('tally.fx', JSON.stringify({ haptics: settings.haptics, sounds: settings.sounds }))
       const meta = document.querySelector('meta[name="theme-color"]')
       if (meta) {
         requestAnimationFrame(() => {
@@ -87,17 +87,7 @@ export default function App() {
     apply()
     media.addEventListener('change', apply)
     return () => media.removeEventListener('change', apply)
-  }, [settings.theme, settings.accent, settings.accentHue, settings.haptics, settings.sounds, settings.soundPack])
-
-  useEffect(() => {
-    let hiddenAt = 0
-    function onVis() {
-      if (document.hidden) hiddenAt = Date.now()
-      else if (hiddenAt && Date.now() - hiddenAt > 120000) setUnlocked(false)
-    }
-    document.addEventListener('visibilitychange', onVis)
-    return () => document.removeEventListener('visibilitychange', onVis)
-  }, [])
+  }, [settings.theme, settings.accent, settings.accentHue, settings.haptics, settings.sounds])
 
   // the quick-add shortcut (long-press launcher icon, or the PWA shortcut)
   useEffect(() => {
@@ -121,19 +111,18 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!pendingAdd || !ready || !settings.initialized) return
-    if (settings.pinHash && !unlocked) return
+    if (!pendingAdd || !ready || !settings.initialized || locked) return
     setPendingAdd(false)
     dismissToast()
     setEditTxn(null)
     setAddOpen(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingAdd, ready, unlocked, settings.initialized, settings.pinHash])
+  }, [pendingAdd, ready, locked, settings.initialized])
 
   if (!settingsLoaded || !ready) return null
 
-  if (settings.initialized && settings.pinHash && !unlocked) {
-    return <LockScreen pinHash={settings.pinHash} onUnlock={() => setUnlocked(true)} />
+  if (locked && settings.pinHash) {
+    return <LockScreen pinHash={settings.pinHash} onUnlock={() => setLocked(false)} />
   }
 
   if (!settings.initialized) {

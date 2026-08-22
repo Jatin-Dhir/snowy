@@ -20,11 +20,7 @@ export function TabBar({
   onTab: (t: Tab) => void
   onAdd: () => void
 }) {
-  const [burst, setBurst] = useState(false)
-  const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([])
   const [ind, setInd] = useState<{ left: number; width: number } | null>(null)
-  const burstTimer = useRef<number | null>(null)
-  const fabRef = useRef<HTMLButtonElement | null>(null)
   const dockRef = useRef<HTMLDivElement | null>(null)
   const btnRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({})
 
@@ -41,14 +37,6 @@ export function TabBar({
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
   }, [tab])
-
-  function splash() {
-    const rect = fabRef.current?.getBoundingClientRect()
-    if (!rect) return
-    const id = Date.now() + Math.random()
-    setRipples((r) => [...r, { id, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }])
-    window.setTimeout(() => setRipples((r) => r.filter((p) => p.id !== id)), 680)
-  }
 
   const item = (t: (typeof TABS)[number]) => (
     <button
@@ -74,14 +62,9 @@ export function TabBar({
         {ind && <span className="dock-ind" style={{ left: ind.left, width: ind.width }} />}
         {TABS.slice(0, 2).map(item)}
         <button
-          ref={fabRef}
-          className={`fab${burst ? ' burst' : ''}`}
+          className="fab"
           onClick={() => {
             haptic('medium')
-            if (burstTimer.current) window.clearTimeout(burstTimer.current)
-            setBurst(true)
-            splash()
-            burstTimer.current = window.setTimeout(() => setBurst(false), 440)
             onAdd()
           }}
           aria-label="Add expense"
@@ -89,9 +72,6 @@ export function TabBar({
           <Icon name="plus" size={24} strokeWidth={2.2} />
         </button>
         {TABS.slice(2).map(item)}
-        {ripples.map((r) => (
-          <span key={r.id} className="fab-ripple" style={{ left: r.x, top: r.y }} />
-        ))}
       </div>
     </nav>
   )

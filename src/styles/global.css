@@ -461,41 +461,6 @@ button.pill:active {
   transition-duration: 40ms, 40ms;
 }
 
-.fab svg {
-  transition: transform 340ms var(--ease-spring);
-}
-
-.fab:active svg {
-  transform: rotate(90deg);
-  transition-duration: 120ms;
-}
-
-/* click burst: the plus spins a half turn while the button pulses */
-.fab.burst {
-  animation: fab-pulse 420ms var(--ease-spring);
-}
-
-.fab.burst svg {
-  animation: fab-spin 420ms var(--ease-spring);
-}
-
-@keyframes fab-pulse {
-  0% {
-    transform: scale(1);
-  }
-  35% {
-    transform: scale(0.84);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes fab-spin {
-  to {
-    transform: rotate(180deg);
-  }
-}
 
 /* ---------- transaction rows ---------- */
 .txn-row {
@@ -675,33 +640,6 @@ button.pill:active {
 @keyframes sheet-down {
   to {
     transform: translateY(105%);
-  }
-}
-
-/* water-droplet ripple expanding out from the + button */
-.fab-ripple {
-  position: fixed;
-  z-index: 48;
-  width: 20px;
-  height: 20px;
-  margin: -10px 0 0 -10px;
-  border-radius: 50%;
-  background: var(--accent);
-  pointer-events: none;
-  animation: ripple-out 640ms var(--ease-water) forwards;
-}
-
-@keyframes ripple-out {
-  0% {
-    transform: scale(0);
-    opacity: 0.35;
-  }
-  60% {
-    opacity: 0.14;
-  }
-  100% {
-    transform: scale(42);
-    opacity: 0;
   }
 }
 

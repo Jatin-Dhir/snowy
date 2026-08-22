@@ -172,6 +172,12 @@ export function AddSheet({
     function onKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return
+      // the tag sheet is on top — don't let hardware keys mutate the amount
+      // underneath it (a zeroed amount would make tag taps silently no-op)
+      if (showAll || manageTags) {
+        if (e.key === 'Escape') setShowAll(false)
+        return
+      }
       if (e.key >= '0' && e.key <= '9') amt.digit(e.key)
       else if (e.key === '.') amt.dot()
       else if (e.key === 'Backspace') amt.backspace()
@@ -240,43 +246,7 @@ export function AddSheet({
           <span className="caret" />
         </div>
 
-        {showAll ? (
-          <>
-            <div className="row-between" style={{ paddingTop: 6 }}>
-              <span className="label" style={{ fontSize: 10.5 }}>
-                {isEdit ? 'Pick a tag' : canSave ? 'Tap a tag to save' : 'All tags'}
-              </span>
-              <button className="icon-btn" onClick={() => setShowAll(false)} aria-label="Back to keypad">
-                <Icon name="chevronDown" size={15} />
-              </button>
-            </div>
-            <div className="tag-list">
-              {categories.map((c) => (
-                <button
-                  key={c.id}
-                  className="tag-list-row"
-                  disabled={!isEdit && !canSave}
-                  style={!isEdit && !canSave ? { opacity: 0.45 } : undefined}
-                  onClick={() => tapCategory(c.id)}
-                >
-                  <span className="txn-icon" style={{ background: `${c.color}26`, color: c.color, width: 38, height: 38 }}>
-                    <Icon name={c.icon} size={19} />
-                  </span>
-                  <span style={{ flex: 1 }}>{c.name}</span>
-                  {isEdit && selectedCat === c.id && (
-                    <span style={{ color: 'var(--pos)' }}>
-                      <Icon name="check" size={16} strokeWidth={2.4} />
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-            <button className="btn ghost" onClick={() => setManageTags(true)}>
-              <Icon name="pencil" size={15} /> Edit tags
-            </button>
-          </>
-        ) : (
-          <>
+        <>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '6px 0 12px', flexWrap: 'wrap' }}>
               <button
                 className="pill"
@@ -338,10 +308,11 @@ export function AddSheet({
                 <button
                   className="chip"
                   style={{ color: 'var(--accent)', fontWeight: 800 }}
+                  disabled={!isEdit && !canSave}
                   onClick={() => setShowAll(true)}
                 >
-                  All
-                  <Icon name="chevronDown" size={12} strokeWidth={2.4} />
+                  <Icon name="grid" size={12} strokeWidth={2.2} />
+                  More
                 </button>
               </div>
             </div>
@@ -362,6 +333,38 @@ export function AddSheet({
               )}
             </div>
           </>
+
+        {showAll && (
+          <Sheet open onClose={() => setShowAll(false)} label="All tags" style={{ gap: 8 }}>
+            <div className="row-between">
+              <span className="label" style={{ letterSpacing: '0.14em' }}>
+                {isEdit ? 'Pick a tag' : 'Tap a tag to save'}
+              </span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="icon-btn" onClick={() => setManageTags(true)} aria-label="Edit tags">
+                  <Icon name="pencil" size={14} />
+                </button>
+                <button className="icon-btn" onClick={() => setShowAll(false)} aria-label="Close">
+                  <Icon name="x" size={14} strokeWidth={2.2} />
+                </button>
+              </div>
+            </div>
+            <div className="tag-list">
+              {categories.map((c) => (
+                <button key={c.id} className="tag-list-row" onClick={() => tapCategory(c.id)}>
+                  <span className="txn-icon" style={{ background: `${c.color}26`, color: c.color, width: 38, height: 38 }}>
+                    <Icon name={c.icon} size={19} />
+                  </span>
+                  <span style={{ flex: 1 }}>{c.name}</span>
+                  {isEdit && selectedCat === c.id && (
+                    <span style={{ color: 'var(--pos)' }}>
+                      <Icon name="check" size={16} strokeWidth={2.4} />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </Sheet>
         )}
 
         <TagManager open={manageTags} onClose={() => setManageTags(false)} />

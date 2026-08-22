@@ -152,11 +152,11 @@ export function Home({
         <span className="label">{dateLabel}</span>
         <button
           className="icon-btn"
-          style={{ width: 34, height: 34, borderRadius: 17 }}
+          style={{ width: 42, height: 42, borderRadius: 21 }}
           onClick={onOpenSettings}
           aria-label="Settings"
         >
-          <Icon name="gear" size={17} />
+          <Icon name="gear" size={21} strokeWidth={1.6} />
         </button>
       </div>
 

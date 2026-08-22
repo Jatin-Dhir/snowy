@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, saveSettings, type Settings } from '../db/db'
 import { allLiveTxns } from '../db/repo'
@@ -21,7 +21,8 @@ const BASE_COLORS = [
   { id: 'mono', name: 'Black', swatch: '#222A35' }
 ]
 
-type PinMode = 'set' | 'confirm' | 'verify-remove' | null
+// set/confirm create or replace a PIN; verify gates the manage view for an existing one
+type PinMode = 'set' | 'confirm' | 'verify' | 'manage' | null
 
 function ActionRow({
   icon,
@@ -70,10 +71,23 @@ export function SettingsSheet({
   const [pinMode, setPinMode] = useState<PinMode>(null)
   const [firstPin, setFirstPin] = useState('')
   const [pinShake, setPinShake] = useState(0)
+  const [pinError, setPinError] = useState('')
+  const [currencyOpen, setCurrencyOpen] = useState(false)
   const hueBar = useRef<HTMLDivElement | null>(null)
   const [dragHue, setDragHue] = useState<number | null>(null)
   const dragHueRef = useRef<number | null>(null)
   const [showCustom, setShowCustom] = useState(settings.accent === 'custom')
+
+  // Settings can close from under its sub-sheets (scrim tap above them) —
+  // clear any half-finished PIN flow or open picker so reopening starts clean
+  useEffect(() => {
+    if (open) return
+    setPinMode(null)
+    setFirstPin('')
+    setPinError('')
+    setPinShake(0)
+    setCurrencyOpen(false)
+  }, [open])
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
 
@@ -144,36 +158,54 @@ export function SettingsSheet({
     setDragHue(null)
   }
 
+  function openPinFlow() {
+    setFirstPin('')
+    setPinShake(0)
+    setPinError('')
+    setPinMode(settings.pinHash ? 'verify' : 'set')
+  }
+
   async function handlePin(pin: string) {
-    if (pinMode === 'set') {
+    if (pinMode === 'verify') {
+      if ((await hashPin(pin)) === settings.pinHash) {
+        haptic('success')
+        setPinShake(0)
+        setPinMode('manage')
+      } else {
+        haptic('heavy')
+        setPinError("That's not it — try again")
+        setPinShake((k) => k + 1)
+      }
+    } else if (pinMode === 'set') {
       setFirstPin(pin)
+      setPinError('')
+      setPinShake(0)
       setPinMode('confirm')
     } else if (pinMode === 'confirm') {
       if (pin === firstPin) {
+        const hadPin = !!settings.pinHash
         await saveSettings({ pinHash: await hashPin(pin) })
         haptic('success')
         setPinMode(null)
-        showToast('App lock is on')
+        showToast(hadPin ? 'PIN changed' : 'App lock is on')
       } else {
         haptic('heavy')
+        setPinError("PINs didn't match — start over")
         setPinShake((k) => k + 1)
         setPinMode('set')
-        showToast("PINs didn't match — try again")
-      }
-    } else if (pinMode === 'verify-remove') {
-      if ((await hashPin(pin)) === settings.pinHash) {
-        await saveSettings({ pinHash: null })
-        haptic('success')
-        setPinMode(null)
-        showToast('App lock removed')
-      } else {
-        haptic('heavy')
-        setPinShake((k) => k + 1)
       }
     }
   }
 
+  async function removePin() {
+    await saveSettings({ pinHash: null })
+    haptic('success')
+    setPinMode(null)
+    showToast('App lock is off')
+  }
+
   const displayHue = dragHue ?? settings.accentHue
+  const currentCurrency = CURRENCIES.find((c) => c.code === settings.currency)
 
   return (
     <Sheet open={open} onClose={onClose} label="Settings" style={{ gap: 18 }}>
@@ -202,7 +234,7 @@ export function SettingsSheet({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <span className="label" style={{ fontSize: 10.5 }}>Color</span>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2px' }}>
             {BASE_COLORS.map((a) => (
               <button
                 key={a.id}
@@ -250,57 +282,38 @@ export function SettingsSheet({
             />
           </div>
           {showCustom && (
-            <>
+            <div
+              ref={hueBar}
+              className="hue-bar"
+              role="slider"
+              aria-label="Pastel color slider"
+              aria-valuemin={0}
+              aria-valuemax={359}
+              aria-valuenow={displayHue}
+              onPointerDown={(e) => {
+                try {
+                  e.currentTarget.setPointerCapture(e.pointerId)
+                } catch {
+                  /* capture unavailable */
+                }
+                previewHue(e.clientX)
+              }}
+              onPointerMove={(e) => {
+                if (e.buttons > 0) previewHue(e.clientX)
+              }}
+              onPointerUp={commitHue}
+              onPointerCancel={commitHue}
+            >
               <div
-                ref={hueBar}
-                className="hue-bar"
-                role="slider"
-                aria-label="Pastel color slider"
-                aria-valuemin={0}
-                aria-valuemax={359}
-                aria-valuenow={displayHue}
-                onPointerDown={(e) => {
-                  try {
-                    e.currentTarget.setPointerCapture(e.pointerId)
-                  } catch {
-                    /* capture unavailable */
-                  }
-                  previewHue(e.clientX)
+                className="hue-thumb"
+                style={{
+                  left: `calc(17px + ${(displayHue / 359) * 100} * (100% - 34px) / 100)`,
+                  background: `hsl(${displayHue} 58% 62%)`,
+                  opacity: settings.accent === 'custom' || dragHue !== null ? 1 : 0.55
                 }}
-                onPointerMove={(e) => {
-                  if (e.buttons > 0) previewHue(e.clientX)
-                }}
-                onPointerUp={commitHue}
-                onPointerCancel={commitHue}
-              >
-                <div
-                  className="hue-thumb"
-                  style={{
-                    left: `calc(17px + ${(displayHue / 359) * 100} * (100% - 34px) / 100)`,
-                    background: `hsl(${displayHue} 58% 62%)`,
-                    opacity: settings.accent === 'custom' || dragHue !== null ? 1 : 0.55
-                  }}
-                />
-              </div>
-            </>
+              />
+            </div>
           )}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span className="label" style={{ fontSize: 10.5 }}>Currency</span>
-          <select
-            className="field"
-            value={settings.currency}
-            onChange={(e) => {
-              if (e.target.value) void saveSettings({ currency: e.target.value })
-            }}
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.symbol} — {c.name}
-              </option>
-            ))}
-          </select>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -321,55 +334,24 @@ export function SettingsSheet({
               Sounds {settings.sounds ? 'on' : 'off'}
             </button>
           </div>
-          {settings.sounds && (
-            <div style={{ display: 'flex', gap: 8 }}>
-              {(
-                [
-                  { id: 'tap', label: 'Tap' },
-                  { id: 'click', label: 'Click' },
-                  { id: 'pop', label: 'Pop' },
-                  { id: 'wood', label: 'Wood' }
-                ] as const
-              ).map((p) => (
-                <button
-                  key={p.id}
-                  className={`pill${settings.soundPack === p.id ? ' active' : ''}`}
-                  style={{ flex: 1, justifyContent: 'center' }}
-                  onClick={() => {
-                    void saveSettings({ soundPack: p.id })
-                    window.setTimeout(() => haptic('light'), 130)
-                    window.setTimeout(() => haptic('success'), 350)
-                  }}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span className="label" style={{ fontSize: 10.5 }}>More</span>
           <ActionRow
+            icon="globe"
+            tint="#C08A3E"
+            title="Currency"
+            sub={currentCurrency ? `${currentCurrency.symbol} ${currentCurrency.name}` : settings.currency}
+            onClick={() => setCurrencyOpen(true)}
+          />
+          <ActionRow
             icon="lock"
             tint="#7B61D6"
             title={settings.pinHash ? 'App lock is on' : 'App lock'}
-            sub={settings.pinHash ? 'Tap to change your PIN' : 'Set a 4-digit PIN to open Taily'}
-            onClick={() => {
-              setFirstPin('')
-              setPinMode('set')
-            }}
+            sub={settings.pinHash ? 'Change your PIN or turn it off' : 'Set a 4-digit PIN to open Taily'}
+            onClick={openPinFlow}
           />
-          {settings.pinHash && (
-            <ActionRow
-              icon="x"
-              tint="#B3453D"
-              title="Remove app lock"
-              sub="Needs your current PIN"
-              danger
-              onClick={() => setPinMode('verify-remove')}
-            />
-          )}
           <ActionRow
             icon={update !== 'idle' && update !== 'checking' && update.status === 'update' ? 'download' : 'refresh'}
             tint="#2B5FE3"
@@ -415,6 +397,51 @@ export function SettingsSheet({
           Taily v{APP_VERSION} · built by Jatin Dhir
         </span>
 
+        {currencyOpen && (
+          <Sheet open onClose={() => setCurrencyOpen(false)} label="Currency" style={{ gap: 8 }}>
+            <div className="row-between">
+              <span className="label" style={{ letterSpacing: '0.14em' }}>Currency</span>
+              <button className="icon-btn" onClick={() => setCurrencyOpen(false)} aria-label="Close">
+                <Icon name="x" size={14} strokeWidth={2.2} />
+              </button>
+            </div>
+            {CURRENCIES.map((c) => (
+              <button
+                key={c.code}
+                className="action-row"
+                onClick={() => {
+                  haptic('selection')
+                  void saveSettings({ currency: c.code })
+                  setCurrencyOpen(false)
+                }}
+              >
+                <span
+                  className="txn-icon"
+                  style={{
+                    background: settings.currency === c.code ? 'var(--accent)' : 'var(--sunken)',
+                    color: settings.currency === c.code ? 'var(--on-accent)' : 'var(--muted)',
+                    width: 38,
+                    height: 38,
+                    fontWeight: 800,
+                    fontSize: 15
+                  }}
+                >
+                  {c.symbol}
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', fontWeight: 700, fontSize: 14 }}>{c.name}</span>
+                  <span className="caption" style={{ fontSize: 11.5 }}>{c.code}</span>
+                </span>
+                {settings.currency === c.code && (
+                  <span style={{ color: 'var(--pos)' }}>
+                    <Icon name="check" size={17} strokeWidth={2.4} />
+                  </span>
+                )}
+              </button>
+            ))}
+          </Sheet>
+        )}
+
         {pinMode && (
           <Sheet open onClose={() => setPinMode(null)} label="App lock" style={{ gap: 14 }}>
             <div className="row-between">
@@ -423,17 +450,41 @@ export function SettingsSheet({
                 <Icon name="x" size={14} strokeWidth={2.2} />
               </button>
             </div>
-            <PinPad
-              label={
-                pinMode === 'set'
-                  ? 'Choose a 4-digit PIN'
-                  : pinMode === 'confirm'
-                    ? 'Type it once more'
-                    : 'Enter your current PIN'
-              }
-              shakeKey={pinShake}
-              onComplete={(p) => void handlePin(p)}
-            />
+            {pinMode === 'manage' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 6 }}>
+                <span className="caption" style={{ fontSize: 13 }}>
+                  PIN verified. What next?
+                </span>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setFirstPin('')
+                    setPinError('')
+                    setPinShake(0)
+                    setPinMode('set')
+                  }}
+                >
+                  <Icon name="lock" size={16} /> Choose a new PIN
+                </button>
+                <button className="btn danger" onClick={() => void removePin()}>
+                  Turn off app lock
+                </button>
+              </div>
+            ) : (
+              <PinPad
+                key={pinMode}
+                label={
+                  pinMode === 'verify'
+                    ? 'Enter your current PIN'
+                    : pinMode === 'set'
+                      ? 'Choose a 4-digit PIN'
+                      : 'Type it once more'
+                }
+                error={pinError}
+                shakeKey={pinShake}
+                onComplete={(p) => void handlePin(p)}
+              />
+            )}
           </Sheet>
         )}
     </Sheet>

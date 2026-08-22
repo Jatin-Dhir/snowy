@@ -43,7 +43,12 @@ export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: (
           </svg>
           <span className="display" style={{ fontWeight: 800, fontSize: 20 }}>Taily</span>
         </div>
-        <PinPad label="Enter your PIN" shakeKey={shakeKey} onComplete={(p) => void tryPin(p)} />
+        <PinPad
+          label="Enter your PIN"
+          error="That's not it — try again"
+          shakeKey={shakeKey}
+          onComplete={(p) => void tryPin(p)}
+        />
       </div>
     </div>
   )
