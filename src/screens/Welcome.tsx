@@ -28,15 +28,17 @@ export function Welcome({ onDone }: { onDone: () => void }) {
     >
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', gap: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <svg width="40" height="36" viewBox="0 0 44 40" aria-hidden="true" style={{ color: 'var(--accent)' }}>
-            <path d="M11 22 L13 5 L22 16 L31 5 L33 22 A 11.4 10.4 0 1 1 11 22 Z" fill="currentColor" />
-            <path d="M15.2 25.6 q 2.4 -3.1 4.8 0" stroke="var(--bg)" strokeWidth="1.7" fill="none" strokeLinecap="round" />
-            <path d="M24 25.6 q 2.4 -3.1 4.8 0" stroke="var(--bg)" strokeWidth="1.7" fill="none" strokeLinecap="round" />
-            <circle cx="22" cy="29.4" r="1.5" fill="var(--bg)" />
-            <path d="M2 24.5 L9 26 M2 30.5 L9 29" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-            <path d="M42 24.5 L35 26 M42 30.5 L35 29" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          <svg width="38" height="36" viewBox="0 0 44 42" aria-hidden="true" style={{ color: 'var(--accent)' }}>
+            <ellipse cx="9" cy="18.5" rx="3.3" ry="4.3" transform="rotate(-24 9 18.5)" fill="currentColor" />
+            <ellipse cx="17" cy="13" rx="3.4" ry="4.4" transform="rotate(-8 17 13)" fill="currentColor" />
+            <ellipse cx="27" cy="13" rx="3.4" ry="4.4" transform="rotate(8 27 13)" fill="currentColor" />
+            <ellipse cx="35" cy="18.5" rx="3.3" ry="4.3" transform="rotate(24 35 18.5)" fill="currentColor" />
+            <circle cx="18.7" cy="25.5" r="5.2" fill="currentColor" />
+            <circle cx="25.3" cy="25.5" r="5.2" fill="currentColor" />
+            <ellipse cx="22" cy="26.5" rx="8.4" ry="5" fill="currentColor" />
+            <path d="M14 27 h16 L22 35.6 Z" fill="currentColor" />
           </svg>
-          <span className="display" style={{ fontWeight: 700, fontSize: 26 }}>Snowy</span>
+          <span className="display" style={{ fontWeight: 700, fontSize: 26 }}>Taily</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <h1 className="display" style={{ margin: 0, fontSize: 34, lineHeight: 1.15, letterSpacing: '-0.02em' }}>

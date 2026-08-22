@@ -14,10 +14,10 @@ import { Sheet } from '../components/Sheet'
 import { haptic, useUi } from '../state/ui'
 
 const BASE_COLORS = [
-  { id: 'blue', name: 'Blue', swatch: '#2B5FE3' },
-  { id: 'lavender', name: 'Violet', swatch: '#7B61D6' },
-  { id: 'pink', name: 'Pink', swatch: '#DD4F97' },
-  { id: 'green', name: 'Green', swatch: '#2C9A67' },
+  { id: 'blue', name: 'Sky', swatch: 'hsl(210 58% 62%)' },
+  { id: 'lavender', name: 'Lavender', swatch: 'hsl(262 58% 68%)' },
+  { id: 'pink', name: 'Pink', swatch: 'hsl(335 58% 70%)' },
+  { id: 'green', name: 'Mint', swatch: 'hsl(150 45% 58%)' },
   { id: 'mono', name: 'Black', swatch: '#222A35' }
 ]
 
@@ -89,10 +89,18 @@ export function SettingsSheet({
       return
     }
     const csv = txnsToCsv(txns, categories)
-    const filename = `snowy-${todayISO()}.csv`
+    const filename = `taily-${todayISO()}.csv`
+    let native = false
     try {
       const { Capacitor } = await import('@capacitor/core')
-      if (Capacitor.isNativePlatform()) {
+      native = Capacitor.isNativePlatform()
+    } catch {
+      /* web */
+    }
+    if (native) {
+      // never fall through to the browser download in the app — it would
+      // silently do nothing and then claim success
+      try {
         const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
         const res = await Filesystem.writeFile({
           path: filename,
@@ -103,10 +111,11 @@ export function SettingsSheet({
         const { Share } = await import('@capacitor/share')
         await Share.share({ title: filename, files: [res.uri] })
         showToast(`Exported ${txns.length} entries`)
-        return
+      } catch (e) {
+        const msg = e instanceof Error ? e.message.toLowerCase() : ''
+        showToast(msg.includes('cancel') ? 'Export canceled' : "Couldn't export — try again")
       }
-    } catch {
-      /* fall back to the browser download below */
+      return
     }
     downloadCsv(csv, filename)
     showToast(`Exported ${txns.length} entries`)
@@ -267,15 +276,12 @@ export function SettingsSheet({
                 <div
                   className="hue-thumb"
                   style={{
-                    left: `${(displayHue / 359) * 100}%`,
+                    left: `calc(17px + ${(displayHue / 359) * 100} * (100% - 34px) / 100)`,
                     background: `hsl(${displayHue} 58% 62%)`,
                     opacity: settings.accent === 'custom' || dragHue !== null ? 1 : 0.55
                   }}
                 />
               </div>
-              <span className="caption" style={{ fontSize: 11.5 }}>
-                Slide to your shade — soft pastels that adapt to light and dark.
-              </span>
             </>
           )}
         </div>
@@ -315,6 +321,31 @@ export function SettingsSheet({
               Sounds {settings.sounds ? 'on' : 'off'}
             </button>
           </div>
+          {settings.sounds && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(
+                [
+                  { id: 'tap', label: 'Tap' },
+                  { id: 'click', label: 'Click' },
+                  { id: 'pop', label: 'Pop' },
+                  { id: 'wood', label: 'Wood' }
+                ] as const
+              ).map((p) => (
+                <button
+                  key={p.id}
+                  className={`pill${settings.soundPack === p.id ? ' active' : ''}`}
+                  style={{ flex: 1, justifyContent: 'center' }}
+                  onClick={() => {
+                    void saveSettings({ soundPack: p.id })
+                    window.setTimeout(() => haptic('light'), 130)
+                    window.setTimeout(() => haptic('success'), 350)
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -323,7 +354,7 @@ export function SettingsSheet({
             icon="lock"
             tint="#7B61D6"
             title={settings.pinHash ? 'App lock is on' : 'App lock'}
-            sub={settings.pinHash ? 'Tap to change your PIN' : 'Set a 4-digit PIN to open Snowy'}
+            sub={settings.pinHash ? 'Tap to change your PIN' : 'Set a 4-digit PIN to open Taily'}
             onClick={() => {
               setFirstPin('')
               setPinMode('set')
@@ -348,7 +379,7 @@ export function SettingsSheet({
                 : update === 'checking'
                   ? 'Checking…'
                   : update.status === 'update'
-                    ? `Get Snowy v${update.info.version}`
+                    ? `Get Taily v${update.info.version}`
                     : update.status === 'latest'
                       ? "You're on the latest"
                       : update.status === 'unavailable'
@@ -381,7 +412,7 @@ export function SettingsSheet({
         </div>
 
         <span className="caption faint" style={{ textAlign: 'center', fontSize: 11 }}>
-          Snowy v{APP_VERSION} · made for three-second logging
+          Taily v{APP_VERSION} · built by Jatin Dhir
         </span>
 
         {pinMode && (

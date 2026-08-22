@@ -1,4 +1,4 @@
-# Snowy
+# Taily
 
 A fast, soft, offline-first expense tracker. Log an expense in under three seconds — numpad up instantly, tap a tag, done. Everything stays on your device.
 

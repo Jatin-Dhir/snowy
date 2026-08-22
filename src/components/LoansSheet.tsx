@@ -286,7 +286,7 @@ export function LoansSheet({
         <>
           {outstanding.length === 0 && settled.length === 0 && (
             <div className="empty">
-              Lent someone money? Note it here and Snowy reminds you to collect it — and keeps the record when
+              Lent someone money? Note it here and Taily reminds you to collect it — and keeps the record when
               it comes back.
             </div>
           )}

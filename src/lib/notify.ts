@@ -21,7 +21,7 @@ export async function notifyAlerts(alerts: { key: string; text: string }[]): Pro
     await LocalNotifications.schedule({
       notifications: fresh.map((a, i) => ({
         id: (Date.now() % 100000000) + i,
-        title: 'Snowy',
+        title: 'Taily',
         body: a.text
       }))
     })
@@ -76,7 +76,7 @@ export async function syncLoanReminders(loans: Loan[]): Promise<void> {
       await LocalNotifications.schedule({
         notifications: wanted.map((l) => ({
           id: numericId(`loan|${l.id}`),
-          title: 'Snowy reminder',
+          title: 'Taily reminder',
           body:
             l.direction === 'lent'
               ? `${l.person} owes you ${formatMinor(l.amountMinor, l.currency)} — time to collect.`

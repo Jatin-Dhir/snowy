@@ -13,7 +13,9 @@ import { useAnimatedNumber } from '../lib/useAnimatedNumber'
 import { currentMonthKey, monthLabel, todayISO, weekDaysOf, weekdayName, fromISO } from '../lib/dates'
 import { TransactionRow } from '../components/TransactionRow'
 import { Icon } from '../components/Icon'
+import { Sheet } from '../components/Sheet'
 import { haptic, useUi } from '../state/ui'
+import { fmtDayHeading } from '../lib/dates'
 
 export function Home({
   currency,
@@ -31,6 +33,7 @@ export function Home({
   const monthKey = currentMonthKey()
   const [dismissedNudge, setDismissedNudge] = useState(() => localStorage.getItem('tally.nudge.dismissed') ?? '')
   const [heroPop, setHeroPop] = useState(0)
+  const [dayOpen, setDayOpen] = useState<string | null>(null)
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const monthTxns = useLiveQuery(() => txnsForMonth(monthKey), [monthKey]) ?? []
@@ -284,7 +287,7 @@ export function Home({
               aria-label={`${weekdayName(b.iso)}: ${formatMinor(b.total, currency)}`}
               onClick={() => {
                 haptic('selection')
-                showToast(`${weekdayName(b.iso)} · ${formatMinor(b.total, currency)}`)
+                setDayOpen(b.iso)
               }}
             >
               <div
@@ -374,6 +377,32 @@ export function Home({
       )}
 
       <LoansSheet open={loansOpen} currency={currency} onClose={() => setLoansOpen(false)} />
+
+      {dayOpen && (
+        <Sheet open onClose={() => setDayOpen(null)} label="Day detail" style={{ gap: 8 }}>
+          <div className="row-between">
+            <span className="label" style={{ letterSpacing: '0.14em' }}>{fmtDayHeading(dayOpen)}</span>
+            <span className="mono" style={{ fontWeight: 700, fontSize: 15 }}>
+              {formatMinor(sum(onDay(weekTxns, dayOpen)), currency)}
+            </span>
+          </div>
+          {onDay(weekTxns, dayOpen).length === 0 ? (
+            <div className="empty">Nothing logged this day.</div>
+          ) : (
+            onDay(weekTxns, dayOpen).map((t) => (
+              <TransactionRow
+                key={t.id}
+                txn={t}
+                categories={categories}
+                onClick={() => {
+                  setDayOpen(null)
+                  onEdit(t)
+                }}
+              />
+            ))
+          )}
+        </Sheet>
+      )}
     </div>
   )
 }

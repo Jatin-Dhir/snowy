@@ -42,7 +42,7 @@ export function RecurringManager({ currency }: { currency: string }) {
       </div>
       {rules.length === 0 && !adding && (
         <span className="caption">
-          Rent, Netflix, SIP, gym — add them once and Snowy logs them automatically every month.
+          Rent, Netflix, SIP, gym — add them once and Taily logs them automatically every month.
         </span>
       )}
       {rules.map((r) => (

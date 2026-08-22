@@ -31,13 +31,17 @@ export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: (
     >
       <div style={{ width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 26 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <svg width="46" height="42" viewBox="0 0 44 40" aria-hidden="true" style={{ color: 'var(--accent)' }}>
-            <path d="M11 22 L13 5 L22 16 L31 5 L33 22 A 11.4 10.4 0 1 1 11 22 Z" fill="currentColor" />
-            <path d="M15.2 25.6 q 2.4 -3.1 4.8 0" stroke="var(--bg)" strokeWidth="1.7" fill="none" strokeLinecap="round" />
-            <path d="M24 25.6 q 2.4 -3.1 4.8 0" stroke="var(--bg)" strokeWidth="1.7" fill="none" strokeLinecap="round" />
-            <circle cx="22" cy="29.4" r="1.5" fill="var(--bg)" />
+          <svg width="42" height="40" viewBox="0 0 44 42" aria-hidden="true" style={{ color: 'var(--accent)' }}>
+            <ellipse cx="9" cy="18.5" rx="3.3" ry="4.3" transform="rotate(-24 9 18.5)" fill="currentColor" />
+            <ellipse cx="17" cy="13" rx="3.4" ry="4.4" transform="rotate(-8 17 13)" fill="currentColor" />
+            <ellipse cx="27" cy="13" rx="3.4" ry="4.4" transform="rotate(8 27 13)" fill="currentColor" />
+            <ellipse cx="35" cy="18.5" rx="3.3" ry="4.3" transform="rotate(24 35 18.5)" fill="currentColor" />
+            <circle cx="18.7" cy="25.5" r="5.2" fill="currentColor" />
+            <circle cx="25.3" cy="25.5" r="5.2" fill="currentColor" />
+            <ellipse cx="22" cy="26.5" rx="8.4" ry="5" fill="currentColor" />
+            <path d="M14 27 h16 L22 35.6 Z" fill="currentColor" />
           </svg>
-          <span className="display" style={{ fontWeight: 800, fontSize: 20 }}>Snowy</span>
+          <span className="display" style={{ fontWeight: 800, fontSize: 20 }}>Taily</span>
         </div>
         <PinPad label="Enter your PIN" shakeKey={shakeKey} onComplete={(p) => void tryPin(p)} />
       </div>

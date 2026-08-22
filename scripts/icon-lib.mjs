@@ -42,10 +42,10 @@ export function png(width, height, rgba) {
   return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', Buffer.alloc(0))])
 }
 
-export const BRAND_BG = [43, 95, 227] // Snowy blue #2B5FE3
-export const BRAND_FG = [244, 247, 253] // paper #F4F7FD
-const GRAD_TOP = [70, 122, 248]
-const GRAD_BOT = [24, 64, 178]
+export const BRAND_BG = [110, 150, 200] // pastel sky, matches the app's default accent
+export const BRAND_FG = [250, 252, 255] // paper
+const GRAD_TOP = [156, 189, 226]
+const GRAD_BOT = [88, 128, 189]
 const BLUSH = [186, 206, 255]
 
 function segDist(px, py, ax, ay, bx, by) {
@@ -63,42 +63,29 @@ function inTri(px, py, ax, ay, bx, by, cx, cy) {
   return (s1 >= 0 && s2 >= 0 && s3 >= 0) || (s1 <= 0 && s2 <= 0 && s3 <= 0)
 }
 
-// Snowy: a content white cat — soft wide head, separated ears with inner
-// ears, happy closed eyes (∩), button nose, a little smile, blush, whiskers.
+function inEll(ux, uy, cx, cy, rx, ry, deg = 0) {
+  const r = (-deg * Math.PI) / 180
+  const dx = ux - cx
+  const dy = uy - cy
+  const x = dx * Math.cos(r) - dy * Math.sin(r)
+  const y = dx * Math.sin(r) + dy * Math.cos(r)
+  return (x / rx) ** 2 + (y / ry) ** 2 <= 1
+}
+
+// Taily: a paw print — heart-ish main pad, four tilted toe beans.
 // Returns 'fg' | 'punch' | 'blush' | null.
 function markAt(ux, uy) {
-  const wh = 0.012
-  if (
-    segDist(ux, uy, 0.075, 0.585, 0.225, 0.625) <= wh ||
-    segDist(ux, uy, 0.075, 0.71, 0.225, 0.685) <= wh ||
-    segDist(ux, uy, 0.925, 0.585, 0.775, 0.625) <= wh ||
-    segDist(ux, uy, 0.925, 0.71, 0.775, 0.685) <= wh
-  ) {
-    return 'fg'
-  }
-
-  const head = ((ux - 0.5) / 0.29) ** 2 + ((uy - 0.625) / 0.255) ** 2 <= 1
-  const earL = inTri(ux, uy, 0.245, 0.52, 0.29, 0.18, 0.465, 0.435)
-  const earR = inTri(ux, uy, 0.755, 0.52, 0.71, 0.18, 0.535, 0.435)
-  if (!(head || earL || earR)) return null
-
-  // inner ears show the ground through the fur
-  if (inTri(ux, uy, 0.288, 0.455, 0.305, 0.255, 0.415, 0.415)) return 'punch'
-  if (inTri(ux, uy, 0.712, 0.455, 0.695, 0.255, 0.585, 0.415)) return 'punch'
-
-  const happyEye = (cx) => {
-    const d = Math.hypot(ux - cx, uy - 0.645)
-    return Math.abs(d - 0.052) <= 0.017 && uy < 0.645
-  }
-  if (happyEye(0.385) || happyEye(0.615)) return 'punch'
-  if (Math.hypot(ux - 0.5, (uy - 0.715) * 1.1) <= 0.026) return 'punch'
-  const smileDist = Math.hypot(ux - 0.5, uy - 0.745)
-  if (Math.abs(smileDist - 0.05) <= 0.013 && uy > 0.755) return 'punch'
-
-  if (head && (Math.hypot(ux - 0.295, uy - 0.7) <= 0.043 || Math.hypot(ux - 0.705, uy - 0.7) <= 0.043)) {
-    return 'blush'
-  }
-  return 'fg'
+  const pad =
+    Math.hypot(ux - 0.425, uy - 0.615) <= 0.118 ||
+    Math.hypot(ux - 0.575, uy - 0.615) <= 0.118 ||
+    inTri(ux, uy, 0.316, 0.64, 0.684, 0.64, 0.5, 0.805) ||
+    inEll(ux, uy, 0.5, 0.64, 0.19, 0.115)
+  const toes =
+    inEll(ux, uy, 0.225, 0.43, 0.073, 0.096, -26) ||
+    inEll(ux, uy, 0.405, 0.305, 0.076, 0.099, -8) ||
+    inEll(ux, uy, 0.595, 0.305, 0.076, 0.099, 8) ||
+    inEll(ux, uy, 0.775, 0.43, 0.073, 0.096, 26)
+  return pad || toes ? 'fg' : null
 }
 
 /**
@@ -136,7 +123,17 @@ export function drawIcon(size, { inset = 0.02, bg = 'gradient', fg = BRAND_FG, c
       let c = null
       if (part === 'fg') c = fg
       else if (part === 'blush') c = BLUSH
-      else c = ground // 'punch' and outside both show the ground (or transparency)
+      else {
+        c = ground // 'punch' and outside both show the ground (or transparency)
+        // soft drop shadow under the mark for depth
+        if (c && markAt(ux - 0.016, uy - 0.026) === 'fg') {
+          c = [
+            Math.round(c[0] * 0.72 + 20 * 0.28),
+            Math.round(c[1] * 0.72 + 45 * 0.28),
+            Math.round(c[2] * 0.72 + 95 * 0.28)
+          ]
+        }
+      }
       if (!c) continue
       rgba[i] = c[0]; rgba[i + 1] = c[1]; rgba[i + 2] = c[2]; rgba[i + 3] = 255
     }

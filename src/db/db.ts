@@ -70,6 +70,7 @@ export interface Settings {
   accentHue: number
   haptics: boolean
   sounds: boolean
+  soundPack: 'tap' | 'click' | 'pop' | 'wood'
   pinHash: string | null
 }
 
@@ -78,9 +79,10 @@ export const DEFAULT_SETTINGS: Settings = {
   currency: 'INR',
   theme: 'light',
   accent: 'blue',
-  accentHue: 222,
+  accentHue: 210,
   haptics: true,
   sounds: true,
+  soundPack: 'tap',
   pinHash: null
 }
 

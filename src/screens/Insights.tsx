@@ -4,18 +4,22 @@ import { db } from '../db/db'
 import { txnsBetween } from '../db/repo'
 import { byCategory, incomeSum, projectMonth, sum } from '../db/stats'
 import { formatMinor } from '../lib/money'
-import { smartNotes } from '../lib/smart'
+import { adviceFor, smartNotes } from '../lib/smart'
+import { Donut } from '../components/Donut'
+import { Sheet } from '../components/Sheet'
 import { addMonths, currentMonthKey, monthKeyOf, monthLabel, monthRange, monthShort, todayISO } from '../lib/dates'
 import { Icon } from '../components/Icon'
 
 export function Insights({ currency }: { currency: string }) {
   const nowKey = currentMonthKey()
   const [monthKey, setMonthKey] = useState(nowKey)
+  const [reportOpen, setReportOpen] = useState(false)
   const today = todayISO()
   const isCurrent = monthKey === nowKey
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
+  const budgets = useLiveQuery(() => db.budgets.toArray(), []) ?? []
 
   const windowFrom = monthRange(addMonths(monthKey, -5)).from
   const windowTo = monthRange(monthKey).to
@@ -125,16 +129,16 @@ export function Insights({ currency }: { currency: string }) {
             )}
           </div>
 
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '13px 20px' }}>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '15px 20px' }}>
             <span className="label">Where it went</span>
-            <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', gap: 2 }}>
-              {breakdown.top.map((r) => (
-                <div key={String(r.id)} style={{ width: `${(r.total / spent) * 100}%`, background: r.color, minWidth: 3 }} />
-              ))}
-              {breakdown.restTotal > 0 && (
-                <div style={{ flexGrow: 1, background: 'var(--faint-future)' }} />
-              )}
-            </div>
+            <Donut
+              segments={[
+                ...breakdown.top.map((r) => ({ color: r.color, value: r.total })),
+                ...(breakdown.restTotal > 0 ? [{ color: 'var(--faint-future)', value: breakdown.restTotal }] : [])
+              ]}
+              centerTop={formatMinor(spent, currency)}
+              centerBottom={monthLabel(monthKey)}
+            />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {breakdown.top.map((r) => (
                 <div key={String(r.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '3px 0' }}>
@@ -163,10 +167,22 @@ export function Insights({ currency }: { currency: string }) {
             </div>
           )}
 
+          <button className="action-row" onClick={() => setReportOpen(true)}>
+            <span className="txn-icon" style={{ background: 'var(--pos-soft)', color: 'var(--accent)', width: 38, height: 38 }}>
+              <Icon name="bars" size={18} />
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontWeight: 700, fontSize: 14 }}>Monthly report &amp; tips</span>
+              <span className="caption" style={{ fontSize: 11.5 }}>What happened, and how to do better</span>
+            </span>
+            <span className="faint">
+              <Icon name="chevronRight" size={15} />
+            </span>
+          </button>
+
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '13px 20px' }}>
             <div className="row-between">
               <span className="label">Six months</span>
-              {isCurrent && <span className="caption" style={{ fontSize: 11.5 }}>dashed = forecast</span>}
             </div>
             <div style={{ overflowX: 'auto' }}>
               <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }}>
@@ -215,8 +231,52 @@ export function Insights({ currency }: { currency: string }) {
                 })}
               </svg>
             </div>
+            {isCurrent && (
+              <span className="caption" style={{ fontSize: 11.5, textAlign: 'center' }}>
+                Solid = spent so far · dashed outline = where this month is heading
+              </span>
+            )}
           </div>
         </>
+      )}
+
+      {reportOpen && (
+        <Sheet open onClose={() => setReportOpen(false)} label="Monthly report" style={{ gap: 14 }}>
+          <div className="row-between">
+            <span className="label" style={{ letterSpacing: '0.14em' }}>
+              {monthLabel(monthKey)} report
+            </span>
+            <button className="icon-btn" onClick={() => setReportOpen(false)} aria-label="Close">
+              <Icon name="x" size={14} strokeWidth={2.2} />
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="well">
+              <span className="label" style={{ fontSize: 9.5 }}>Spent</span>
+              <span className="well-num">{formatMinor(spent, currency)}</span>
+            </div>
+            <div className="well">
+              <span className="label" style={{ fontSize: 9.5 }}>Received</span>
+              <span className="well-num" style={{ color: received > 0 ? 'var(--pos)' : undefined }}>
+                {received > 0 ? `+${formatMinor(received, currency)}` : '—'}
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span className="label" style={{ fontSize: 10.5 }}>How to improve</span>
+            {adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonthly, currency }).map((tip, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span
+                  className="mono"
+                  style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 13, width: 18, flexShrink: 0 }}
+                >
+                  {i + 1}.
+                </span>
+                <span style={{ fontSize: 13.5, color: 'var(--muted)', fontWeight: 500 }}>{tip}</span>
+              </div>
+            ))}
+          </div>
+        </Sheet>
       )}
 
       {activeRules.length > 0 && (

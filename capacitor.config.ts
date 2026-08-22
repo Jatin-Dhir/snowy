@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
   appId: 'com.tally.expense',
-  appName: 'Snowy',
+  appName: 'Taily',
   webDir: 'dist',
   android: {
     backgroundColor: '#EDF0F5'

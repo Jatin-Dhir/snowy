@@ -2,7 +2,7 @@
 // and generated insight notes. Deterministic, instant, fully offline.
 import type { Category, Txn } from '../db/db'
 import { isOut, sum } from '../db/stats'
-import { addDaysISO, fromISO, todayISO, weekDaysOf } from './dates'
+import { addDaysISO, daysInMonth, fromISO, todayISO, weekDaysOf } from './dates'
 import { formatMinor } from './money'
 
 function normalize(note: string): string {
@@ -79,12 +79,104 @@ export function weeklyAnomalies(txns: Txn[], categories: Category[], today = tod
       prior += total
     }
     if (weeksWithData < 2) continue
-    const avg = prior / 4
+    // average over the weeks that actually have data, so short histories
+    // don't produce false "2x your usual" alerts
+    const avg = prior / weeksWithData
     if (avg > 0 && thisWeek >= avg * 1.8) {
       out.push({ categoryId: cat.id, name: cat.name, ratio: thisWeek / avg, thisWeek })
     }
   }
   return out.sort((a, b) => b.ratio - a.ratio).slice(0, 2)
+}
+
+export interface AdviceInput {
+  monthTxns: Txn[]
+  monthKey: string
+  categories: Category[]
+  budgets: { id: string; amountMinor: number }[]
+  rulesMonthly: number
+  currency: string
+}
+
+/** Personalised, rule-based "how to improve" tips — all computed on-device. */
+export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonthly, currency }: AdviceInput): string[] {
+  const outs = monthTxns.filter(isOut)
+  const spent = sum(outs)
+  if (spent <= 0) return ['Log a few expenses first — the more Taily sees, the sharper the advice gets.']
+  const tips: string[] = []
+
+  const totals = new Map<string, number>()
+  for (const t of outs) {
+    if (t.categoryId) totals.set(t.categoryId, (totals.get(t.categoryId) ?? 0) + t.amountMinor)
+  }
+  const top = [...totals.entries()].sort((a, b) => b[1] - a[1])[0]
+  if (top) {
+    const cat = categories.find((c) => c.id === top[0])
+    const share = Math.round((top[1] / spent) * 100)
+    if (cat && share >= 35) {
+      const hasBudget = budgets.some((b) => b.id === cat.id)
+      tips.push(
+        hasBudget
+          ? `${cat.name} is ${share}% of your spending — it decides your month. Watch its pace line first.`
+          : `${cat.name} is ${share}% of your spending and has no budget. Cap it and most of your month is under control.`
+      )
+    }
+  }
+
+  const overall = budgets.find((b) => b.id === 'overall')
+  const today = todayISO()
+  const isCurrentMonth = monthKey === today.slice(0, 7)
+  if (overall) {
+    if (isCurrentMonth) {
+      const day = Math.max(1, parseInt(today.slice(8, 10), 10))
+      const dim = daysInMonth(monthKey)
+      const projected = Math.round((spent / day) * dim)
+      const daysLeft = Math.max(1, dim - day + 1)
+      if (projected > overall.amountMinor) {
+        tips.push(
+          `At today's pace you'd land around ${formatMinor(projected, currency)} — over your ${formatMinor(overall.amountMinor, currency)} budget. Trimming ${formatMinor(Math.ceil((projected - overall.amountMinor) / daysLeft / 100) * 100, currency)} a day closes the gap.`
+        )
+      }
+    } else if (spent > overall.amountMinor) {
+      tips.push(
+        `This month closed ${formatMinor(spent - overall.amountMinor, currency)} over the ${formatMinor(overall.amountMinor, currency)} budget. Worth planning the current month with that in mind.`
+      )
+    }
+  } else {
+    tips.push('No monthly budget set — one number in Budgets unlocks safe-to-spend and pace warnings.')
+  }
+
+  const weekend = sum(outs.filter((t) => [0, 6].includes(fromISO(t.dateISO).getDay())))
+  const weekendPct = Math.round((weekend / spent) * 100)
+  if (weekendPct >= 45) {
+    tips.push(`${weekendPct}% of spending happens on weekends. Deciding a weekend number on Friday beats regretting it on Monday.`)
+  }
+
+  if (rulesMonthly > 0 && rulesMonthly / spent >= 0.15) {
+    tips.push(
+      `Subscriptions and fixed payments are ${formatMinor(rulesMonthly, currency)}/month — ${formatMinor(rulesMonthly * 12, currency)} a year. Cancel one you barely use and it compounds quietly.`
+    )
+  }
+
+  const small = outs.filter((t) => t.amountMinor <= 20000)
+  if (small.length >= 12) {
+    tips.push(
+      `${small.length} small expenses under ${formatMinor(20000, currency)} added up to ${formatMinor(sum(small), currency)}. Little leaks sink the ship — pick one to skip daily.`
+    )
+  }
+
+  const untagged = outs.filter((t) => !t.categoryId).length
+  if (untagged >= 3) {
+    tips.push(`${untagged} expenses are untagged, which blurs every chart here. A quick pass in Activity fixes it.`)
+  }
+
+  const income = sum(monthTxns.filter((t) => !isOut(t)))
+  if (income > spent) {
+    const kept = Math.round(((income - spent) / income) * 100)
+    tips.push(`You kept ${kept}% of what came in this month. Move it somewhere it can't be spent by accident.`)
+  }
+
+  return tips.slice(0, 5)
 }
 
 /** Short generated observations about a month of spending. */

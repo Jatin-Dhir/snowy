@@ -50,34 +50,34 @@
 }
 
 [data-theme='dark'] {
-  /* true black-blue ground; raised surfaces carry a soft top-lit gradient so
+  /* lifted dark ground; raised surfaces carry a soft top-lit gradient so
      the depth reads as strongly as it does in light mode */
-  --bg: #121417;
-  --card: #121417;
-  --raised-bg: linear-gradient(150deg, #1c2025 0%, #0e1013 100%);
-  --sheet-bg: #171a1f;
-  --sunken: #0b0d10;
-  --edge: rgba(255, 255, 255, 0.075);
+  --bg: #14171b;
+  --card: #14171b;
+  --raised-bg: linear-gradient(150deg, #242b33 0%, #12151a 100%);
+  --sheet-bg: #1b2127;
+  --sunken: #0c0e11;
+  --edge: rgba(255, 255, 255, 0.09);
   /* dark buttons: solid lifted tone, crisp top light, no gradient mud */
-  --btn-bg: #1b1f24;
+  --btn-bg: #212831;
   --btn-shadow: 0 2px 7px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
   --btn-shadow-active: inset 0 2px 7px rgba(0, 0, 0, 0.72);
-  --surface-2: #171a1e;
+  --surface-2: #1a1f26;
   --ink: #e8ebf0;
   --muted: #9aa3ae;
-  --faint: #6b7480;
-  --line: #23272d;
-  --line-soft: #1d2126;
-  --line-strong: #343a42;
+  --faint: #6f7883;
+  --line: #262c34;
+  --line-soft: #20252c;
+  --line-strong: #39414b;
   --accent: #4e80ff;
   --on-accent: #f6f8ff;
   --pos: #6d9aff;
   --pos-soft: #16233f;
   --amber: #e09858;
   --red: #d06258;
-  --bar-idle: #24282e;
-  --bar-empty: #1a1d21;
-  --faint-future: #3c424b;
+  --bar-idle: #272e36;
+  --bar-empty: #1b2026;
+  --faint-future: #414954;
   --scrim: rgba(0, 0, 0, 0.6);
   --nm-hi: rgba(255, 255, 255, 0.05);
   --nm-lo: rgba(0, 0, 0, 0.72);
@@ -94,76 +94,6 @@
 }
 
 /* ---------- accent palettes (Settings ▸ Color) ---------- */
-[data-accent='lavender'] {
-  --accent: #7b61d6;
-  --on-accent: #f7f5fd;
-  --pos: #8e74ea;
-  --pos-soft: #eae4fb;
-  --fab-glow: 0 10px 24px rgba(123, 97, 214, 0.35);
-}
-[data-theme='dark'][data-accent='lavender'] {
-  --accent: #a98bf5;
-  --on-accent: #16121f;
-  --pos: #b79cff;
-  --pos-soft: #241d3a;
-  --fab-glow: 0 10px 26px rgba(169, 139, 245, 0.3);
-}
-[data-accent='pink'] {
-  --accent: #dd4f97;
-  --on-accent: #fdf4f9;
-  --pos: #e967ac;
-  --pos-soft: #fbe0ee;
-  --fab-glow: 0 10px 24px rgba(221, 79, 151, 0.33);
-}
-[data-theme='dark'][data-accent='pink'] {
-  --accent: #f484c2;
-  --on-accent: #1f1218;
-  --pos: #fa9bce;
-  --pos-soft: #38202c;
-  --fab-glow: 0 10px 26px rgba(244, 132, 194, 0.3);
-}
-[data-accent='magenta'] {
-  --accent: #b93bb5;
-  --on-accent: #fcf3fc;
-  --pos: #cc55c6;
-  --pos-soft: #f6def5;
-  --fab-glow: 0 10px 24px rgba(185, 59, 181, 0.32);
-}
-[data-theme='dark'][data-accent='magenta'] {
-  --accent: #e273dc;
-  --on-accent: #1e1220;
-  --pos: #ed8fe6;
-  --pos-soft: #351b33;
-  --fab-glow: 0 10px 26px rgba(226, 115, 220, 0.3);
-}
-[data-accent='green'] {
-  --accent: #2c9a67;
-  --on-accent: #f2fbf6;
-  --pos: #3baf7a;
-  --pos-soft: #dcf2e7;
-  --fab-glow: 0 10px 24px rgba(44, 154, 103, 0.32);
-}
-[data-theme='dark'][data-accent='green'] {
-  --accent: #4cd695;
-  --on-accent: #0f1b14;
-  --pos: #66e3a8;
-  --pos-soft: #16301f;
-  --fab-glow: 0 10px 26px rgba(76, 214, 149, 0.28);
-}
-[data-accent='red'] {
-  --accent: #d34a4a;
-  --on-accent: #fdf4f4;
-  --pos: #e06060;
-  --pos-soft: #f9dfdf;
-  --fab-glow: 0 10px 24px rgba(211, 74, 74, 0.32);
-}
-[data-theme='dark'][data-accent='red'] {
-  --accent: #f27e7e;
-  --on-accent: #1f1212;
-  --pos: #f79a9a;
-  --pos-soft: #391b1b;
-  --fab-glow: 0 10px 26px rgba(242, 126, 126, 0.28);
-}
 [data-accent='mono'] {
   --accent: #222a35;
   --on-accent: #f4f6f9;
@@ -1254,15 +1184,22 @@ button.weekbar-col:disabled {
   position: relative;
   height: 34px;
   border-radius: 17px;
+  /* identical saturation/lightness at every hue → visually even spacing */
   background: linear-gradient(
     90deg,
-    hsl(0 58% 66%),
-    hsl(60 55% 62%),
-    hsl(120 45% 60%),
-    hsl(180 48% 60%),
-    hsl(240 55% 70%),
-    hsl(300 52% 68%),
-    hsl(359 58% 66%)
+    hsl(0 58% 64%) 0%,
+    hsl(30 58% 64%) 8.3%,
+    hsl(60 58% 64%) 16.7%,
+    hsl(90 58% 64%) 25%,
+    hsl(120 58% 64%) 33.3%,
+    hsl(150 58% 64%) 41.7%,
+    hsl(180 58% 64%) 50%,
+    hsl(210 58% 64%) 58.3%,
+    hsl(240 58% 64%) 66.7%,
+    hsl(270 58% 64%) 75%,
+    hsl(300 58% 64%) 83.3%,
+    hsl(330 58% 64%) 91.7%,
+    hsl(359 58% 64%) 100%
   );
   box-shadow: var(--inset-sm);
   touch-action: none;

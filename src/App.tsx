@@ -35,6 +35,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ready, setReady] = useState(false)
   const [unlocked, setUnlocked] = useState(false)
+  const [pendingAdd, setPendingAdd] = useState(false)
 
   const settingsRow = useLiveQuery(() => db.kv.get('settings'), [])
   const settings: Settings = { ...DEFAULT_SETTINGS, ...((settingsRow?.value as Partial<Settings>) ?? {}) }
@@ -55,7 +56,7 @@ export default function App() {
       }
       setReady(true)
       const update = await autoCheckForUpdate()
-      if (update) showToast(`Snowy v${update.version} is out — grab it in Settings`)
+      if (update) showToast(`Taily v${update.version} is out — grab it in Settings`)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -67,9 +68,15 @@ export default function App() {
       const root = document.documentElement
       root.dataset.theme = resolved
       root.dataset.accent = settings.accent
+      // pastel presets share the custom formula at fixed hues; mono/cream stay CSS-driven
+      const PRESET_HUES: Record<string, number> = { blue: 210, lavender: 262, pink: 335, green: 150 }
       if (settings.accent === 'custom') applyCustomAccent(settings.accentHue, resolved === 'dark')
+      else if (settings.accent in PRESET_HUES) applyCustomAccent(PRESET_HUES[settings.accent], resolved === 'dark')
       else clearCustomAccent()
-      localStorage.setItem('tally.fx', JSON.stringify({ haptics: settings.haptics, sounds: settings.sounds }))
+      localStorage.setItem(
+        'tally.fx',
+        JSON.stringify({ haptics: settings.haptics, sounds: settings.sounds, soundPack: settings.soundPack })
+      )
       const meta = document.querySelector('meta[name="theme-color"]')
       if (meta) {
         requestAnimationFrame(() => {
@@ -80,7 +87,7 @@ export default function App() {
     apply()
     media.addEventListener('change', apply)
     return () => media.removeEventListener('change', apply)
-  }, [settings.theme, settings.accent, settings.accentHue, settings.haptics, settings.sounds])
+  }, [settings.theme, settings.accent, settings.accentHue, settings.haptics, settings.sounds, settings.soundPack])
 
   useEffect(() => {
     let hiddenAt = 0
@@ -91,6 +98,37 @@ export default function App() {
     document.addEventListener('visibilitychange', onVis)
     return () => document.removeEventListener('visibilitychange', onVis)
   }, [])
+
+  // the quick-add shortcut (long-press launcher icon, or the PWA shortcut)
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('add')) setPendingAdd(true)
+    let sub: { remove(): void } | undefined
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) return
+        const { App: CapApp } = await import('@capacitor/app')
+        const launch = await CapApp.getLaunchUrl()
+        if (launch?.url?.includes('add')) setPendingAdd(true)
+        sub = await CapApp.addListener('appUrlOpen', (e) => {
+          if (e.url.includes('add')) setPendingAdd(true)
+        })
+      } catch {
+        /* not native */
+      }
+    })()
+    return () => sub?.remove()
+  }, [])
+
+  useEffect(() => {
+    if (!pendingAdd || !ready || !settings.initialized) return
+    if (settings.pinHash && !unlocked) return
+    setPendingAdd(false)
+    dismissToast()
+    setEditTxn(null)
+    setAddOpen(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingAdd, ready, unlocked, settings.initialized, settings.pinHash])
 
   if (!settingsLoaded || !ready) return null
 
