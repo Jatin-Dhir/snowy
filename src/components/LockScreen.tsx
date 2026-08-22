@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PinPad } from './PinPad'
+import { SpendyMark } from '../screens/Welcome'
 import { hashPin } from '../lib/pin'
 import { haptic } from '../state/ui'
 
@@ -31,17 +32,22 @@ export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: (
     >
       <div style={{ width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 26 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <svg width="42" height="40" viewBox="0 0 44 42" aria-hidden="true" style={{ color: 'var(--accent)' }}>
-            <ellipse cx="9" cy="18.5" rx="3.3" ry="4.3" transform="rotate(-24 9 18.5)" fill="currentColor" />
-            <ellipse cx="17" cy="13" rx="3.4" ry="4.4" transform="rotate(-8 17 13)" fill="currentColor" />
-            <ellipse cx="27" cy="13" rx="3.4" ry="4.4" transform="rotate(8 27 13)" fill="currentColor" />
-            <ellipse cx="35" cy="18.5" rx="3.3" ry="4.3" transform="rotate(24 35 18.5)" fill="currentColor" />
-            <circle cx="18.7" cy="25.5" r="5.2" fill="currentColor" />
-            <circle cx="25.3" cy="25.5" r="5.2" fill="currentColor" />
-            <ellipse cx="22" cy="26.5" rx="8.4" ry="5" fill="currentColor" />
-            <path d="M14 27 h16 L22 35.6 Z" fill="currentColor" />
-          </svg>
-          <span className="display" style={{ fontWeight: 800, fontSize: 20 }}>Taily</span>
+          <span
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 18,
+              background: 'var(--accent)',
+              color: 'var(--on-accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: 'var(--raise)'
+            }}
+          >
+            <SpendyMark size={30} />
+          </span>
+          <span className="display" style={{ fontWeight: 800, fontSize: 20 }}>Spendy</span>
         </div>
         <PinPad
           label="Enter your PIN"

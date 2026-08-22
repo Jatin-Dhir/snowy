@@ -72,20 +72,30 @@ function inEll(ux, uy, cx, cy, rx, ry, deg = 0) {
   return (x / rx) ** 2 + (y / ry) ** 2 <= 1
 }
 
-// Taily: a paw print — heart-ish main pad, four tilted toe beans.
-// Returns 'fg' | 'punch' | 'blush' | null.
+// Spendy: a bold geometric S — two ring arcs with round caps, drawn like a
+// single continuous stroke. Upper ring opens to the southeast, lower to the
+// northwest; they meet seamlessly at the center.
+const S_RM = 0.152 // ring mid-radius
+const S_HT = 0.064 // stroke half-thickness
+const S_CT = 0.348 // upper ring center y
+const S_CB = 0.652 // lower ring center y
+
+function sRing(ux, uy, cy, exclude) {
+  const dx = ux - 0.5
+  const dy = uy - cy
+  if (Math.abs(Math.hypot(dx, dy) - S_RM) > S_HT) return false
+  if (exclude === 'se' && dx > 0 && dy > 0) return false
+  if (exclude === 'nw' && dx < 0 && dy < 0) return false
+  return true
+}
+
 function markAt(ux, uy) {
-  const pad =
-    Math.hypot(ux - 0.425, uy - 0.615) <= 0.118 ||
-    Math.hypot(ux - 0.575, uy - 0.615) <= 0.118 ||
-    inTri(ux, uy, 0.316, 0.64, 0.684, 0.64, 0.5, 0.805) ||
-    inEll(ux, uy, 0.5, 0.64, 0.19, 0.115)
-  const toes =
-    inEll(ux, uy, 0.225, 0.43, 0.073, 0.096, -26) ||
-    inEll(ux, uy, 0.405, 0.305, 0.076, 0.099, -8) ||
-    inEll(ux, uy, 0.595, 0.305, 0.076, 0.099, 8) ||
-    inEll(ux, uy, 0.775, 0.43, 0.073, 0.096, 26)
-  return pad || toes ? 'fg' : null
+  const stroke =
+    sRing(ux, uy, S_CT, 'se') ||
+    sRing(ux, uy, S_CB, 'nw') ||
+    Math.hypot(ux - (0.5 + S_RM), uy - S_CT) <= S_HT || // top-right round cap
+    Math.hypot(ux - (0.5 - S_RM), uy - S_CB) <= S_HT // bottom-left round cap
+  return stroke ? 'fg' : null
 }
 
 /**

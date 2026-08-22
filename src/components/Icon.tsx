@@ -154,7 +154,13 @@ const PATHS: Record<string, ReactNode> = {
       <circle cx="12" cy="15.2" r="1.3" fill="currentColor" stroke="none" />
     </>
   ),
-  arrowUp: <path d="M12 19V7m0 0-4.5 4.5M12 7l4.5 4.5" />
+  arrowUp: <path d="M12 19V7m0 0-4.5 4.5M12 7l4.5 4.5" />,
+  mic: (
+    <>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7" />
+    </>
+  )
 }
 
 export function Icon({

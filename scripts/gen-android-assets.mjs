@@ -24,7 +24,7 @@ for (const [dir, size] of Object.entries(FOREGROUND)) {
 
 writeFileSync(
   join(res, 'values', 'ic_launcher_background.xml'),
-  `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#2B5FE3</color>\n</resources>\n`
+  `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#6E96C8</color>\n</resources>\n`
 )
 
 // Solid brand splash (a plain color stretches cleanly at any aspect ratio).

@@ -5,7 +5,7 @@ export interface NewTxn {
   amountMinor: number
   currency: string
   categoryId: string | null
-  accountId: 'upi' | 'cash' | 'card'
+  accountId: string
   kind?: 'out' | 'in'
   note?: string
   dateISO?: string
@@ -35,7 +35,10 @@ export async function addTxn(input: NewTxn): Promise<Txn> {
 }
 
 export async function updateTxn(id: string, patch: Partial<Txn>): Promise<void> {
-  await db.txns.update(id, { ...patch, updatedAt: Date.now() })
+  // a hand-edited amount is a new fact in the current currency — the stored
+  // pre-conversion original no longer describes it
+  const clearBase = patch.amountMinor !== undefined ? { baseMinor: null, baseCurrency: null } : {}
+  await db.txns.update(id, { ...patch, ...clearBase, updatedAt: Date.now() })
 }
 
 export async function softDeleteTxn(id: string): Promise<void> {

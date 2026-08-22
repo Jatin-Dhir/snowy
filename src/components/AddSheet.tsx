@@ -12,12 +12,6 @@ import { Sheet } from './Sheet'
 import { TagManager } from './TagManager'
 import { haptic, useUi } from '../state/ui'
 
-const ACCOUNTS: { id: 'upi' | 'cash' | 'card'; label: string }[] = [
-  { id: 'upi', label: 'UPI' },
-  { id: 'cash', label: 'Cash' },
-  { id: 'card', label: 'Card' }
-]
-
 export function AddSheet({
   open,
   editTxn,
@@ -34,7 +28,8 @@ export function AddSheet({
   const [kind, setKind] = useState<'out' | 'in'>('out')
   const [note, setNote] = useState('')
   const [dateISO, setDateISO] = useState(todayISO())
-  const [account, setAccount] = useState<'upi' | 'cash' | 'card'>('upi')
+  const [account, setAccount] = useState('upi')
+  const [pickAccount, setPickAccount] = useState(false)
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
   const [manageTags, setManageTags] = useState(false)
@@ -43,6 +38,9 @@ export function AddSheet({
 
   const allCategories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const categories = useMemo(() => allCategories.filter((c) => !c.archived), [allCategories])
+  const accounts = useLiveQuery(() => db.accounts.orderBy('sort').toArray(), []) ?? []
+  const activeAccounts = useMemo(() => accounts.filter((a) => !a.archived), [accounts])
+  const accountName = accounts.find((a) => a.id === account)?.name ?? account.toUpperCase()
   const recent = useLiveQuery(() => recentTxns(600), []) ?? []
 
   // Exactly two suggestions: your real habits once they exist (3+ uses in 60
@@ -91,12 +89,13 @@ export function AddSheet({
       setKind('out')
       setNote('')
       setDateISO(todayISO())
-      setAccount('upi')
+      setAccount(activeAccounts[0]?.id ?? 'upi')
       setSelectedCat(null)
       setShowNote(false)
       setShowDate(false)
     }
     setShowAll(false)
+    setPickAccount(false)
     setManageTags(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editTxn])
@@ -174,8 +173,11 @@ export function AddSheet({
       if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return
       // the tag sheet is on top — don't let hardware keys mutate the amount
       // underneath it (a zeroed amount would make tag taps silently no-op)
-      if (showAll || manageTags) {
-        if (e.key === 'Escape') setShowAll(false)
+      if (showAll || manageTags || pickAccount) {
+        if (e.key === 'Escape') {
+          setShowAll(false)
+          setPickAccount(false)
+        }
         return
       }
       if (e.key >= '0' && e.key <= '9') amt.digit(e.key)
@@ -259,15 +261,9 @@ export function AddSheet({
                 <Icon name="calendar" size={13} />
                 {dateLabel}
               </button>
-              <button
-                className="pill"
-                onClick={() => {
-                  const idx = ACCOUNTS.findIndex((a) => a.id === account)
-                  setAccount(ACCOUNTS[(idx + 1) % ACCOUNTS.length].id)
-                }}
-              >
+              <button className="pill" onClick={() => setPickAccount(true)}>
                 <Icon name="wallet" size={13} />
-                {ACCOUNTS.find((a) => a.id === account)?.label}
+                {accountName}
               </button>
               <button className={`pill${showNote ? ' active' : ''}`} onClick={() => setShowNote(!showNote)}>
                 <Icon name="pencil" size={13} />
@@ -333,6 +329,44 @@ export function AddSheet({
               )}
             </div>
           </>
+
+        {pickAccount && (
+          <Sheet open onClose={() => setPickAccount(false)} label="Account" style={{ gap: 8 }}>
+            <div className="row-between">
+              <span className="label" style={{ letterSpacing: '0.14em' }}>Paying from</span>
+              <button className="icon-btn" onClick={() => setPickAccount(false)} aria-label="Close">
+                <Icon name="x" size={14} strokeWidth={2.2} />
+              </button>
+            </div>
+            <div className="tag-list">
+              {activeAccounts.map((a) => (
+                <button
+                  key={a.id}
+                  className="tag-list-row"
+                  onClick={() => {
+                    setAccount(a.id)
+                    setPickAccount(false)
+                  }}
+                >
+                  <span className="txn-icon" style={{ background: 'var(--pos-soft)', color: 'var(--accent)', width: 38, height: 38 }}>
+                    <Icon name="wallet" size={17} />
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {a.name}
+                  </span>
+                  {account === a.id && (
+                    <span style={{ color: 'var(--pos)' }}>
+                      <Icon name="check" size={16} strokeWidth={2.4} />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <span className="caption" style={{ fontSize: 11.5 }}>
+              Add or rename accounts in Settings → Accounts.
+            </span>
+          </Sheet>
+        )}
 
         {showAll && (
           <Sheet open onClose={() => setShowAll(false)} label="All tags" style={{ gap: 8 }}>

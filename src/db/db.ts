@@ -5,7 +5,8 @@ export interface Txn {
   amountMinor: number
   currency: string
   categoryId: string | null
-  accountId: 'upi' | 'cash' | 'card'
+  /** references an Account row; legacy rows carry 'upi' | 'cash' | 'card' */
+  accountId: string
   /** 'out' = money spent (default for old rows), 'in' = money received */
   kind?: 'out' | 'in'
   note: string
@@ -15,6 +16,17 @@ export interface Txn {
   createdAt: number
   updatedAt: number
   deleted: 0 | 1
+  /** original amount before any currency conversion — restored exactly when converting back */
+  baseMinor?: number | null
+  baseCurrency?: string | null
+}
+
+/** A money source — bank, wallet, cash jar, someone's card. Not a login. */
+export interface Account {
+  id: string
+  name: string
+  sort: number
+  archived?: 0 | 1
 }
 
 export interface Category {
@@ -30,6 +42,8 @@ export interface Budget {
   /** 'overall' for the whole month, else the categoryId. */
   id: string
   amountMinor: number
+  baseMinor?: number | null
+  baseCurrency?: string | null
 }
 
 export interface Rule {
@@ -37,10 +51,12 @@ export interface Rule {
   name: string
   amountMinor: number
   categoryId: string | null
-  accountId: 'upi' | 'cash' | 'card'
+  accountId: string
   dayOfMonth: number
   nextRunISO: string
   paused: 0 | 1
+  baseMinor?: number | null
+  baseCurrency?: string | null
 }
 
 export interface Loan {
@@ -55,6 +71,8 @@ export interface Loan {
   settledISO: string | null
   createdAt: number
   updatedAt: number
+  baseMinor?: number | null
+  baseCurrency?: string | null
 }
 
 export interface Goal {
@@ -64,6 +82,9 @@ export interface Goal {
   savedMinor: number
   createdAt: number
   updatedAt: number
+  baseTargetMinor?: number | null
+  baseSavedMinor?: number | null
+  baseCurrency?: string | null
 }
 
 export interface KV {
@@ -102,6 +123,7 @@ class TallyDB extends Dexie {
   rules!: Table<Rule, string>
   loans!: Table<Loan, string>
   goals!: Table<Goal, string>
+  accounts!: Table<Account, string>
   kv!: Table<KV, string>
 
   constructor() {
@@ -118,6 +140,9 @@ class TallyDB extends Dexie {
     })
     this.version(3).stores({
       goals: 'id'
+    })
+    this.version(4).stores({
+      accounts: 'id, sort'
     })
   }
 }

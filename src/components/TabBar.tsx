@@ -14,15 +14,33 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 export function TabBar({
   tab,
   onTab,
-  onAdd
+  onAdd,
+  onVoice
 }: {
   tab: Tab
   onTab: (t: Tab) => void
   onAdd: () => void
+  onVoice: () => void
 }) {
   const [ind, setInd] = useState<{ left: number; width: number } | null>(null)
   const dockRef = useRef<HTMLDivElement | null>(null)
   const btnRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({})
+  const holdTimer = useRef<number | null>(null)
+  const holdFired = useRef(false)
+
+  function holdStart() {
+    holdFired.current = false
+    holdTimer.current = window.setTimeout(() => {
+      holdFired.current = true
+      haptic('heavy')
+      onVoice()
+    }, 420)
+  }
+
+  function holdCancel() {
+    if (holdTimer.current) window.clearTimeout(holdTimer.current)
+    holdTimer.current = null
+  }
 
   useLayoutEffect(() => {
     function measure() {
@@ -64,10 +82,19 @@ export function TabBar({
         <button
           className="fab"
           onClick={() => {
+            if (holdFired.current) {
+              holdFired.current = false
+              return
+            }
             haptic('medium')
             onAdd()
           }}
-          aria-label="Add expense"
+          onPointerDown={holdStart}
+          onPointerUp={holdCancel}
+          onPointerLeave={holdCancel}
+          onPointerCancel={holdCancel}
+          onContextMenu={(e) => e.preventDefault()}
+          aria-label="Add expense — hold to speak"
         >
           <Icon name="plus" size={24} strokeWidth={2.2} />
         </button>

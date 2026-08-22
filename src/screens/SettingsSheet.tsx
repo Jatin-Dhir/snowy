@@ -10,6 +10,7 @@ import { APP_VERSION, checkForUpdate, type UpdateCheck } from '../lib/updater'
 import { applyCustomAccent } from '../lib/theme'
 import { hashPin } from '../lib/pin'
 import { todayISO } from '../lib/dates'
+import { AccountManager } from '../components/AccountManager'
 import { Icon } from '../components/Icon'
 import { PinPad } from '../components/PinPad'
 import { Sheet } from '../components/Sheet'
@@ -75,6 +76,7 @@ export function SettingsSheet({
   const [pinShake, setPinShake] = useState(0)
   const [pinError, setPinError] = useState('')
   const [currencyOpen, setCurrencyOpen] = useState(false)
+  const [accountsOpen, setAccountsOpen] = useState(false)
   const [convert, setConvert] = useState<{ code: string; state: 'loading' | 'error' | RateInfo } | null>(null)
   const [convertBusy, setConvertBusy] = useState(false)
   const hueBar = useRef<HTMLDivElement | null>(null)
@@ -91,6 +93,7 @@ export function SettingsSheet({
     setPinError('')
     setPinShake(0)
     setCurrencyOpen(false)
+    setAccountsOpen(false)
     setConvert(null)
   }, [open])
 
@@ -108,7 +111,7 @@ export function SettingsSheet({
       return
     }
     const csv = txnsToCsv(txns, categories)
-    const filename = `taily-${todayISO()}.csv`
+    const filename = `spendy-${todayISO()}.csv`
     let native = false
     try {
       const { Capacitor } = await import('@capacitor/core')
@@ -230,7 +233,7 @@ export function SettingsSheet({
     setConvertBusy(true)
     try {
       if (rate !== null) {
-        const n = await convertEverything(rate, code)
+        const n = await convertEverything(rate, settings.currency, code)
         await saveSettings({ currency: code })
         haptic('success')
         showToast(`Converted ${n} ${n === 1 ? 'entry' : 'entries'} to ${code}`)
@@ -381,6 +384,13 @@ export function SettingsSheet({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span className="label" style={{ fontSize: 10.5 }}>More</span>
           <ActionRow
+            icon="wallet"
+            tint="#3E8FA8"
+            title="Accounts"
+            sub="Banks, wallets, cash — name them all"
+            onClick={() => setAccountsOpen(true)}
+          />
+          <ActionRow
             icon="globe"
             tint="#C08A3E"
             title="Currency"
@@ -391,7 +401,7 @@ export function SettingsSheet({
             icon="lock"
             tint="#7B61D6"
             title={settings.pinHash ? 'App lock is on' : 'App lock'}
-            sub={settings.pinHash ? 'Change your PIN or turn it off' : 'Set a 4-digit PIN to open Taily'}
+            sub={settings.pinHash ? 'Change your PIN or turn it off' : 'Set a 4-digit PIN to open Spendy'}
             onClick={openPinFlow}
           />
           <ActionRow
@@ -403,7 +413,7 @@ export function SettingsSheet({
                 : update === 'checking'
                   ? 'Checking…'
                   : update.status === 'update'
-                    ? `Get Taily v${update.info.version}`
+                    ? `Get Spendy v${update.info.version}`
                     : update.status === 'latest'
                       ? "You're on the latest"
                       : update.status === 'unavailable'
@@ -436,8 +446,10 @@ export function SettingsSheet({
         </div>
 
         <span className="caption faint" style={{ textAlign: 'center', fontSize: 11 }}>
-          Taily v{APP_VERSION} · built by Jatin Dhir
+          Spendy v{APP_VERSION} · built by Jatin Dhir
         </span>
+
+        <AccountManager open={accountsOpen} onClose={() => setAccountsOpen(false)} />
 
         {currencyOpen && (
           <Sheet open onClose={() => setCurrencyOpen(false)} label="Currency" style={{ gap: 8 }}>

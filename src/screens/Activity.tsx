@@ -32,6 +32,9 @@ export function Activity({ currency, onEdit }: { currency: string; onEdit: (t: T
   const { showToast } = useUi()
   const [query, setQuery] = useState('')
   const [catFilter, setCatFilter] = useState<string | null>(null)
+  const [accFilter, setAccFilter] = useState<string | null>(null)
+  const [dateFilter, setDateFilter] = useState<string | null>(null)
+  const [showDatePick, setShowDatePick] = useState(false)
   const [limit, setLimit] = useState(120)
   const [selecting, setSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -68,6 +71,7 @@ export function Activity({ currency, onEdit }: { currency: string; onEdit: (t: T
   }
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
+  const accounts = useLiveQuery(() => db.accounts.orderBy('sort').toArray(), []) ?? []
   const txns = useLiveQuery(() => allLiveTxns(), []) ?? []
   const catName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
 
@@ -79,9 +83,11 @@ export function Activity({ currency, onEdit }: { currency: string; onEdit: (t: T
       txns.filter(
         (t) =>
           (catFilter === null || t.categoryId === catFilter) &&
+          (accFilter === null || t.accountId === accFilter) &&
+          (dateFilter === null || t.dateISO === dateFilter) &&
           matchesQuery(t, t.categoryId ? (catName.get(t.categoryId) ?? '') : 'uncategorized', query)
       ),
-    [txns, catFilter, query, catName]
+    [txns, catFilter, accFilter, dateFilter, query, catName]
   )
 
   const shown = filtered.slice(0, limit)
@@ -119,38 +125,112 @@ export function Activity({ currency, onEdit }: { currency: string; onEdit: (t: T
         </div>
       )}
 
-      <div className="searchbar">
-        <span className="faint" style={{ display: 'flex' }}>
-          <Icon name="search" size={16} />
-        </span>
-        <input
-          placeholder='Search — try "chai", ">500"'
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          inputMode="search"
-        />
-        {query && (
-          <button className="faint" onClick={() => setQuery('')} aria-label="Clear search">
-            <Icon name="x" size={14} strokeWidth={2.2} />
-          </button>
-        )}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="searchbar" style={{ flex: 1 }}>
+          <span className="faint" style={{ display: 'flex' }}>
+            <Icon name="search" size={16} />
+          </span>
+          <input
+            placeholder='Search — try "chai", ">500"'
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            inputMode="search"
+          />
+          {query && (
+            <button className="faint" onClick={() => setQuery('')} aria-label="Clear search">
+              <Icon name="x" size={14} strokeWidth={2.2} />
+            </button>
+          )}
+        </div>
+        <button
+          className="icon-btn"
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 14,
+            ...(dateFilter ? { color: 'var(--on-accent)', background: 'var(--accent)', borderColor: 'var(--accent)' } : {})
+          }}
+          onClick={() => {
+            if (dateFilter) {
+              setDateFilter(null)
+              setShowDatePick(false)
+            } else {
+              setShowDatePick((v) => !v)
+            }
+          }}
+          aria-label={dateFilter ? 'Clear date filter' : 'Jump to a date'}
+        >
+          <Icon name="calendar" size={17} />
+        </button>
       </div>
 
+      {(showDatePick || dateFilter) && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            className="field"
+            type="date"
+            value={dateFilter ?? ''}
+            max={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setDateFilter(e.target.value || null)}
+          />
+          {dateFilter && (
+            <button
+              className="pill"
+              onClick={() => {
+                setDateFilter(null)
+                setShowDatePick(false)
+              }}
+            >
+              <Icon name="x" size={12} strokeWidth={2.4} /> Clear
+            </button>
+          )}
+        </div>
+      )}
+
       {usedCategories.length > 0 && (
-        <div className="chip-row">
-          <button className={`pill${catFilter === null ? ' active' : ''}`} onClick={() => setCatFilter(null)}>
+        <div className="chip-row" style={{ flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
+          <button
+            className={`pill${catFilter === null ? ' active' : ''}`}
+            style={{ flexShrink: 0 }}
+            onClick={() => setCatFilter(null)}
+          >
             All
           </button>
           {usedCategories.map((c) => (
             <button
               key={c.id}
               className={`pill${catFilter === c.id ? ' active' : ''}`}
+              style={{ flexShrink: 0 }}
               onClick={() => setCatFilter(catFilter === c.id ? null : c.id)}
             >
               <span style={{ width: 7, height: 7, borderRadius: 4, background: c.color, display: 'inline-block' }} />
               {c.name}
             </button>
           ))}
+        </div>
+      )}
+
+      {accounts.filter((a) => !a.archived).length > 1 && (
+        <div className="chip-row" style={{ flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
+          <button
+            className={`pill${accFilter === null ? ' active' : ''}`}
+            style={{ flexShrink: 0 }}
+            onClick={() => setAccFilter(null)}
+          >
+            <Icon name="wallet" size={12} /> All accounts
+          </button>
+          {accounts
+            .filter((a) => !a.archived)
+            .map((a) => (
+              <button
+                key={a.id}
+                className={`pill${accFilter === a.id ? ' active' : ''}`}
+                style={{ flexShrink: 0 }}
+                onClick={() => setAccFilter(accFilter === a.id ? null : a.id)}
+              >
+                {a.name}
+              </button>
+            ))}
         </div>
       )}
 

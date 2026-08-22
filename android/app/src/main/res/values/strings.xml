@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Taily</string>
-    <string name="title_activity_main">Taily</string>
+    <string name="app_name">Spendy</string>
+    <string name="title_activity_main">Spendy</string>
     <string name="package_name">com.tally.expense</string>
     <string name="custom_url_scheme">com.tally.expense</string>
     <string name="shortcut_add_short">Add expense</string>
-    <string name="shortcut_add_long">Add an expense to Taily</string>
+    <string name="shortcut_add_long">Add an expense to Spendy</string>
 </resources>
 

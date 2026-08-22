@@ -1,4 +1,11 @@
-import { db, type Category } from './db'
+import { db, type Account, type Category } from './db'
+
+/** ids match the old hardcoded 'upi' | 'cash' | 'card' so history keeps its labels */
+export const DEFAULT_ACCOUNTS: Account[] = [
+  { id: 'upi', name: 'UPI', sort: 0 },
+  { id: 'cash', name: 'Cash', sort: 1 },
+  { id: 'card', name: 'Card', sort: 2 }
+]
 
 /** Everyday basics — broad buckets people actually think in. */
 export const DEFAULT_CATEGORIES: Category[] = [
@@ -29,6 +36,7 @@ export const TAG_ICONS = [
 ]
 
 export async function ensureSeeded(): Promise<void> {
+  if ((await db.accounts.count()) === 0) await db.accounts.bulkPut(DEFAULT_ACCOUNTS)
   const existing = await db.categories.toArray()
   if (existing.length === 0) {
     await db.categories.bulkPut(DEFAULT_CATEGORIES)

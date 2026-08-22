@@ -10,6 +10,7 @@ import { LockScreen } from './components/LockScreen'
 import { TabBar, type Tab } from './components/TabBar'
 import { Toast } from './components/Toast'
 import { AddSheet } from './components/AddSheet'
+import { VoiceOverlay } from './components/VoiceOverlay'
 import { Home } from './screens/Home'
 import { Activity } from './screens/Activity'
 import { Budgets } from './screens/Budgets'
@@ -31,6 +32,7 @@ export default function App() {
     setTab(next)
   }
   const [addOpen, setAddOpen] = useState(false)
+  const [voiceOpen, setVoiceOpen] = useState(false)
   const [editTxn, setEditTxn] = useState<Txn | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ready, setReady] = useState(false)
@@ -59,7 +61,7 @@ export default function App() {
       }
       setReady(true)
       const update = await autoCheckForUpdate()
-      if (update) showToast(`Taily v${update.version} is out — grab it in Settings`)
+      if (update) showToast(`Spendy v${update.version} is out — grab it in Settings`)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -164,7 +166,9 @@ export default function App() {
         {tab === 'insights' && <Insights currency={settings.currency} />}
       </div>
 
-      <TabBar tab={tab} onTab={goTab} onAdd={openAdd} />
+      <TabBar tab={tab} onTab={goTab} onAdd={openAdd} onVoice={() => setVoiceOpen(true)} />
+
+      <VoiceOverlay open={voiceOpen} currency={settings.currency} onClose={() => setVoiceOpen(false)} />
 
       <AddSheet
         open={addOpen}

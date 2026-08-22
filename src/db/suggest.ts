@@ -33,7 +33,7 @@ export interface Frequent {
   label: string
   amountMinor: number
   categoryId: string | null
-  accountId: 'upi' | 'cash' | 'card'
+  accountId: string
   count: number
   lastTs: number
 }
