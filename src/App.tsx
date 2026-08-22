@@ -64,8 +64,11 @@ export default function App() {
       const root = document.documentElement
       root.dataset.theme = resolved
       root.dataset.accent = settings.accent
-      root.dataset.style = settings.styleMode
-      localStorage.setItem('tally.fx', JSON.stringify({ haptics: settings.haptics, sounds: settings.sounds }))
+      root.dataset.style = settings.styleMode === 'candy' ? 'candy' : 'soft'
+      localStorage.setItem(
+        'tally.fx',
+        JSON.stringify({ haptics: settings.haptics, sounds: settings.sounds, soundPack: settings.soundPack })
+      )
       const meta = document.querySelector('meta[name="theme-color"]')
       if (meta) {
         requestAnimationFrame(() => {
@@ -76,7 +79,7 @@ export default function App() {
     apply()
     media.addEventListener('change', apply)
     return () => media.removeEventListener('change', apply)
-  }, [settings.theme, settings.accent, settings.styleMode, settings.haptics, settings.sounds])
+  }, [settings.theme, settings.accent, settings.styleMode, settings.haptics, settings.sounds, settings.soundPack])
 
   if (!settingsLoaded || !ready) return null
 

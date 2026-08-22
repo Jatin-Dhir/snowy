@@ -238,52 +238,16 @@
   --scrim: rgba(0, 0, 0, 0.6);
 }
 
-/* ---------- surface styles (Settings ▸ Style) ---------- */
-/* clay: puffy, thick, accent-tinted — everything looks squeezable */
-[data-style='clay'] {
-  --r-lg: 30px;
-  --r-md: 24px;
-  --r-sm: 19px;
-  --raised-bg: var(--card);
-  --btn-bg: var(--card);
-  --raise-sm: 0 8px 16px color-mix(in srgb, var(--accent) 20%, transparent),
-    inset 0 4px 7px rgba(255, 255, 255, 0.85),
-    inset 0 -5px 9px color-mix(in srgb, var(--accent) 12%, rgba(0, 0, 0, 0.05));
-  --raise: 0 14px 28px color-mix(in srgb, var(--accent) 22%, transparent),
-    inset 0 5px 9px rgba(255, 255, 255, 0.85),
-    inset 0 -7px 12px color-mix(in srgb, var(--accent) 13%, rgba(0, 0, 0, 0.05));
-  --raise-lg: 0 18px 36px color-mix(in srgb, var(--accent) 26%, transparent),
-    inset 0 6px 10px rgba(255, 255, 255, 0.85),
-    inset 0 -8px 14px color-mix(in srgb, var(--accent) 13%, rgba(0, 0, 0, 0.06));
-  --btn-shadow: var(--raise-sm);
-  --inset-sm: inset 0 4px 8px color-mix(in srgb, var(--accent) 15%, rgba(0, 0, 0, 0.07)),
-    inset 0 -2px 5px rgba(255, 255, 255, 0.7);
-  --inset: inset 0 6px 12px color-mix(in srgb, var(--accent) 17%, rgba(0, 0, 0, 0.08)),
-    inset 0 -3px 6px rgba(255, 255, 255, 0.7);
-  --btn-shadow-active: var(--inset);
-}
-[data-theme='dark'][data-style='clay'] {
-  --raise-sm: 0 8px 16px rgba(0, 0, 0, 0.5), inset 0 4px 7px rgba(255, 255, 255, 0.09),
-    inset 0 -5px 9px rgba(0, 0, 0, 0.45);
-  --raise: 0 14px 28px rgba(0, 0, 0, 0.55), inset 0 5px 9px rgba(255, 255, 255, 0.09),
-    inset 0 -7px 12px rgba(0, 0, 0, 0.5);
-  --raise-lg: 0 18px 36px rgba(0, 0, 0, 0.6), inset 0 6px 10px rgba(255, 255, 255, 0.1),
-    inset 0 -8px 14px rgba(0, 0, 0, 0.5);
-  --raised-bg: color-mix(in srgb, var(--accent) 10%, var(--card));
-  --btn-bg: color-mix(in srgb, var(--accent) 10%, var(--card));
-  --btn-shadow: var(--raise-sm);
-  --inset-sm: inset 0 4px 8px rgba(0, 0, 0, 0.6), inset 0 -2px 5px rgba(255, 255, 255, 0.06);
-  --inset: inset 0 6px 12px rgba(0, 0, 0, 0.65), inset 0 -3px 6px rgba(255, 255, 255, 0.06);
-  --btn-shadow-active: var(--inset);
-}
-/* bubble: glossy, round, bouncy — full kawaii with pink or lavender */
-[data-style='bubble'] {
-  --r-lg: 32px;
+/* ---------- surface styles: Simple (default) & Candy ---------- */
+/* candy: unmistakably girlish — polka ground, glossy pills, striped bars,
+   bows on the + button and sheet handles, bouncier sheets */
+[data-style='candy'] {
+  --r-lg: 34px;
   --r-md: 26px;
   --r-sm: 22px;
-  --raised-bg: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--accent) 13%, #ffffff) 100%);
-  --btn-bg: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--accent) 13%, #ffffff) 100%);
-  --sunken: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  --raised-bg: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--accent) 16%, #ffffff) 100%);
+  --btn-bg: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--accent) 16%, #ffffff) 100%);
+  --sunken: color-mix(in srgb, var(--accent) 10%, var(--bg));
   --raise-sm: 0 6px 14px color-mix(in srgb, var(--accent) 30%, transparent),
     inset 0 3px 5px rgba(255, 255, 255, 1),
     inset 0 -5px 8px color-mix(in srgb, var(--accent) 20%, transparent);
@@ -299,8 +263,9 @@
   --inset: inset 0 5px 10px color-mix(in srgb, var(--accent) 28%, transparent),
     inset 0 -2px 5px rgba(255, 255, 255, 0.9);
   --btn-shadow-active: inset 0 5px 10px color-mix(in srgb, var(--accent) 34%, transparent);
+  --ease-water: var(--ease-spring);
 }
-[data-theme='dark'][data-style='bubble'] {
+[data-theme='dark'][data-style='candy'] {
   --raised-bg: linear-gradient(180deg, color-mix(in srgb, var(--accent) 28%, #171a20) 0%, color-mix(in srgb, var(--accent) 10%, #101318) 100%);
   --btn-bg: linear-gradient(180deg, color-mix(in srgb, var(--accent) 28%, #171a20) 0%, color-mix(in srgb, var(--accent) 10%, #101318) 100%);
   --sunken: color-mix(in srgb, var(--accent) 10%, #0b0d10);
@@ -314,6 +279,78 @@
   --inset-sm: inset 0 3px 7px rgba(0, 0, 0, 0.65), inset 0 -2px 4px rgba(255, 255, 255, 0.08);
   --inset: inset 0 5px 10px rgba(0, 0, 0, 0.7), inset 0 -2px 5px rgba(255, 255, 255, 0.08);
   --btn-shadow-active: inset 0 5px 10px rgba(0, 0, 0, 0.75);
+}
+
+/* polka-dot ground */
+[data-style='candy'] body {
+  background-image: radial-gradient(color-mix(in srgb, var(--accent) 16%, transparent) 1.6px, transparent 1.7px);
+  background-size: 26px 26px;
+}
+
+/* candy-cane stripes on every progress fill (inline background can't stop us) */
+[data-style='candy'] .bar-fill,
+[data-style='candy'] .weekbar-col .bar {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.4) 0 5px,
+    transparent 5px 10px
+  ) !important;
+}
+
+/* a little bow perched on the + button */
+[data-style='candy'] .fab::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: -3px;
+  width: 21px;
+  height: 13px;
+  background:
+    radial-gradient(circle at 25% 50%, var(--on-accent) 0 33%, transparent 36%),
+    radial-gradient(circle at 75% 50%, var(--on-accent) 0 33%, transparent 36%),
+    radial-gradient(circle at 50% 50%, var(--accent) 0 17%, transparent 20%);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+/* sheet handles become bows */
+[data-style='candy'] .sheet-handle {
+  width: 10px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--accent);
+  position: relative;
+  overflow: visible;
+}
+
+[data-style='candy'] .sheet-handle::before,
+[data-style='candy'] .sheet-handle::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  width: 17px;
+  height: 13px;
+  background: color-mix(in srgb, var(--accent) 40%, #ffffff);
+}
+
+[data-style='candy'] .sheet-handle::before {
+  right: 100%;
+  border-radius: 70% 20% 70% 20%;
+  transform: rotate(14deg);
+}
+
+[data-style='candy'] .sheet-handle::after {
+  left: 100%;
+  border-radius: 20% 70% 20% 70%;
+  transform: rotate(-14deg);
+}
+
+/* deeper, squishier presses */
+[data-style='candy'] .key:active {
+  transform: scale(0.88);
+}
+
+[data-style='candy'] .fab:active {
+  transform: scale(0.82);
 }
 
 * {

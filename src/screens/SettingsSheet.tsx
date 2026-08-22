@@ -12,14 +12,12 @@ import { Sheet } from '../components/Sheet'
 import { haptic, useUi } from '../state/ui'
 
 const ACCENTS = [
-  { id: 'blue', name: 'Blue', swatch: '#2B5FE3' },
-  { id: 'lavender', name: 'Lavender', swatch: '#7B61D6' },
-  { id: 'pink', name: 'Pink', swatch: '#DD4F97' },
-  { id: 'magenta', name: 'Magenta', swatch: '#B93BB5' },
-  { id: 'green', name: 'Green', swatch: '#2C9A67' },
-  { id: 'red', name: 'Red', swatch: '#D34A4A' },
-  { id: 'cream', name: 'Creamy', swatch: '#C09B62' },
-  { id: 'mono', name: 'Mono', swatch: '#222A35' }
+  { id: 'blue', name: 'Blue' },
+  { id: 'lavender', name: 'Lavender' },
+  { id: 'pink', name: 'Pink' },
+  { id: 'green', name: 'Green' },
+  { id: 'mono', name: 'White' },
+  { id: 'cream', name: 'Creamy' }
 ]
 
 export function SettingsSheet({
@@ -95,57 +93,51 @@ export function SettingsSheet({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span className="label" style={{ fontSize: 10.5 }}>Color</span>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <select
+            className="field"
+            value={ACCENTS.some((a) => a.id === settings.accent) ? settings.accent : 'blue'}
+            onChange={(e) => {
+              haptic('selection')
+              void saveSettings({ accent: e.target.value })
+            }}
+          >
             {ACCENTS.map((a) => (
-              <button
-                key={a.id}
-                aria-label={`${a.name} color`}
-                title={a.name}
-                onClick={() => {
-                  haptic('selection')
-                  void saveSettings({ accent: a.id })
-                }}
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 17,
-                  background: a.swatch,
-                  boxShadow:
-                    settings.accent === a.id
-                      ? `0 0 0 3px var(--bg), 0 0 0 5px ${a.swatch}`
-                      : 'var(--raise-sm)',
-                  transition: 'box-shadow 200ms ease'
-                }}
-              />
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span className="label" style={{ fontSize: 10.5 }}>Style</span>
+          <span className="label" style={{ fontSize: 10.5 }}>Theme style</span>
           <div style={{ display: 'flex', gap: 8 }}>
-            {(
-              [
-                { id: 'soft', label: 'Soft' },
-                { id: 'clay', label: 'Clay' },
-                { id: 'bubble', label: 'Bubble' }
-              ] as const
-            ).map((s) => (
-              <button
-                key={s.id}
-                className={`pill${settings.styleMode === s.id ? ' active' : ''}`}
-                style={{ flex: 1, justifyContent: 'center' }}
-                onClick={() => {
-                  haptic('selection')
-                  void saveSettings({ styleMode: s.id })
-                }}
-              >
-                {s.label}
-              </button>
-            ))}
+            <button
+              className={`pill${settings.styleMode !== 'candy' ? ' active' : ''}`}
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => {
+                haptic('selection')
+                void saveSettings({ styleMode: 'soft' })
+              }}
+            >
+              Simple
+            </button>
+            <button
+              className={`pill${settings.styleMode === 'candy' ? ' active' : ''}`}
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => {
+                haptic('selection')
+                void saveSettings({
+                  styleMode: 'candy',
+                  ...(settings.accent === 'blue' ? { accent: 'pink' } : {})
+                })
+              }}
+            >
+              Candy
+            </button>
           </div>
           <span className="caption" style={{ fontSize: 11.5 }}>
-            Try Bubble with Pink or Lavender for the full kawaii look.
+            Candy: polka dots, bows, striped bars and glossy pills — pure girlish energy.
           </span>
         </div>
 
@@ -167,6 +159,20 @@ export function SettingsSheet({
               Sounds {settings.sounds ? 'on' : 'off'}
             </button>
           </div>
+          {settings.sounds && (
+            <select
+              className="field"
+              value={settings.soundPack}
+              onChange={(e) => {
+                void saveSettings({ soundPack: e.target.value as 'click' | 'pop' | 'chime' })
+                window.setTimeout(() => haptic('success'), 120)
+              }}
+            >
+              <option value="click">Click — soft mechanical taps</option>
+              <option value="pop">Pop — watery little pops</option>
+              <option value="chime">Chime — gentle musical notes</option>
+            </select>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
