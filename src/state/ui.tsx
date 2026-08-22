@@ -41,17 +41,19 @@ export function haptic(kind: HapticKind = 'light'): void {
   if (!fxSettings().haptics) return
   void getHaptics().then((mod) => {
     if (mod) {
-      // Everything one notch gentler: keystrokes use the subtle selection tick.
-      const { Haptics, ImpactStyle, NotificationType } = mod
-      if (kind === 'success') void Haptics.notification({ type: NotificationType.Success })
-      else if (kind === 'heavy') void Haptics.impact({ style: ImpactStyle.Medium })
-      else if (kind === 'medium') void Haptics.impact({ style: ImpactStyle.Light })
-      else void Haptics.selectionChanged().catch(() => Haptics.impact({ style: ImpactStyle.Light }))
+      // Raw timed vibrations: crisp, reliable on every Android, tuned per kind.
+      const { Haptics } = mod
+      if (kind === 'success') {
+        void Haptics.vibrate({ duration: 12 })
+        window.setTimeout(() => void Haptics.vibrate({ duration: 14 }), 90)
+      } else if (kind === 'heavy') void Haptics.vibrate({ duration: 28 })
+      else if (kind === 'medium') void Haptics.vibrate({ duration: 16 })
+      else void Haptics.vibrate({ duration: 9 })
       return
     }
     try {
       const pattern =
-        kind === 'success' ? [8, 30, 8] : kind === 'heavy' ? 16 : kind === 'medium' ? 9 : 4
+        kind === 'success' ? [12, 60, 14] : kind === 'heavy' ? 28 : kind === 'medium' ? 16 : 9
       navigator.vibrate?.(pattern as number | number[])
     } catch {
       /* not supported */

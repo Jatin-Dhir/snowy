@@ -15,13 +15,46 @@ import { haptic, useUi } from '../state/ui'
 
 const BASE_COLORS = [
   { id: 'blue', name: 'Blue', swatch: '#2B5FE3' },
-  { id: 'lavender', name: 'Lavender', swatch: '#7B61D6' },
+  { id: 'lavender', name: 'Violet', swatch: '#7B61D6' },
   { id: 'pink', name: 'Pink', swatch: '#DD4F97' },
   { id: 'green', name: 'Green', swatch: '#2C9A67' },
-  { id: 'mono', name: 'White', swatch: '#222A35' }
+  { id: 'mono', name: 'Black', swatch: '#222A35' }
 ]
 
 type PinMode = 'set' | 'confirm' | 'verify-remove' | null
+
+function ActionRow({
+  icon,
+  tint,
+  title,
+  sub,
+  danger,
+  onClick
+}: {
+  icon: string
+  tint: string
+  title: string
+  sub: string
+  danger?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button className="action-row" onClick={onClick}>
+      <span className="txn-icon" style={{ background: `${tint}26`, color: tint, width: 38, height: 38 }}>
+        <Icon name={icon} size={18} />
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontWeight: 700, fontSize: 14, color: danger ? 'var(--red)' : 'var(--ink)' }}>
+          {title}
+        </span>
+        <span className="caption" style={{ fontSize: 11.5 }}>{sub}</span>
+      </span>
+      <span className="faint">
+        <Icon name="chevronRight" size={15} />
+      </span>
+    </button>
+  )
+}
 
 export function SettingsSheet({
   open,
@@ -40,6 +73,7 @@ export function SettingsSheet({
   const hueBar = useRef<HTMLDivElement | null>(null)
   const [dragHue, setDragHue] = useState<number | null>(null)
   const dragHueRef = useRef<number | null>(null)
+  const [showCustom, setShowCustom] = useState(settings.accent === 'custom')
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
 
@@ -159,7 +193,7 @@ export function SettingsSheet({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <span className="label" style={{ fontSize: 10.5 }}>Color</span>
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             {BASE_COLORS.map((a) => (
               <button
                 key={a.id}
@@ -167,6 +201,7 @@ export function SettingsSheet({
                 title={a.name}
                 onClick={() => {
                   haptic('selection')
+                  setShowCustom(false)
                   void saveSettings({ accent: a.id })
                 }}
                 style={{
@@ -182,41 +217,67 @@ export function SettingsSheet({
                 }}
               />
             ))}
-          </div>
-          <div
-            ref={hueBar}
-            className="hue-bar"
-            role="slider"
-            aria-label="Custom color"
-            aria-valuemin={0}
-            aria-valuemax={359}
-            aria-valuenow={displayHue}
-            onPointerDown={(e) => {
-              try {
-                e.currentTarget.setPointerCapture(e.pointerId)
-              } catch {
-                /* capture unavailable */
-              }
-              previewHue(e.clientX)
-            }}
-            onPointerMove={(e) => {
-              if (e.buttons > 0) previewHue(e.clientX)
-            }}
-            onPointerUp={commitHue}
-            onPointerCancel={commitHue}
-          >
-            <div
-              className="hue-thumb"
+            <button
+              aria-label="Custom color"
+              title="Custom"
+              onClick={() => {
+                haptic('selection')
+                setShowCustom((v) => !v)
+              }}
               style={{
-                left: `${(displayHue / 359) * 100}%`,
-                background: `hsl(${displayHue} 68% 50%)`,
-                opacity: settings.accent === 'custom' || dragHue !== null ? 1 : 0.55
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                background:
+                  settings.accent === 'custom'
+                    ? `hsl(${displayHue} 58% 62%)`
+                    : 'conic-gradient(hsl(0 60% 70%), hsl(60 60% 68%), hsl(120 50% 66%), hsl(180 50% 66%), hsl(240 55% 72%), hsl(300 55% 70%), hsl(0 60% 70%))',
+                boxShadow:
+                  settings.accent === 'custom' || showCustom
+                    ? '0 0 0 3px var(--bg), 0 0 0 5px var(--accent)'
+                    : 'var(--raise-sm)',
+                transition: 'box-shadow 200ms ease'
               }}
             />
           </div>
-          <span className="caption" style={{ fontSize: 11.5 }}>
-            Or slide anywhere on the bar to make it exactly your color.
-          </span>
+          {showCustom && (
+            <>
+              <div
+                ref={hueBar}
+                className="hue-bar"
+                role="slider"
+                aria-label="Pastel color slider"
+                aria-valuemin={0}
+                aria-valuemax={359}
+                aria-valuenow={displayHue}
+                onPointerDown={(e) => {
+                  try {
+                    e.currentTarget.setPointerCapture(e.pointerId)
+                  } catch {
+                    /* capture unavailable */
+                  }
+                  previewHue(e.clientX)
+                }}
+                onPointerMove={(e) => {
+                  if (e.buttons > 0) previewHue(e.clientX)
+                }}
+                onPointerUp={commitHue}
+                onPointerCancel={commitHue}
+              >
+                <div
+                  className="hue-thumb"
+                  style={{
+                    left: `${(displayHue / 359) * 100}%`,
+                    background: `hsl(${displayHue} 58% 62%)`,
+                    opacity: settings.accent === 'custom' || dragHue !== null ? 1 : 0.55
+                  }}
+                />
+              </div>
+              <span className="caption" style={{ fontSize: 11.5 }}>
+                Slide to your shade — soft pastels that adapt to light and dark.
+              </span>
+            </>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -257,65 +318,63 @@ export function SettingsSheet({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span className="label" style={{ fontSize: 10.5 }}>App lock</span>
-          {settings.pinHash ? (
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                className="btn ghost"
-                onClick={() => {
-                  setFirstPin('')
-                  setPinMode('set')
-                }}
-              >
-                Change PIN
-              </button>
-              <button className="btn danger" onClick={() => setPinMode('verify-remove')}>
-                Remove lock
-              </button>
-            </div>
-          ) : (
-            <button
-              className="btn ghost"
-              onClick={() => {
-                setFirstPin('')
-                setPinMode('set')
-              }}
-            >
-              <Icon name="gauge" size={15} /> Set up a 4-digit PIN
-            </button>
+          <span className="label" style={{ fontSize: 10.5 }}>More</span>
+          <ActionRow
+            icon="lock"
+            tint="#7B61D6"
+            title={settings.pinHash ? 'App lock is on' : 'App lock'}
+            sub={settings.pinHash ? 'Tap to change your PIN' : 'Set a 4-digit PIN to open Snowy'}
+            onClick={() => {
+              setFirstPin('')
+              setPinMode('set')
+            }}
+          />
+          {settings.pinHash && (
+            <ActionRow
+              icon="x"
+              tint="#B3453D"
+              title="Remove app lock"
+              sub="Needs your current PIN"
+              danger
+              onClick={() => setPinMode('verify-remove')}
+            />
           )}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div className="row-between">
-            <span className="label" style={{ fontSize: 10.5 }}>App</span>
-            <span className="mono faint" style={{ fontWeight: 700, fontSize: 12 }}>v{APP_VERSION}</span>
-          </div>
-          {update !== 'idle' && update !== 'checking' && update.status === 'update' ? (
-            <button className="btn" onClick={() => window.open(update.info.url, '_blank')}>
-              <Icon name="download" size={16} /> Get Snowy v{update.info.version}
-            </button>
-          ) : (
-            <button className="btn ghost" disabled={update === 'checking'} onClick={() => void runUpdateCheck()}>
-              <Icon name="refresh" size={15} />
-              {update === 'idle'
+          <ActionRow
+            icon={update !== 'idle' && update !== 'checking' && update.status === 'update' ? 'download' : 'refresh'}
+            tint="#2B5FE3"
+            title={
+              update === 'idle'
                 ? 'Check for updates'
                 : update === 'checking'
                   ? 'Checking…'
-                  : update.status === 'latest'
-                    ? `You're on the latest (v${APP_VERSION})`
-                    : update.status === 'unavailable'
-                      ? "Update channel isn't live yet"
-                      : "Couldn't check — tap to retry"}
-            </button>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span className="label" style={{ fontSize: 10.5 }}>Your data</span>
-          <button className="btn ghost" onClick={() => void exportCsv()}>
-            <Icon name="download" size={16} /> Export everything as CSV
-          </button>
+                  : update.status === 'update'
+                    ? `Get Snowy v${update.info.version}`
+                    : update.status === 'latest'
+                      ? "You're on the latest"
+                      : update.status === 'unavailable'
+                        ? 'Updates'
+                        : 'Check for updates'
+            }
+            sub={
+              update !== 'idle' && update !== 'checking' && update.status === 'update'
+                ? 'Tap to download the new version'
+                : `You have v${APP_VERSION} · checks daily on its own`
+            }
+            onClick={() => {
+              if (update !== 'idle' && update !== 'checking' && update.status === 'update') {
+                window.open(update.info.url, '_blank')
+              } else if (update !== 'checking') {
+                void runUpdateCheck()
+              }
+            }}
+          />
+          <ActionRow
+            icon="download"
+            tint="#2C9A67"
+            title="Export as CSV"
+            sub="Your full history, shareable anywhere"
+            onClick={() => void exportCsv()}
+          />
           <span className="caption" style={{ fontSize: 11.5 }}>
             Everything lives on this device. No account, no cloud, no ads.
           </span>

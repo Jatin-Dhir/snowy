@@ -139,6 +139,13 @@ const PATHS: Record<string, ReactNode> = {
     </>
   ),
   arrowDown: <path d="M12 5v12m0 0-4.5-4.5M12 17l4.5-4.5" />,
+  lock: (
+    <>
+      <rect x="5" y="10.5" width="14" height="9.5" rx="2.5" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+      <circle cx="12" cy="15.2" r="1.3" fill="currentColor" stroke="none" />
+    </>
+  ),
   arrowUp: <path d="M12 19V7m0 0-4.5 4.5M12 7l4.5 4.5" />
 }
 

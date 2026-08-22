@@ -76,13 +76,13 @@ export function playSound(kind: Kind): void {
   const ac = ensureCtx()
   if (!ac) return
   try {
-    if (kind === 'light') tock(ac, 1500, 240, 0.028, 0.055)
-    else if (kind === 'selection') tock(ac, 1150, 210, 0.026, 0.045)
-    else if (kind === 'medium') tock(ac, 850, 170, 0.04, 0.075)
-    else if (kind === 'heavy') tock(ac, 560, 130, 0.055, 0.09)
+    if (kind === 'light') tock(ac, 1450, 260, 0.038, 0.16)
+    else if (kind === 'selection') tock(ac, 1100, 220, 0.034, 0.13)
+    else if (kind === 'medium') tock(ac, 820, 180, 0.05, 0.2)
+    else if (kind === 'heavy') tock(ac, 540, 135, 0.07, 0.24)
     else {
-      tock(ac, 900, 200, 0.035, 0.055)
-      tock(ac, 1250, 300, 0.05, 0.05, 0.085)
+      tock(ac, 880, 210, 0.045, 0.15)
+      tock(ac, 1240, 320, 0.06, 0.14, 0.09)
     }
   } catch {
     /* audio unavailable */
