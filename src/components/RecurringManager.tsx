@@ -1,37 +1,66 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../db/db'
-import { addRule, deleteRule, togglePauseRule } from '../db/recurring'
+import { db, type Rule } from '../db/db'
+import { addRule, deleteRule, togglePauseRule, updateRule } from '../db/recurring'
 import { formatMinor } from '../lib/money'
 import { todayISO } from '../lib/dates'
 import { Icon } from './Icon'
+import { Sheet } from './Sheet'
 import { haptic, useUi } from '../state/ui'
 
-/** Monthly payments & subscriptions: they log themselves on their day. */
+interface RuleForm {
+  name: string
+  amount: string
+  day: string
+  cat: string | null
+}
+
+const emptyForm = (): RuleForm => ({
+  name: '',
+  amount: '',
+  day: String(parseInt(todayISO().slice(8, 10), 10)),
+  cat: 'bills'
+})
+
+/** Monthly payments & subscriptions: a plain list — tap one to manage it. */
 export function RecurringManager({ currency }: { currency: string }) {
   const { showToast } = useUi()
-  const [adding, setAdding] = useState(false)
-  const [name, setName] = useState('')
-  const [amount, setAmount] = useState('')
-  const [day, setDay] = useState(String(parseInt(todayISO().slice(8, 10), 10)))
-  const [cat, setCat] = useState('bills')
+  const [formOpen, setFormOpen] = useState<'add' | 'edit' | null>(null)
+  const [form, setForm] = useState<RuleForm>(emptyForm())
+  const [tagPick, setTagPick] = useState(false)
+  const [active, setActive] = useState<Rule | null>(null)
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
   const catOf = (id: string | null) => categories.find((c) => c.id === id)
 
-  const minor = Math.round(parseFloat(amount) * 100) || 0
-  const dayNum = Math.min(31, Math.max(1, parseInt(day, 10) || 1))
-  const canSave = name.trim().length > 0 && minor > 0
+  const minor = Math.round(parseFloat(form.amount) * 100) || 0
+  const dayNum = Math.min(31, Math.max(1, parseInt(form.day, 10) || 1))
+  const canSave = form.name.trim().length > 0 && minor > 0
+  const formCat = catOf(form.cat)
 
-  async function saveRule() {
+  function openAdd() {
+    setForm(emptyForm())
+    setFormOpen('add')
+  }
+
+  function openEdit(r: Rule) {
+    setForm({ name: r.name, amount: String(r.amountMinor / 100), day: String(r.dayOfMonth), cat: r.categoryId })
+    setFormOpen('edit')
+  }
+
+  async function saveForm() {
     if (!canSave) return
-    await addRule({ name: name.trim(), amountMinor: minor, categoryId: cat, dayOfMonth: dayNum })
+    if (formOpen === 'edit' && active) {
+      await updateRule(active.id, { name: form.name.trim(), amountMinor: minor, categoryId: form.cat, dayOfMonth: dayNum })
+      showToast('Updated')
+      setActive(null)
+    } else {
+      await addRule({ name: form.name.trim(), amountMinor: minor, categoryId: form.cat, dayOfMonth: dayNum })
+      showToast(`${form.name.trim()} logs itself on day ${dayNum} every month`)
+    }
     haptic('success')
-    setAdding(false)
-    setName('')
-    setAmount('')
-    showToast(`${name.trim()} logs itself on day ${dayNum} every month`)
+    setFormOpen(null)
   }
 
   return (
@@ -39,34 +68,28 @@ export function RecurringManager({ currency }: { currency: string }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <span className="label" style={{ fontSize: 10.5 }}>Monthly payments &amp; subscriptions</span>
         <span className="caption" style={{ fontSize: 11.5 }}>
-          Added once, logged automatically on their day — rent, Netflix, SIP, gym.
+          Added once, logged automatically on their day. Tap one to change it.
         </span>
       </div>
 
       {rules.map((r) => {
         const c = catOf(r.categoryId)
         return (
-          <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: r.paused ? 0.5 : 1 }}>
+          <button
+            key={r.id}
+            className="txn-row"
+            style={{ opacity: r.paused ? 0.55 : 1, padding: '6px 0' }}
+            onClick={() => setActive(r)}
+          >
             <span
               className="txn-icon"
-              style={{ background: `${c?.color ?? '#7A8794'}26`, color: c?.color ?? '#7A8794', width: 36, height: 36 }}
+              style={{ background: `${c?.color ?? '#7A8794'}26`, color: c?.color ?? '#7A8794', width: 38, height: 38 }}
             >
-              <Icon name={c?.icon ?? 'receipt'} size={17} />
+              <Icon name={c?.icon ?? 'receipt'} size={18} />
             </span>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span
-                style={{
-                  display: 'block',
-                  fontWeight: 600,
-                  fontSize: 14,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}
-              >
-                {r.name}
-              </span>
-              <span className="caption" style={{ fontSize: 11.5 }}>
+            <span className="txn-main">
+              <span className="txn-title">{r.name}</span>
+              <span className="txn-sub">
                 {r.paused ? 'paused' : `day ${r.dayOfMonth} of every month`}
                 {c ? ` · ${c.name}` : ''}
               </span>
@@ -74,34 +97,86 @@ export function RecurringManager({ currency }: { currency: string }) {
             <span className="mono" style={{ fontWeight: 700, fontSize: 13.5 }}>
               {formatMinor(r.amountMinor, currency)}
             </span>
-            <button
-              className="icon-btn"
-              style={{ width: 28, height: 28 }}
-              onClick={() => void togglePauseRule(r.id)}
-              aria-label={r.paused ? 'Resume' : 'Pause'}
-            >
-              <Icon name={r.paused ? 'play' : 'pause'} size={13} />
-            </button>
-            <button
-              className="icon-btn"
-              style={{ width: 28, height: 28, color: 'var(--red)' }}
-              onClick={() => void deleteRule(r.id)}
-              aria-label="Delete rule"
-            >
-              <Icon name="trash" size={13} />
-            </button>
-          </div>
+            <span className="faint">
+              <Icon name="chevronRight" size={15} />
+            </span>
+          </button>
         )
       })}
 
-      {adding ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 4 }}>
+      <button className="btn ghost" onClick={openAdd}>
+        <Icon name="plus" size={15} strokeWidth={2.4} /> Add a monthly payment
+      </button>
+
+      {active && !formOpen && (
+        <Sheet open onClose={() => setActive(null)} label={active.name} style={{ gap: 10 }}>
+          <div className="row-between">
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span
+                style={{
+                  display: 'block',
+                  fontWeight: 700,
+                  fontSize: 17,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                {active.name}
+              </span>
+              <span className="caption" style={{ fontSize: 12.5 }}>
+                {formatMinor(active.amountMinor, currency)} · day {active.dayOfMonth} of every month
+                {catOf(active.categoryId) ? ` · ${catOf(active.categoryId)?.name}` : ''}
+              </span>
+            </span>
+            <button className="icon-btn" onClick={() => setActive(null)} aria-label="Close">
+              <Icon name="x" size={14} strokeWidth={2.2} />
+            </button>
+          </div>
+
+          <button className="btn" onClick={() => openEdit(active)}>
+            <Icon name="pencil" size={16} /> Edit — name, amount, day, tag
+          </button>
+          <button
+            className="btn ghost"
+            onClick={() => {
+              void togglePauseRule(active.id)
+              showToast(active.paused ? `${active.name} is back on` : `${active.name} paused — nothing logs until you resume`)
+              setActive(null)
+            }}
+          >
+            <Icon name={active.paused ? 'play' : 'pause'} size={15} />
+            {active.paused ? 'Resume payments' : 'Pause payments'}
+          </button>
+          <button
+            className="btn danger"
+            onClick={() => {
+              void deleteRule(active.id)
+              showToast(`${active.name} removed`)
+              setActive(null)
+            }}
+          >
+            Delete this payment
+          </button>
+        </Sheet>
+      )}
+
+      {formOpen && (
+        <Sheet open onClose={() => setFormOpen(null)} label="Monthly payment" style={{ gap: 12 }}>
+          <div className="row-between">
+            <span className="label" style={{ letterSpacing: '0.14em' }}>
+              {formOpen === 'edit' ? 'Edit payment' : 'New monthly payment'}
+            </span>
+            <button className="icon-btn" onClick={() => setFormOpen(null)} aria-label="Close">
+              <Icon name="x" size={14} strokeWidth={2.2} />
+            </button>
+          </div>
           <input
             className="field"
             placeholder="Name — e.g. Rent, Netflix, SIP"
-            value={name}
+            value={form.name}
             maxLength={40}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input
@@ -109,9 +184,9 @@ export function RecurringManager({ currency }: { currency: string }) {
               type="number"
               inputMode="decimal"
               placeholder="Amount"
-              value={amount}
+              value={form.amount}
               min={0}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => setForm({ ...form, amount: e.target.value })}
             />
             <span className="caption" style={{ flexShrink: 0, fontSize: 12.5 }}>on day</span>
             <input
@@ -121,44 +196,76 @@ export function RecurringManager({ currency }: { currency: string }) {
               inputMode="numeric"
               min={1}
               max={31}
-              value={day}
-              onChange={(e) => setDay(e.target.value)}
+              value={form.day}
+              onChange={(e) => setForm({ ...form, day: e.target.value })}
             />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span className="label" style={{ fontSize: 10 }}>Tag it as</span>
-            <div className="chip-row" style={{ flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
-              {categories
-                .filter((c) => !c.archived)
-                .map((c) => (
-                  <button
-                    key={c.id}
-                    className={`chip${cat === c.id ? ' selected' : ''}`}
-                    style={{ flexShrink: 0, ...(cat === c.id ? { background: `${c.color}26` } : {}) }}
-                    onClick={() => {
-                      haptic('selection')
-                      setCat(c.id)
-                    }}
-                  >
-                    <span className="dot" style={{ background: c.color }} />
-                    {c.name}
-                  </button>
-                ))}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn ghost" onClick={() => setAdding(false)}>
-              Cancel
-            </button>
-            <button className="btn" disabled={!canSave} onClick={() => void saveRule()}>
-              {canSave ? `Add — ${formatMinor(minor, currency)} on day ${dayNum}` : 'Add'}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <button className="btn ghost" onClick={() => setAdding(true)}>
-          <Icon name="plus" size={15} strokeWidth={2.4} /> Add a monthly payment
-        </button>
+          <button className="action-row" onClick={() => setTagPick(true)}>
+            <span
+              className="txn-icon"
+              style={{
+                background: `${formCat?.color ?? '#7A8794'}26`,
+                color: formCat?.color ?? '#7A8794',
+                width: 38,
+                height: 38
+              }}
+            >
+              <Icon name={formCat?.icon ?? 'dots'} size={18} />
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontWeight: 700, fontSize: 14 }}>{formCat?.name ?? 'Pick a tag'}</span>
+              <span className="caption" style={{ fontSize: 11.5 }}>Tag it as</span>
+            </span>
+            <span className="faint">
+              <Icon name="chevronRight" size={15} />
+            </span>
+          </button>
+          <button className="btn" disabled={!canSave} onClick={() => void saveForm()}>
+            {canSave
+              ? formOpen === 'edit'
+                ? 'Save changes'
+                : `Add — ${formatMinor(minor, currency)} on day ${dayNum}`
+              : formOpen === 'edit'
+                ? 'Save changes'
+                : 'Add'}
+          </button>
+
+          {tagPick && (
+            <Sheet open onClose={() => setTagPick(false)} label="Tag" style={{ gap: 8 }}>
+              <div className="row-between">
+                <span className="label" style={{ letterSpacing: '0.14em' }}>Tag it as</span>
+                <button className="icon-btn" onClick={() => setTagPick(false)} aria-label="Close">
+                  <Icon name="x" size={14} strokeWidth={2.2} />
+                </button>
+              </div>
+              <div className="tag-list">
+                {categories
+                  .filter((c) => !c.archived)
+                  .map((c) => (
+                    <button
+                      key={c.id}
+                      className="tag-list-row"
+                      onClick={() => {
+                        haptic('selection')
+                        setForm({ ...form, cat: c.id })
+                        setTagPick(false)
+                      }}
+                    >
+                      <span className="txn-icon" style={{ background: `${c.color}26`, color: c.color, width: 38, height: 38 }}>
+                        <Icon name={c.icon} size={19} />
+                      </span>
+                      <span style={{ flex: 1 }}>{c.name}</span>
+                      {form.cat === c.id && (
+                        <span style={{ color: 'var(--pos)' }}>
+                          <Icon name="check" size={16} strokeWidth={2.4} />
+                        </span>
+                      )}
+                    </button>
+                  ))}
+              </div>
+            </Sheet>
+          )}
+        </Sheet>
       )}
     </div>
   )

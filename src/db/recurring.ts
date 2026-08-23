@@ -70,6 +70,25 @@ function addDays(iso: string, days: number): string {
   return `${y}-${m}-${day}`
 }
 
+/** Edit a rule's facts; a changed day recomputes the next run, a changed amount clears its conversion base. */
+export async function updateRule(
+  id: string,
+  patch: { name: string; amountMinor: number; categoryId: string | null; dayOfMonth: number }
+): Promise<void> {
+  const rule = await db.rules.get(id)
+  if (!rule) return
+  const today = todayISO()
+  const dayNow = parseInt(today.slice(8, 10), 10)
+  const nextRunISO =
+    patch.dayOfMonth === rule.dayOfMonth
+      ? rule.nextRunISO
+      : patch.dayOfMonth >= dayNow
+        ? nextMonthlyOccurrence(patch.dayOfMonth, addDays(today, -1))
+        : nextMonthlyOccurrence(patch.dayOfMonth, today)
+  const clearBase = patch.amountMinor !== rule.amountMinor ? { baseMinor: null, baseCurrency: null } : {}
+  await db.rules.update(id, { ...patch, ...clearBase, nextRunISO })
+}
+
 export async function deleteRule(id: string): Promise<void> {
   await db.rules.delete(id)
 }

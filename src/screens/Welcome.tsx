@@ -7,11 +7,12 @@ import { haptic } from '../state/ui'
 export function SpendyMark({ size = 44 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.1" fill="none" stroke="currentColor" strokeWidth="1.9" />
       <path
-        d="M 15.75 8.25 A 3.75 3.75 0 1 0 12 12 A 3.75 3.75 0 1 1 8.25 15.75"
+        d="M 14.5 9.5 A 2.5 2.5 0 1 0 12 12 A 2.5 2.5 0 1 1 9.5 14.5"
         fill="none"
         stroke="currentColor"
-        strokeWidth="3.1"
+        strokeWidth="2.3"
         strokeLinecap="round"
       />
     </svg>

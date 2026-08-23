@@ -66,6 +66,8 @@ export interface Loan {
   person: string
   amountMinor: number
   currency: string
+  /** what it was for — "concert tickets", "split dinner" */
+  note?: string
   lentISO: string
   remindISO: string | null
   settledISO: string | null

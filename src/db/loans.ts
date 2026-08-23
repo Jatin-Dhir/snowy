@@ -6,6 +6,7 @@ export async function addLoan(input: {
   person: string
   amountMinor: number
   currency: string
+  note?: string
   remindISO: string | null
 }): Promise<Loan> {
   const now = Date.now()
@@ -15,6 +16,7 @@ export async function addLoan(input: {
     person: input.person.trim(),
     amountMinor: input.amountMinor,
     currency: input.currency,
+    note: input.note?.trim() || undefined,
     lentISO: todayISO(),
     remindISO: input.remindISO,
     settledISO: null,
@@ -23,6 +25,15 @@ export async function addLoan(input: {
   }
   await db.loans.add(loan)
   return loan
+}
+
+/** Edit any of the loan's facts. A hand-edited amount clears its conversion base. */
+export async function updateLoan(
+  id: string,
+  patch: Partial<Pick<Loan, 'person' | 'amountMinor' | 'note' | 'direction'>>
+): Promise<void> {
+  const clearBase = patch.amountMinor !== undefined ? { baseMinor: null, baseCurrency: null } : {}
+  await db.loans.update(id, { ...patch, ...clearBase, updatedAt: Date.now() })
 }
 
 export async function settleLoan(id: string): Promise<void> {

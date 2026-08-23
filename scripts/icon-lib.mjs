@@ -42,10 +42,10 @@ export function png(width, height, rgba) {
   return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', Buffer.alloc(0))])
 }
 
-export const BRAND_BG = [110, 150, 200] // pastel sky, matches the app's default accent
-export const BRAND_FG = [250, 252, 255] // paper
-const GRAD_TOP = [156, 189, 226]
-const GRAD_BOT = [88, 128, 189]
+export const BRAND_BG = [88, 116, 210] // rich indigo, the launcher ground's midpoint
+export const BRAND_FG = [252, 253, 255] // paper
+const GRAD_TOP = [118, 148, 235]
+const GRAD_BOT = [58, 84, 186]
 const BLUSH = [186, 206, 255]
 
 function segDist(px, py, ax, ay, bx, by) {
@@ -72,13 +72,15 @@ function inEll(ux, uy, cx, cy, rx, ry, deg = 0) {
   return (x / rx) ** 2 + (y / ry) ** 2 <= 1
 }
 
-// Spendy: a bold geometric S — two ring arcs with round caps, drawn like a
-// single continuous stroke. Upper ring opens to the southeast, lower to the
-// northwest; they meet seamlessly at the center.
-const S_RM = 0.152 // ring mid-radius
-const S_HT = 0.064 // stroke half-thickness
-const S_CT = 0.348 // upper ring center y
-const S_CB = 0.652 // lower ring center y
+// Spendy: a coin — an outer ring with a bold S at its center. The S is two
+// ring arcs with round caps (upper opens southeast, lower northwest) meeting
+// seamlessly in the middle.
+const S_RM = 0.105 // S arc mid-radius
+const S_HT = 0.049 // S stroke half-thickness
+const S_CT = 0.396 // upper arc center y
+const S_CB = 0.604 // lower arc center y
+const RING_R = 0.335 // coin ring radius
+const RING_HT = 0.037 // coin ring half-thickness
 
 function sRing(ux, uy, cy, exclude) {
   const dx = ux - 0.5
@@ -90,7 +92,9 @@ function sRing(ux, uy, cy, exclude) {
 }
 
 function markAt(ux, uy) {
+  const coin = Math.abs(Math.hypot(ux - 0.5, uy - 0.5) - RING_R) <= RING_HT
   const stroke =
+    coin ||
     sRing(ux, uy, S_CT, 'se') ||
     sRing(ux, uy, S_CB, 'nw') ||
     Math.hypot(ux - (0.5 + S_RM), uy - S_CT) <= S_HT || // top-right round cap
@@ -119,11 +123,14 @@ export function drawIcon(size, { inset = 0.02, bg = 'gradient', fg = BRAND_FG, c
       let ground = null
       if (bg === 'gradient') {
         const t = Math.min(1, Math.max(0, (px + py) / 2))
-        ground = [
-          Math.round(GRAD_TOP[0] + (GRAD_BOT[0] - GRAD_TOP[0]) * t),
-          Math.round(GRAD_TOP[1] + (GRAD_BOT[1] - GRAD_TOP[1]) * t),
-          Math.round(GRAD_TOP[2] + (GRAD_BOT[2] - GRAD_TOP[2]) * t)
+        let g = [
+          GRAD_TOP[0] + (GRAD_BOT[0] - GRAD_TOP[0]) * t,
+          GRAD_TOP[1] + (GRAD_BOT[1] - GRAD_TOP[1]) * t,
+          GRAD_TOP[2] + (GRAD_BOT[2] - GRAD_TOP[2]) * t
         ]
+        // soft top-left light so the ground doesn't sit flat
+        const glow = Math.max(0, 1 - Math.hypot(px - 0.32, py - 0.24) / 0.75) * 0.16
+        ground = g.map((v) => Math.round(v + (255 - v) * glow))
       } else if (bg) {
         ground = bg
       }

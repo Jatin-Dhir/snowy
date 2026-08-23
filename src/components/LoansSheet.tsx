@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Loan } from '../db/db'
-import { addLoan, settleLoan, unsettleLoan, updateLoanReminder, deleteLoan } from '../db/loans'
+import { addLoan, settleLoan, unsettleLoan, updateLoan, updateLoanReminder, deleteLoan } from '../db/loans'
 import { formatEntry, formatMinor, currencySymbol } from '../lib/money'
 import { useAmountEntry } from '../lib/useAmountEntry'
 import { addDaysISO, fmtDayHeading, fromISO, todayISO } from '../lib/dates'
@@ -43,10 +43,17 @@ export function LoansSheet({
   const [direction, setDirection] = useState<'lent' | 'borrowed'>('lent')
   const [person, setPerson] = useState('')
   const [typingPerson, setTypingPerson] = useState(false)
+  const [note, setNote] = useState('')
   const [remindDays, setRemindDays] = useState<number>(7)
   const [customDate, setCustomDate] = useState(addDaysISO(todayISO(), 7))
   const [active, setActive] = useState<Loan | null>(null)
   const [editingReminder, setEditingReminder] = useState(false)
+  // detail-sheet edit mode: every fact of the loan becomes a field
+  const [loanEdit, setLoanEdit] = useState(false)
+  const [editPerson, setEditPerson] = useState('')
+  const [editAmount, setEditAmount] = useState('')
+  const [editNote, setEditNote] = useState('')
+  const [editDirection, setEditDirection] = useState<'lent' | 'borrowed'>('lent')
 
   // scrim taps and swipe-down bypass the header X, so reset the add form and
   // detail view whenever the sheet is dismissed — reopening starts clean
@@ -55,9 +62,11 @@ export function LoansSheet({
     setAdding(false)
     setPerson('')
     setTypingPerson(false)
+    setNote('')
     setRemindDays(7)
     setActive(null)
     setEditingReminder(false)
+    setLoanEdit(false)
     amt.reset()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -81,6 +90,7 @@ export function LoansSheet({
     setAdding(false)
     setPerson('')
     setTypingPerson(false)
+    setNote('')
     setRemindDays(7)
     amt.reset()
   }
@@ -88,7 +98,7 @@ export function LoansSheet({
   async function save() {
     if (!canSave) return
     const remindISO = remindDays === -1 ? customDate || null : addDaysISO(todayISO(), remindDays)
-    await addLoan({ direction, person, amountMinor: amt.minor, currency, remindISO })
+    await addLoan({ direction, person, amountMinor: amt.minor, currency, note, remindISO })
     haptic('success')
     showToast(
       direction === 'lent'
@@ -96,6 +106,31 @@ export function LoansSheet({
         : `Noted — you owe ${person.trim()} ${formatMinor(amt.minor, currency)}`
     )
     stopAdding()
+  }
+
+  function startLoanEdit(l: Loan) {
+    setEditPerson(l.person)
+    setEditAmount(String(l.amountMinor / 100))
+    setEditNote(l.note ?? '')
+    setEditDirection(l.direction)
+    setLoanEdit(true)
+  }
+
+  async function saveLoanEdit() {
+    if (!active) return
+    const minor = Math.round(parseFloat(editAmount) * 100) || 0
+    if (!editPerson.trim() || minor <= 0) return
+    const patch = {
+      person: editPerson.trim(),
+      amountMinor: minor,
+      note: editNote.trim() || undefined,
+      direction: editDirection
+    }
+    await updateLoan(active.id, patch)
+    haptic('success')
+    setActive({ ...active, ...patch })
+    setLoanEdit(false)
+    showToast('Updated')
   }
 
   async function markReturned(loan: Loan) {
@@ -116,6 +151,7 @@ export function LoansSheet({
         className="txn-row"
         onClick={() => {
           setEditingReminder(false)
+          setLoanEdit(false)
           setActive(l)
         }}
       >
@@ -136,13 +172,17 @@ export function LoansSheet({
         <span className="txn-main">
           <span className="txn-title">{l.person}</span>
           <span className="txn-sub" style={overdue ? { color: 'var(--amber)', fontWeight: 600 } : undefined}>
-            {l.settledISO
-              ? `${l.direction === 'lent' ? 'returned' : 'paid back'} · ${shortDate(l.settledISO)}`
-              : l.remindISO
-                ? `${l.direction === 'lent' ? 'owes you' : 'you owe'} · remind ${fmtDayHeading(l.remindISO).toLowerCase()}`
+            {[
+              l.settledISO
+                ? `${l.direction === 'lent' ? 'returned' : 'paid back'} · ${shortDate(l.settledISO)}`
                 : l.direction === 'lent'
                   ? 'owes you'
-                  : 'you owe'}
+                  : 'you owe',
+              l.note,
+              !l.settledISO && l.remindISO ? `remind ${fmtDayHeading(l.remindISO).toLowerCase()}` : null
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </span>
         </span>
         <span
@@ -227,6 +267,13 @@ export function LoansSheet({
                 onChange={(e) => setPerson(e.target.value)}
               />
             )}
+            <input
+              className="field"
+              placeholder="What for? — optional, e.g. concert tickets"
+              value={note}
+              maxLength={60}
+              onChange={(e) => setNote(e.target.value)}
+            />
           </div>
 
           <div className="amount-display" style={{ padding: 0 }}>
@@ -357,46 +404,119 @@ export function LoansSheet({
               <Icon name="x" size={14} strokeWidth={2.2} />
             </button>
           </div>
-          <span className="caption" style={{ overflowWrap: 'anywhere' }}>
-            {active.direction === 'lent' ? 'They took it' : 'You took it'} on {shortDate(active.lentISO)}
-            {active.settledISO ? ` · settled ${shortDate(active.settledISO)}` : ''}
-          </span>
-          {!active.settledISO && (
+          {loanEdit ? (
             <>
-              <button className="btn" onClick={() => void markReturned(active)}>
-                <Icon name="check" size={16} strokeWidth={2.4} />
-                {active.direction === 'lent' ? 'Got it back' : 'Paid it back'}
-              </button>
-              {editingReminder ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <span className="label" style={{ fontSize: 10 }}>Who and how much</span>
                 <input
                   className="field"
-                  type="date"
-                  min={todayISO()}
-                  value={active.remindISO ?? ''}
-                  onChange={(e) => {
-                    const v = e.target.value || null
-                    void updateLoanReminder(active.id, v)
-                    setActive({ ...active, remindISO: v })
-                  }}
+                  placeholder="Their name"
+                  value={editPerson}
+                  maxLength={40}
+                  onChange={(e) => setEditPerson(e.target.value)}
                 />
-              ) : (
-                <button className="btn ghost" onClick={() => setEditingReminder(true)}>
-                  <Icon name="calendar" size={15} />
-                  {active.remindISO ? `Reminder: ${shortDate(active.remindISO)} — change` : 'Set a reminder'}
+                <input
+                  className="field mono"
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="Amount"
+                  value={editAmount}
+                  min={0}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                />
+                <input
+                  className="field"
+                  placeholder="What for? — optional"
+                  value={editNote}
+                  maxLength={60}
+                  onChange={(e) => setEditNote(e.target.value)}
+                />
+                <span className="seg" style={{ alignSelf: 'center' }}>
+                  <button
+                    className={editDirection === 'lent' ? 'on' : ''}
+                    onClick={() => {
+                      haptic('selection')
+                      setEditDirection('lent')
+                    }}
+                  >
+                    They owe me
+                  </button>
+                  <button
+                    className={editDirection === 'borrowed' ? 'on' : ''}
+                    onClick={() => {
+                      haptic('selection')
+                      setEditDirection('borrowed')
+                    }}
+                  >
+                    I owe them
+                  </button>
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn ghost" onClick={() => setLoanEdit(false)}>
+                  Cancel
                 </button>
+                <button
+                  className="btn"
+                  disabled={!editPerson.trim() || (Math.round(parseFloat(editAmount) * 100) || 0) <= 0}
+                  onClick={() => void saveLoanEdit()}
+                >
+                  Save changes
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {active.note && (
+                <span className="caption" style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', overflowWrap: 'anywhere' }}>
+                  For: {active.note}
+                </span>
               )}
+              <span className="caption" style={{ overflowWrap: 'anywhere' }}>
+                {active.direction === 'lent' ? 'They took it' : 'You took it'} on {shortDate(active.lentISO)}
+                {active.settledISO ? ` · settled ${shortDate(active.settledISO)}` : ''}
+              </span>
+              {!active.settledISO && (
+                <>
+                  <button className="btn" onClick={() => void markReturned(active)}>
+                    <Icon name="check" size={16} strokeWidth={2.4} />
+                    {active.direction === 'lent' ? 'Got it back' : 'Paid it back'}
+                  </button>
+                  {editingReminder ? (
+                    <input
+                      className="field"
+                      type="date"
+                      min={todayISO()}
+                      value={active.remindISO ?? ''}
+                      onChange={(e) => {
+                        const v = e.target.value || null
+                        void updateLoanReminder(active.id, v)
+                        setActive({ ...active, remindISO: v })
+                      }}
+                    />
+                  ) : (
+                    <button className="btn ghost" onClick={() => setEditingReminder(true)}>
+                      <Icon name="calendar" size={15} />
+                      {active.remindISO ? `Reminder: ${shortDate(active.remindISO)} — change` : 'Set a reminder'}
+                    </button>
+                  )}
+                </>
+              )}
+              <button className="btn ghost" onClick={() => startLoanEdit(active)}>
+                <Icon name="pencil" size={15} /> Edit — name, amount, note
+              </button>
+              <button
+                className="btn danger"
+                onClick={() => {
+                  void deleteLoan(active.id)
+                  setActive(null)
+                  showToast('Removed')
+                }}
+              >
+                Delete this record
+              </button>
             </>
           )}
-          <button
-            className="btn danger"
-            onClick={() => {
-              void deleteLoan(active.id)
-              setActive(null)
-              showToast('Removed')
-            }}
-          >
-            Delete this record
-          </button>
         </Sheet>
       )}
     </Sheet>
