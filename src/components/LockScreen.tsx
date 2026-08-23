@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { PinPad } from './PinPad'
-import { SpendyMark } from '../screens/Welcome'
+import { TailyMark } from '../screens/Welcome'
 import { hashPin } from '../lib/pin'
 import { haptic } from '../state/ui'
 
@@ -45,9 +45,9 @@ export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: (
               boxShadow: 'var(--raise)'
             }}
           >
-            <SpendyMark size={30} />
+            <TailyMark size={30} />
           </span>
-          <span className="display" style={{ fontWeight: 800, fontSize: 20 }}>Spendy</span>
+          <span className="display" style={{ fontWeight: 800, fontSize: 20 }}>Taily</span>
         </div>
         <PinPad
           label="Enter your PIN"

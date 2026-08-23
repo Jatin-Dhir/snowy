@@ -4,17 +4,15 @@ import { CURRENCIES } from '../lib/money'
 import { Icon } from '../components/Icon'
 import { haptic } from '../state/ui'
 
-export function SpendyMark({ size = 44 }: { size?: number }) {
+/** The Taily paw — four toes and a soft heel pad, in whatever color it sits on. */
+export function TailyMark({ size = 44 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.1" fill="none" stroke="currentColor" strokeWidth="1.9" />
-      <path
-        d="M 14.5 9.5 A 2.5 2.5 0 1 0 12 12 A 2.5 2.5 0 1 1 9.5 14.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.3"
-        strokeLinecap="round"
-      />
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+      <ellipse cx="5.6" cy="10.2" rx="1.8" ry="2.35" transform="rotate(-24 5.6 10.2)" />
+      <ellipse cx="9.3" cy="7.6" rx="1.95" ry="2.5" transform="rotate(-8 9.3 7.6)" />
+      <ellipse cx="14.7" cy="7.6" rx="1.95" ry="2.5" transform="rotate(8 14.7 7.6)" />
+      <ellipse cx="18.4" cy="10.2" rx="1.8" ry="2.35" transform="rotate(24 18.4 10.2)" />
+      <path d="M12 11.9 C15.1 11.9 17.3 13.9 17.3 16.3 C17.3 18.1 16 19.2 14.5 19.8 C13.6 20.2 12.8 20.7 12 20.7 C11.2 20.7 10.4 20.2 9.5 19.8 C8 19.2 6.7 18.1 6.7 16.3 C6.7 13.9 8.9 11.9 12 11.9 Z" />
     </svg>
   )
 }
@@ -67,10 +65,10 @@ export function Welcome({ onDone }: { onDone: () => void }) {
         {step === 0 && (
           <div key="s0" className="onb-step" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, textAlign: 'center' }}>
             <span className="onb-logo" style={{ color: 'var(--on-accent)' }}>
-              <SpendyMark size={52} />
+              <TailyMark size={52} />
             </span>
             <div className="onb-rise" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <span className="display" style={{ fontSize: 40, letterSpacing: '-0.02em' }}>Spendy</span>
+              <span className="display" style={{ fontSize: 40, letterSpacing: '-0.02em' }}>Taily</span>
               <span className="muted" style={{ fontSize: 16 }}>Three seconds to logged.</span>
             </div>
             <span className="caption onb-late" style={{ fontSize: 12.5 }}>

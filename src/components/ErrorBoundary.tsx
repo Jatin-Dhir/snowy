@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
             Your data is safe on this device. Reload and you're back where you were.
           </span>
           <button className="btn" onClick={() => location.reload()}>
-            Reload Spendy
+            Reload Taily
           </button>
         </div>
       </div>

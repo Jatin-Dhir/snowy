@@ -61,7 +61,7 @@ export default function App() {
       }
       setReady(true)
       const update = await autoCheckForUpdate()
-      if (update) showToast(`Spendy v${update.version} is out — grab it in Settings`)
+      if (update) showToast(`Taily v${update.version} is out — grab it in Settings`)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

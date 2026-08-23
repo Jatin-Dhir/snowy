@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, saveSettings, type Settings } from '../db/db'
 import { allLiveTxns } from '../db/repo'
-import { txnsToCsv, downloadCsv } from '../lib/csv'
+import { txnsToCsv, downloadCsv, planCsvImport, type ImportPlan } from '../lib/csv'
 import { CURRENCIES, formatMinor } from '../lib/money'
 import { fetchRate, type RateInfo } from '../lib/rates'
 import { convertEverything } from '../db/convert'
@@ -10,7 +10,10 @@ import { APP_VERSION, checkForUpdate, type UpdateCheck } from '../lib/updater'
 import { applyCustomAccent } from '../lib/theme'
 import { hashPin } from '../lib/pin'
 import { todayISO } from '../lib/dates'
+import { currentProfile } from '../lib/profiles'
+import { TAG_COLORS, TAG_ICONS } from '../db/seed'
 import { AccountManager } from '../components/AccountManager'
+import { ProfilesSheet } from '../components/ProfilesSheet'
 import { Icon } from '../components/Icon'
 import { PinPad } from '../components/PinPad'
 import { Sheet } from '../components/Sheet'
@@ -77,6 +80,10 @@ export function SettingsSheet({
   const [pinError, setPinError] = useState('')
   const [currencyOpen, setCurrencyOpen] = useState(false)
   const [accountsOpen, setAccountsOpen] = useState(false)
+  const [profilesOpen, setProfilesOpen] = useState(false)
+  const [importPlan, setImportPlan] = useState<ImportPlan | null>(null)
+  const [importBusy, setImportBusy] = useState(false)
+  const importFile = useRef<HTMLInputElement | null>(null)
   const [convert, setConvert] = useState<{ code: string; state: 'loading' | 'error' | RateInfo } | null>(null)
   const [convertBusy, setConvertBusy] = useState(false)
   const hueBar = useRef<HTMLDivElement | null>(null)
@@ -94,6 +101,8 @@ export function SettingsSheet({
     setPinShake(0)
     setCurrencyOpen(false)
     setAccountsOpen(false)
+    setProfilesOpen(false)
+    setImportPlan(null)
     setConvert(null)
   }, [open])
 
@@ -110,8 +119,10 @@ export function SettingsSheet({
       showToast('Nothing to export yet')
       return
     }
-    const csv = txnsToCsv(txns, categories)
-    const filename = `spendy-${todayISO()}.csv`
+    const accounts = await db.accounts.toArray()
+    const csv = txnsToCsv(txns, categories, accounts)
+    const profileSlug = currentProfile().name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'main'
+    const filename = `taily-${profileSlug}-${todayISO()}.csv`
     let native = false
     try {
       const { Capacitor } = await import('@capacitor/core')
@@ -141,6 +152,85 @@ export function SettingsSheet({
     }
     downloadCsv(csv, filename)
     showToast(`Exported ${txns.length} entries`)
+  }
+
+  async function readImportFile(file: File) {
+    try {
+      const text = await file.text()
+      const [cats, accounts, allTxns] = await Promise.all([
+        db.categories.toArray(),
+        db.accounts.toArray(),
+        db.txns.toArray()
+      ])
+      const plan = planCsvImport(text, {
+        categories: cats,
+        accounts,
+        existingIds: new Set(allTxns.map((t) => t.id)),
+        defaultCurrency: settings.currency
+      })
+      if (!plan) {
+        showToast("Couldn't read that file — it needs date and amount columns")
+        return
+      }
+      if (plan.txns.length === 0) {
+        showToast(`Nothing new in that file — ${plan.duplicates} entries are already here`)
+        return
+      }
+      setImportPlan(plan)
+    } catch {
+      showToast("Couldn't read that file")
+    }
+  }
+
+  async function applyImport(plan: ImportPlan) {
+    setImportBusy(true)
+    try {
+      const cats = await db.categories.toArray()
+      const catId = new Map(cats.map((c) => [c.name.toLowerCase(), c.id]))
+      let catSort = Math.max(0, ...cats.map((c) => c.sort)) + 1
+      for (const name of plan.newCategories) {
+        const id = crypto.randomUUID()
+        await db.categories.put({
+          id,
+          name,
+          color: TAG_COLORS[catId.size % TAG_COLORS.length],
+          icon: TAG_ICONS[catId.size % TAG_ICONS.length],
+          sort: catSort++
+        })
+        catId.set(name.toLowerCase(), id)
+      }
+      const accounts = await db.accounts.toArray()
+      const accId = new Map(accounts.map((a) => [a.name.toLowerCase(), a.id]))
+      let accSort = Math.max(0, ...accounts.map((a) => a.sort)) + 1
+      for (const name of plan.newAccounts) {
+        const id = crypto.randomUUID()
+        await db.accounts.put({ id, name, sort: accSort++ })
+        accId.set(name.toLowerCase(), id)
+      }
+      const now = Date.now()
+      await db.txns.bulkAdd(
+        plan.txns.map((t) => ({
+          id: t.id,
+          amountMinor: t.amountMinor,
+          currency: t.currency,
+          categoryId: t.categoryName ? (catId.get(t.categoryName.toLowerCase()) ?? null) : null,
+          accountId: accId.get(t.accountName.toLowerCase()) ?? 'cash',
+          kind: t.kind,
+          note: t.note,
+          dateISO: t.dateISO,
+          ts: t.ts,
+          source: t.source,
+          createdAt: now,
+          updatedAt: now,
+          deleted: 0 as const
+        }))
+      )
+      haptic('success')
+      showToast(`Imported ${plan.txns.length} entries`)
+      setImportPlan(null)
+    } finally {
+      setImportBusy(false)
+    }
   }
 
   function hueFromEvent(clientX: number): number {
@@ -384,6 +474,13 @@ export function SettingsSheet({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span className="label" style={{ fontSize: 10.5 }}>More</span>
           <ActionRow
+            icon="person"
+            tint="#C75D8D"
+            title="Profiles"
+            sub={`You're in ${currentProfile().name} — separate books for separate people`}
+            onClick={() => setProfilesOpen(true)}
+          />
+          <ActionRow
             icon="wallet"
             tint="#3E8FA8"
             title="Accounts"
@@ -401,7 +498,7 @@ export function SettingsSheet({
             icon="lock"
             tint="#7B61D6"
             title={settings.pinHash ? 'App lock is on' : 'App lock'}
-            sub={settings.pinHash ? 'Change your PIN or turn it off' : 'Set a 4-digit PIN to open Spendy'}
+            sub={settings.pinHash ? 'Change your PIN or turn it off' : 'Set a 4-digit PIN to open Taily'}
             onClick={openPinFlow}
           />
           <ActionRow
@@ -413,7 +510,7 @@ export function SettingsSheet({
                 : update === 'checking'
                   ? 'Checking…'
                   : update.status === 'update'
-                    ? `Get Spendy v${update.info.version}`
+                    ? `Get Taily v${update.info.version}`
                     : update.status === 'latest'
                       ? "You're on the latest"
                       : update.status === 'unavailable'
@@ -437,19 +534,78 @@ export function SettingsSheet({
             icon="download"
             tint="#2C9A67"
             title="Export as CSV"
-            sub="Your full history, shareable anywhere"
+            sub="Every column — dates, in/out, tags, accounts, notes"
             onClick={() => void exportCsv()}
+          />
+          <ActionRow
+            icon="arrowUp"
+            tint="#B0764A"
+            title="Import a CSV"
+            sub="Bring entries back in — ours or any date+amount file"
+            onClick={() => importFile.current?.click()}
           />
           <span className="caption" style={{ fontSize: 11.5 }}>
             Everything lives on this device. No account, no cloud, no ads.
           </span>
         </div>
 
+        <input
+          ref={importFile}
+          type="file"
+          accept=".csv,text/csv,text/comma-separated-values"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) void readImportFile(f)
+            e.target.value = ''
+          }}
+        />
+
         <span className="caption faint" style={{ textAlign: 'center', fontSize: 11 }}>
-          Spendy v{APP_VERSION} · built by Jatin Dhir
+          Taily v{APP_VERSION} · built by Jatin Dhir
         </span>
 
         <AccountManager open={accountsOpen} onClose={() => setAccountsOpen(false)} />
+        <ProfilesSheet open={profilesOpen} onClose={() => setProfilesOpen(false)} />
+
+        {importPlan && (
+          <Sheet open onClose={() => !importBusy && setImportPlan(null)} label="Import CSV" style={{ gap: 12 }}>
+            <div className="row-between">
+              <span className="label" style={{ letterSpacing: '0.14em' }}>Ready to import</span>
+              <button className="icon-btn" onClick={() => setImportPlan(null)} disabled={importBusy} aria-label="Close">
+                <Icon name="x" size={14} strokeWidth={2.2} />
+              </button>
+            </div>
+            <div className="well" style={{ alignItems: 'center' }}>
+              <span className="well-num">{importPlan.txns.length} entries</span>
+              {importPlan.dateFrom && importPlan.dateTo && (
+                <span className="caption" style={{ fontSize: 11.5 }}>
+                  {importPlan.dateFrom === importPlan.dateTo
+                    ? importPlan.dateFrom
+                    : `${importPlan.dateFrom} → ${importPlan.dateTo}`}
+                </span>
+              )}
+            </div>
+            <span className="caption" style={{ fontSize: 12.5 }}>
+              {[
+                importPlan.newCategories.length > 0 &&
+                  `${importPlan.newCategories.length} new ${importPlan.newCategories.length === 1 ? 'tag' : 'tags'} (${importPlan.newCategories.slice(0, 4).join(', ')}${importPlan.newCategories.length > 4 ? '…' : ''})`,
+                importPlan.newAccounts.length > 0 &&
+                  `${importPlan.newAccounts.length} new ${importPlan.newAccounts.length === 1 ? 'account' : 'accounts'} (${importPlan.newAccounts.slice(0, 4).join(', ')}${importPlan.newAccounts.length > 4 ? '…' : ''})`,
+                importPlan.duplicates > 0 && `${importPlan.duplicates} already here — skipped`,
+                importPlan.badRows > 0 && `${importPlan.badRows} unreadable ${importPlan.badRows === 1 ? 'row' : 'rows'} ignored`
+              ]
+                .filter(Boolean)
+                .join(' · ') || 'Everything maps onto your existing tags and accounts.'}
+            </span>
+            <button className="btn" disabled={importBusy} onClick={() => void applyImport(importPlan)}>
+              {importBusy ? 'Importing…' : `Import ${importPlan.txns.length} entries`}
+            </button>
+            <button className="btn ghost" disabled={importBusy} onClick={() => setImportPlan(null)}>
+              Cancel
+            </button>
+          </Sheet>
+        )}
 
         {currencyOpen && (
           <Sheet open onClose={() => setCurrencyOpen(false)} label="Currency" style={{ gap: 8 }}>

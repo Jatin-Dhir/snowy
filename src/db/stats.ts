@@ -83,6 +83,43 @@ export function pace(spent: number, budget: number, todayIso = todayISO()): Pace
   return { spent, budget, fraction, dayFraction, state }
 }
 
+export interface SaveSuggestion {
+  amountMinor: number
+  /** under-pace = today's unspent allowance; steady = a gentle daily habit */
+  reason: 'under-pace' | 'steady'
+  /** days of saving at this rate until the goal is full */
+  daysToGoal: number | null
+}
+
+/**
+ * How much could go into savings today. With a budget: whatever of today's
+ * allowance is still unspent (rounded to a clean step). Without one: a steady
+ * 10% of the recent daily spend. Only suggested while a goal wants money.
+ */
+export function saveSuggestion(
+  sts: SafeToSpend,
+  avgDailySpend: number,
+  goalRemaining: number
+): SaveSuggestion | null {
+  if (goalRemaining <= 0) return null
+  const step = 1000 // ₹10 steps — clean numbers people actually move
+  let amountMinor = 0
+  let reason: SaveSuggestion['reason'] = 'under-pace'
+  if (sts.hasBudget && sts.remainingToday >= 2 * step) {
+    amountMinor = Math.floor(sts.remainingToday / step) * step
+  } else if (avgDailySpend > 0) {
+    amountMinor = Math.max(step, Math.floor((avgDailySpend * 0.1) / step) * step)
+    reason = 'steady'
+  }
+  if (amountMinor <= 0) return null
+  amountMinor = Math.min(amountMinor, goalRemaining)
+  return {
+    amountMinor,
+    reason,
+    daysToGoal: amountMinor > 0 ? Math.ceil(goalRemaining / amountMinor) : null
+  }
+}
+
 /** Straight-line end-of-month projection from spend so far. */
 export function projectMonth(monthTxns: Txn[], monthKey: string, todayIso = todayISO()): number {
   const spent = sum(monthTxns)

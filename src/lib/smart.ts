@@ -102,7 +102,7 @@ export interface AdviceInput {
 export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonthly, currency }: AdviceInput): string[] {
   const outs = monthTxns.filter(isOut)
   const spent = sum(outs)
-  if (spent <= 0) return ['Log a few expenses first — the more Spendy sees, the sharper the advice gets.']
+  if (spent <= 0) return ['Log a few expenses first — the more Taily sees, the sharper the advice gets.']
   const tips: string[] = []
 
   const totals = new Map<string, number>()

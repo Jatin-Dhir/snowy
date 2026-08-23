@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie'
+import { currentDbName } from '../lib/profiles'
 
 export interface Txn {
   id: string
@@ -128,8 +129,8 @@ class TallyDB extends Dexie {
   accounts!: Table<Account, string>
   kv!: Table<KV, string>
 
-  constructor() {
-    super('tally')
+  constructor(name: string) {
+    super(name)
     this.version(1).stores({
       txns: 'id, dateISO, ts, categoryId, deleted',
       categories: 'id, sort',
@@ -149,7 +150,8 @@ class TallyDB extends Dexie {
   }
 }
 
-export const db = new TallyDB()
+// each profile is its own database — see lib/profiles.ts
+export const db = new TallyDB(currentDbName())
 
 export async function getSettings(): Promise<Settings> {
   const row = await db.kv.get('settings')

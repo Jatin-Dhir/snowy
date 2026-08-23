@@ -42,11 +42,9 @@ export function png(width, height, rgba) {
   return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', Buffer.alloc(0))])
 }
 
-export const BRAND_BG = [88, 116, 210] // rich indigo, the launcher ground's midpoint
-export const BRAND_FG = [252, 253, 255] // paper
-const GRAD_TOP = [118, 148, 235]
-const GRAD_BOT = [58, 84, 186]
-const BLUSH = [186, 206, 255]
+// Taily is black & white for now: a black paw on clean white.
+export const BRAND_BG = [255, 255, 255]
+export const BRAND_FG = [16, 17, 19]
 
 function segDist(px, py, ax, ay, bx, by) {
   const vx = bx - ax, vy = by - ay
@@ -72,45 +70,40 @@ function inEll(ux, uy, cx, cy, rx, ry, deg = 0) {
   return (x / rx) ** 2 + (y / ry) ** 2 <= 1
 }
 
-// Spendy: a coin — an outer ring with a bold S at its center. The S is two
-// ring arcs with round caps (upper opens southeast, lower northwest) meeting
-// seamlessly in the middle.
-const S_RM = 0.105 // S arc mid-radius
-const S_HT = 0.049 // S stroke half-thickness
-const S_CT = 0.396 // upper arc center y
-const S_CB = 0.604 // lower arc center y
-const RING_R = 0.335 // coin ring radius
-const RING_HT = 0.037 // coin ring half-thickness
+// Taily: a paw print — four tilted toes over a soft heel pad.
+const TOES = [
+  { cx: 0.262, cy: 0.408, rx: 0.076, ry: 0.106, deg: -26 },
+  { cx: 0.408, cy: 0.302, rx: 0.079, ry: 0.112, deg: -9 },
+  { cx: 0.592, cy: 0.302, rx: 0.079, ry: 0.112, deg: 9 },
+  { cx: 0.738, cy: 0.408, rx: 0.076, ry: 0.106, deg: 26 }
+]
 
-function sRing(ux, uy, cy, exclude) {
-  const dx = ux - 0.5
-  const dy = uy - cy
-  if (Math.abs(Math.hypot(dx, dy) - S_RM) > S_HT) return false
-  if (exclude === 'se' && dx > 0 && dy > 0) return false
-  if (exclude === 'nw' && dx < 0 && dy < 0) return false
-  return true
+function inHeel(ux, uy) {
+  // two stacked ellipses: a wide top and a slightly narrower base = smooth pad
+  if (inEll(ux, uy, 0.5, 0.612, 0.196, 0.148)) return true
+  if (inEll(ux, uy, 0.5, 0.672, 0.162, 0.122)) return true
+  return false
 }
 
 function markAt(ux, uy) {
-  const coin = Math.abs(Math.hypot(ux - 0.5, uy - 0.5) - RING_R) <= RING_HT
-  const stroke =
-    coin ||
-    sRing(ux, uy, S_CT, 'se') ||
-    sRing(ux, uy, S_CB, 'nw') ||
-    Math.hypot(ux - (0.5 + S_RM), uy - S_CT) <= S_HT || // top-right round cap
-    Math.hypot(ux - (0.5 - S_RM), uy - S_CB) <= S_HT // bottom-left round cap
-  return stroke ? 'fg' : null
+  for (const t of TOES) {
+    if (inEll(ux, uy, t.cx, t.cy, t.rx, t.ry, t.deg)) return 'fg'
+  }
+  return inHeel(ux, uy) ? 'fg' : null
 }
 
 /**
- * Draw the Snowy cat.
- * opts.inset: padding fraction; opts.bg: 'gradient' | RGB | null (transparent);
+ * Draw the Taily paw, supersampled so the curves stay soft at every size.
+ * opts.inset: padding fraction; opts.bg: 'gradient' | RGB | null (transparent) —
+ * 'gradient' is kept as an alias for the flat brand ground;
  * opts.circleMask: clip everything to an inscribed circle.
  */
 export function drawIcon(size, { inset = 0.02, bg = 'gradient', fg = BRAND_FG, circleMask = false } = {}) {
   const rgba = Buffer.alloc(size * size * 4)
   const scale = 1 - inset * 2
   const r = size / 2
+  const ground = bg === 'gradient' ? BRAND_BG : bg
+  const SS = 3 // 3×3 samples per pixel — antialiased edges
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const i = (y * size + x) * 4
@@ -118,41 +111,31 @@ export function drawIcon(size, { inset = 0.02, bg = 'gradient', fg = BRAND_FG, c
         const d = Math.hypot(x + 0.5 - r, y + 0.5 - r)
         if (d > r - 0.5) continue
       }
-      const px = (x + 0.5) / size
-      const py = (y + 0.5) / size
-      let ground = null
-      if (bg === 'gradient') {
-        const t = Math.min(1, Math.max(0, (px + py) / 2))
-        let g = [
-          GRAD_TOP[0] + (GRAD_BOT[0] - GRAD_TOP[0]) * t,
-          GRAD_TOP[1] + (GRAD_BOT[1] - GRAD_TOP[1]) * t,
-          GRAD_TOP[2] + (GRAD_BOT[2] - GRAD_TOP[2]) * t
-        ]
-        // soft top-left light so the ground doesn't sit flat
-        const glow = Math.max(0, 1 - Math.hypot(px - 0.32, py - 0.24) / 0.75) * 0.16
-        ground = g.map((v) => Math.round(v + (255 - v) * glow))
-      } else if (bg) {
-        ground = bg
-      }
-      const ux = (px - inset) / scale
-      const uy = (py - inset) / scale
-      const part = ux >= 0 && ux <= 1 && uy >= 0 && uy <= 1 ? markAt(ux, uy) : null
-      let c = null
-      if (part === 'fg') c = fg
-      else if (part === 'blush') c = BLUSH
-      else {
-        c = ground // 'punch' and outside both show the ground (or transparency)
-        // soft drop shadow under the mark for depth
-        if (c && markAt(ux - 0.016, uy - 0.026) === 'fg') {
-          c = [
-            Math.round(c[0] * 0.72 + 20 * 0.28),
-            Math.round(c[1] * 0.72 + 45 * 0.28),
-            Math.round(c[2] * 0.72 + 95 * 0.28)
-          ]
+      let hit = 0
+      for (let sy = 0; sy < SS; sy++) {
+        for (let sx = 0; sx < SS; sx++) {
+          const px = (x + (sx + 0.5) / SS) / size
+          const py = (y + (sy + 0.5) / SS) / size
+          const ux = (px - inset) / scale
+          const uy = (py - inset) / scale
+          if (ux >= 0 && ux <= 1 && uy >= 0 && uy <= 1 && markAt(ux, uy) === 'fg') hit++
         }
       }
-      if (!c) continue
-      rgba[i] = c[0]; rgba[i + 1] = c[1]; rgba[i + 2] = c[2]; rgba[i + 3] = 255
+      const a = hit / (SS * SS)
+      if (a === 0) {
+        if (!ground) continue
+        rgba[i] = ground[0]; rgba[i + 1] = ground[1]; rgba[i + 2] = ground[2]; rgba[i + 3] = 255
+        continue
+      }
+      if (ground) {
+        rgba[i] = Math.round(fg[0] * a + ground[0] * (1 - a))
+        rgba[i + 1] = Math.round(fg[1] * a + ground[1] * (1 - a))
+        rgba[i + 2] = Math.round(fg[2] * a + ground[2] * (1 - a))
+        rgba[i + 3] = 255
+      } else {
+        rgba[i] = fg[0]; rgba[i + 1] = fg[1]; rgba[i + 2] = fg[2]
+        rgba[i + 3] = Math.round(a * 255)
+      }
     }
   }
   return png(size, size, rgba)

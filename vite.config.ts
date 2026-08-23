@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Spendy',
-        short_name: 'Spendy',
+        name: 'Taily',
+        short_name: 'Taily',
         description: 'Three seconds to logged.',
         start_url: '/',
         display: 'standalone',

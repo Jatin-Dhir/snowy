@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
 import { txnsForMonth, txnsBetween, recentTxns, addTxn, removeTxnPermanently, softDeleteTxn, restoreTxn } from '../db/repo'
+import { addToGoal } from '../db/goals'
 import { learnFrequents } from '../db/suggest'
-import { safeToSpend, weekBars, sum, onDay, byCategory } from '../db/stats'
+import { safeToSpend, saveSuggestion, weekBars, sum, onDay, byCategory } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
 import { weeklyAnomalies } from '../lib/smart'
@@ -44,7 +45,9 @@ export function Home({
   const budgets = useLiveQuery(() => db.budgets.toArray(), []) ?? []
   const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
   const loans = useLiveQuery(() => db.loans.toArray(), []) ?? []
+  const goals = useLiveQuery(() => db.goals.toArray(), []) ?? []
   const [loansOpen, setLoansOpen] = useState(false)
+  const [saveHidden, setSaveHidden] = useState(() => localStorage.getItem('taily.save.hidden') === todayISO())
 
   const sts = useMemo(
     () => safeToSpend(monthTxns, overallBudget?.amountMinor ?? null, today),
@@ -56,6 +59,33 @@ export function Home({
   const maxBar = Math.max(...bars.map((b) => b.total), 1)
   const todayTxns = useMemo(() => onDay(monthTxns, today), [monthTxns, today])
   const frequents = useMemo(() => learnFrequents(recent, categories), [recent, categories])
+  // savings nudge: goals are the "saving is set up" signal; pick the one closest to done
+  const saveGoal = useMemo(() => {
+    const open = goals.filter((g) => g.savedMinor < g.targetMinor)
+    return open.sort((a, b) => b.savedMinor / b.targetMinor - a.savedMinor / a.targetMinor)[0] ?? null
+  }, [goals])
+  const saveIdea = useMemo(() => {
+    if (!saveGoal) return null
+    const cutoff = Date.now() - 30 * 86400000
+    const last30 = recent.filter((t) => t.ts >= cutoff)
+    const avgDaily = last30.length > 0 ? sum(last30) / 30 : 0
+    return saveSuggestion(sts, avgDaily, saveGoal.targetMinor - saveGoal.savedMinor)
+  }, [saveGoal, recent, sts])
+
+  async function tuckAway() {
+    if (!saveGoal || !saveIdea) return
+    const amt = saveIdea.amountMinor
+    await addToGoal(saveGoal.id, amt)
+    localStorage.setItem('taily.save.hidden', today)
+    setSaveHidden(true)
+    haptic('success')
+    showToast(`Tucked ${formatMinor(amt, currency)} into ${saveGoal.name}`, () => {
+      void addToGoal(saveGoal.id, -amt)
+      localStorage.removeItem('taily.save.hidden')
+      setSaveHidden(false)
+    })
+  }
+
   const nextBill = upcomingRules(rules, 3)[0]
   const nudgeKey = nextBill ? `${nextBill.id}|${nextBill.nextRunISO}` : ''
   const showNudge = nextBill && dismissedNudge !== nudgeKey
@@ -277,6 +307,45 @@ export function Home({
           </button>
         </div>
       ))}
+
+      {saveGoal && saveIdea && !saveHidden && (
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14 }}>
+          <span className="txn-icon" style={{ background: 'var(--pos-soft)', color: 'var(--pos)', width: 36, height: 36 }}>
+            <Icon name="heart" size={17} />
+          </span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontWeight: 700, fontSize: 14 }}>
+              {saveIdea.reason === 'under-pace' ? 'Under pace — save the difference?' : `A little for ${saveGoal.name}?`}
+            </span>
+            <span className="caption" style={{ fontSize: 12 }}>
+              {saveIdea.reason === 'under-pace'
+                ? `${formatMinor(saveIdea.amountMinor, currency)} of today's allowance is still free`
+                : `${formatMinor(saveIdea.amountMinor, currency)} a day is all it takes`}
+              {saveIdea.daysToGoal !== null &&
+                ` · ${saveGoal.name} full in ~${
+                  saveIdea.daysToGoal > 60 ? `${Math.round(saveIdea.daysToGoal / 30)} months` : `${saveIdea.daysToGoal} days`
+                }`}
+            </span>
+          </span>
+          <button
+            className="btn"
+            style={{ padding: '8px 13px', fontSize: 13, flexShrink: 0 }}
+            onClick={() => void tuckAway()}
+          >
+            Save {formatMinor(saveIdea.amountMinor, currency)}
+          </button>
+          <button
+            className="faint"
+            aria-label="Not today"
+            onClick={() => {
+              localStorage.setItem('taily.save.hidden', today)
+              setSaveHidden(true)
+            }}
+          >
+            <Icon name="x" size={14} strokeWidth={2} />
+          </button>
+        </div>
+      )}
 
       {(() => {
         const owedToMe = loans.filter((l) => !l.settledISO && l.direction === 'lent').reduce((a, l) => a + l.amountMinor, 0)
