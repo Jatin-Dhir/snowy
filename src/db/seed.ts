@@ -22,7 +22,8 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'salary', name: 'Salary', color: '#4D82F3', icon: 'wallet', sort: 10 },
   { id: 'payment', name: 'Payment', color: '#5B8DE0', icon: 'arrowDown', sort: 11 },
   { id: 'return', name: 'Return', color: '#4FAF9B', icon: 'refresh', sort: 12 },
-  { id: 'other', name: 'Other', color: '#7A8794', icon: 'dots', sort: 13 }
+  { id: 'other', name: 'Other', color: '#7A8794', icon: 'dots', sort: 13 },
+  { id: 'savings', name: 'Savings', color: '#3AA675', icon: 'lock', sort: 14 }
 ]
 
 export const TAG_COLORS = [

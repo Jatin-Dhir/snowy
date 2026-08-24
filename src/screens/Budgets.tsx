@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Goal } from '../db/db'
 import { addGoal, addToGoal, deleteGoal, updateGoal } from '../db/goals'
-import { txnsForMonth } from '../db/repo'
+import { addTxn, txnsForMonth } from '../db/repo'
 import { byCategory, pace, projectMonth, sum } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
@@ -80,6 +80,7 @@ function GoalDialog({
   const targetMinor = (parseInt(target, 10) || 0) * 100
   const amountMinor = Math.round(parseFloat(amount) * 100) || 0
   const canSave = name.trim().length > 0 && targetMinor > 0
+  const accounts = useLiveQuery(() => db.accounts.toArray(), []) ?? []
 
   async function save() {
     if (!canSave) return
@@ -96,6 +97,16 @@ function GoalDialog({
 
   async function move(sign: 1 | -1) {
     if (!goal || amountMinor <= 0) return
+    // a real transaction, same as the Home nudge — money into savings comes
+    // off what's left to spend; money back out shows up as available again
+    await addTxn({
+      amountMinor,
+      currency,
+      categoryId: 'savings',
+      accountId: accounts.find((a) => !a.archived)?.id ?? 'upi',
+      kind: sign === 1 ? 'out' : 'in',
+      note: goal.name
+    })
     await addToGoal(goal.id, sign * amountMinor)
     haptic('success')
     const g = await db.goals.get(goal.id)

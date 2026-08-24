@@ -85,6 +85,12 @@ export async function deleteProfile(id: string): Promise<void> {
   const s = loadProfiles()
   if (s.list.length <= 1 || !s.list.some((p) => p.id === id)) return
   const { default: Dexie } = await import('dexie')
+  if (s.current === id) {
+    // deleting the database this session has open — IndexedDB blocks the
+    // delete until every connection to it closes, and ours is still live
+    const { db } = await import('../db/db')
+    db.close()
+  }
   await Dexie.delete(dbNameFor(id))
   const list = s.list.filter((p) => p.id !== id)
   const current = s.current === id ? list[0].id : s.current

@@ -46,6 +46,7 @@ export function Home({
   const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
   const loans = useLiveQuery(() => db.loans.toArray(), []) ?? []
   const goals = useLiveQuery(() => db.goals.toArray(), []) ?? []
+  const accounts = useLiveQuery(() => db.accounts.toArray(), []) ?? []
   const [loansOpen, setLoansOpen] = useState(false)
   const [saveHidden, setSaveHidden] = useState(() => localStorage.getItem('taily.save.hidden') === todayISO())
 
@@ -75,12 +76,24 @@ export function Home({
   async function tuckAway() {
     if (!saveGoal || !saveIdea) return
     const amt = saveIdea.amountMinor
+    // a real transaction — not just a hidden bump on the goal — so it shows
+    // in Activity and actually comes off what's left to spend today, same
+    // as any other expense, instead of vanishing invisibly
+    const txn = await addTxn({
+      amountMinor: amt,
+      currency,
+      categoryId: 'savings',
+      accountId: accounts.find((a) => !a.archived)?.id ?? 'upi',
+      kind: 'out',
+      note: saveGoal.name
+    })
     await addToGoal(saveGoal.id, amt)
     localStorage.setItem('taily.save.hidden', today)
     setSaveHidden(true)
     haptic('success')
     showToast(`Tucked ${formatMinor(amt, currency)} into ${saveGoal.name}`, () => {
       void addToGoal(saveGoal.id, -amt)
+      void removeTxnPermanently(txn.id)
       localStorage.removeItem('taily.save.hidden')
       setSaveHidden(false)
     })
@@ -309,40 +322,39 @@ export function Home({
       ))}
 
       {saveGoal && saveIdea && !saveHidden && (
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14 }}>
-          <span className="txn-icon" style={{ background: 'var(--pos-soft)', color: 'var(--pos)', width: 36, height: 36 }}>
-            <Icon name="heart" size={17} />
-          </span>
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontWeight: 700, fontSize: 14 }}>
-              {saveIdea.reason === 'under-pace' ? 'Under pace — save the difference?' : `A little for ${saveGoal.name}?`}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 11, padding: '13px 14px', borderRadius: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <span className="txn-icon" style={{ background: 'var(--pos-soft)', color: 'var(--pos)', width: 36, height: 36, flexShrink: 0 }}>
+              <Icon name="heart" size={17} />
             </span>
-            <span className="caption" style={{ fontSize: 12 }}>
-              {saveIdea.reason === 'under-pace'
-                ? `${formatMinor(saveIdea.amountMinor, currency)} of today's allowance is still free`
-                : `${formatMinor(saveIdea.amountMinor, currency)} a day is all it takes`}
-              {saveIdea.daysToGoal !== null &&
-                ` · ${saveGoal.name} full in ~${
-                  saveIdea.daysToGoal > 60 ? `${Math.round(saveIdea.daysToGoal / 30)} months` : `${saveIdea.daysToGoal} days`
-                }`}
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontWeight: 700, fontSize: 14 }}>
+                {saveIdea.reason === 'under-pace' ? 'Under pace — save the difference?' : `A little for ${saveGoal.name}?`}
+              </span>
+              <span className="caption" style={{ fontSize: 12 }}>
+                {saveIdea.reason === 'under-pace'
+                  ? `${formatMinor(saveIdea.amountMinor, currency)} of today's allowance is still free`
+                  : `${formatMinor(saveIdea.amountMinor, currency)} a day is all it takes`}
+                {saveIdea.daysToGoal !== null &&
+                  ` · ${saveGoal.name} full in ~${
+                    saveIdea.daysToGoal > 60 ? `${Math.round(saveIdea.daysToGoal / 30)} months` : `${saveIdea.daysToGoal} days`
+                  }`}
+              </span>
             </span>
-          </span>
-          <button
-            className="btn"
-            style={{ padding: '8px 13px', fontSize: 13, flexShrink: 0 }}
-            onClick={() => void tuckAway()}
-          >
+            <button
+              className="faint"
+              aria-label="Not today"
+              style={{ flexShrink: 0 }}
+              onClick={() => {
+                localStorage.setItem('taily.save.hidden', today)
+                setSaveHidden(true)
+              }}
+            >
+              <Icon name="x" size={14} strokeWidth={2} />
+            </button>
+          </div>
+          <button className="btn" style={{ padding: '11px 16px', fontSize: 14 }} onClick={() => void tuckAway()}>
             Save {formatMinor(saveIdea.amountMinor, currency)}
-          </button>
-          <button
-            className="faint"
-            aria-label="Not today"
-            onClick={() => {
-              localStorage.setItem('taily.save.hidden', today)
-              setSaveHidden(true)
-            }}
-          >
-            <Icon name="x" size={14} strokeWidth={2} />
           </button>
         </div>
       )}

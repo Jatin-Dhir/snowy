@@ -1,6 +1,6 @@
 // In-app updater: checks the GitHub Releases feed for a newer APK.
 // The API allows anonymous, CORS-enabled reads — no keys involved.
-export const APP_VERSION = '2.2.0'
+export const APP_VERSION = '2.3.0'
 const RELEASES_API = 'https://api.github.com/repos/Jatin-Dhir/snowy/releases/latest'
 
 export interface UpdateInfo {
@@ -26,7 +26,10 @@ function isNewer(a: string, b: string): boolean {
 
 export async function checkForUpdate(): Promise<UpdateCheck> {
   try {
-    const res = await fetch(RELEASES_API, { headers: { Accept: 'application/vnd.github+json' } })
+    const res = await fetch(RELEASES_API, {
+      headers: { Accept: 'application/vnd.github+json' },
+      signal: AbortSignal.timeout(6000)
+    })
     if (res.status === 404) return { status: 'unavailable' }
     if (!res.ok) return { status: 'error' }
     const data = (await res.json()) as {
@@ -45,13 +48,4 @@ export async function checkForUpdate(): Promise<UpdateCheck> {
   } catch {
     return { status: 'error' }
   }
-}
-
-/** Quiet daily check on launch; resolves with an update only when one exists. */
-export async function autoCheckForUpdate(): Promise<UpdateInfo | null> {
-  const last = parseInt(localStorage.getItem('tally.update.lastCheck') ?? '0', 10)
-  if (Date.now() - last < 20 * 3600 * 1000) return null
-  localStorage.setItem('tally.update.lastCheck', String(Date.now()))
-  const result = await checkForUpdate()
-  return result.status === 'update' ? result.info : null
 }

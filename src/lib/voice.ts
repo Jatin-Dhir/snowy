@@ -31,31 +31,56 @@ export async function listenOnce(onPartial: (text: string) => void): Promise<Voi
       const perm = await SpeechRecognition.requestPermissions()
       if (perm.speechRecognition !== 'granted') return { ok: false, reason: 'denied' }
 
+      // with partialResults:true the plugin's own docs say start() "responds
+      // directly without result" — it resolves the instant listening begins,
+      // before any speech happens. The real transcript only ever arrives via
+      // the partialResults event, and the mic keeps listening until stop() is
+      // called or the recognizer times out on its own (listeningState event).
       let last = ''
-      const sub = await SpeechRecognition.addListener('partialResults', (data: { matches?: string[] }) => {
+      const partialSub = await SpeechRecognition.addListener('partialResults', (data: { matches?: string[] }) => {
         const t = data.matches?.[0]
         if (t) {
           last = t
           onPartial(t)
         }
       })
+
+      // assign the cancel hook synchronously — a tap on Cancel can land before
+      // the listeningState subscription round-trips to native, and a stale
+      // (or missing) stopper would leave the mic listening in the background
       stopper = () => {
         void SpeechRecognition.stop().catch(() => undefined)
       }
-      try {
-        const res = await SpeechRecognition.start({
-          language: 'en-IN',
-          maxResults: 3,
-          partialResults: true,
-          popup: false
+
+      const outcome = await new Promise<VoiceOutcome>((resolve) => {
+        let settled = false
+        let timeoutId: number
+        const finish = (o: VoiceOutcome) => {
+          if (settled) return
+          settled = true
+          window.clearTimeout(timeoutId)
+          resolve(o)
+        }
+        void SpeechRecognition.addListener('listeningState', (data: { status: string }) => {
+          if (data.status === 'stopped') finish(last ? { ok: true, text: last } : { ok: false, reason: 'nothing' })
         })
-        const text = res?.matches?.[0] ?? last
-        return text ? { ok: true, text } : { ok: false, reason: 'nothing' }
-      } finally {
-        stopper = null
-        void sub.remove()
-      }
+        // safety net: some devices/OEMs don't reliably emit listeningState —
+        // force a stop so the recognizer doesn't linger if we're giving up on it
+        timeoutId = window.setTimeout(() => {
+          void SpeechRecognition.stop().catch(() => undefined)
+          finish(last ? { ok: true, text: last } : { ok: false, reason: 'nothing' })
+        }, 12000)
+        void SpeechRecognition.start({ language: 'en-IN', maxResults: 3, partialResults: true, popup: false }).catch(() =>
+          finish({ ok: false, reason: 'error' })
+        )
+      })
+
+      stopper = null
+      void partialSub.remove()
+      void SpeechRecognition.removeAllListeners()
+      return outcome
     } catch {
+      stopper = null
       return { ok: false, reason: 'error' }
     }
   }

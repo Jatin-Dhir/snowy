@@ -4,13 +4,14 @@ import { db, DEFAULT_SETTINGS, type Settings, type Txn } from './db/db'
 import { ensureSeeded } from './db/seed'
 import { runDueRules } from './db/recurring'
 import { formatMinor } from './lib/money'
-import { autoCheckForUpdate } from './lib/updater'
+import { checkForUpdate, type UpdateInfo } from './lib/updater'
 import { applyCustomAccent, clearCustomAccent } from './lib/theme'
 import { LockScreen } from './components/LockScreen'
 import { TabBar, type Tab } from './components/TabBar'
 import { Toast } from './components/Toast'
 import { AddSheet } from './components/AddSheet'
 import { VoiceOverlay } from './components/VoiceOverlay'
+import { UpdateGate } from './components/UpdateGate'
 import { Home } from './screens/Home'
 import { Activity } from './screens/Activity'
 import { Budgets } from './screens/Budgets'
@@ -40,6 +41,10 @@ export default function App() {
   // never throw the user back to the lock screen
   const [locked, setLocked] = useState(false)
   const [pendingAdd, setPendingAdd] = useState(false)
+  // a confirmed newer release — blocks entry until installed. Only ever set
+  // from a positive 'update' result, never from a network error or timeout,
+  // so being offline never locks anyone out of their own data.
+  const [forceUpdate, setForceUpdate] = useState<UpdateInfo | null>(null)
 
   const settingsRow = useLiveQuery(() => db.kv.get('settings'), [])
   const settings: Settings = { ...DEFAULT_SETTINGS, ...((settingsRow?.value as Partial<Settings>) ?? {}) }
@@ -47,21 +52,27 @@ export default function App() {
 
   useEffect(() => {
     void (async () => {
-      await ensureSeeded()
-      const row = await db.kv.get('settings')
-      const s: Settings = { ...DEFAULT_SETTINGS, ...((row?.value as Partial<Settings>) ?? {}) }
-      if (s.initialized && s.pinHash) setLocked(true)
-      if (s.initialized) {
-        const logged = await runDueRules(s.currency)
-        if (logged.length === 1) {
-          showToast(`Logged ${logged[0].name} — ${formatMinor(logged[0].amountMinor, s.currency)} (recurring)`)
-        } else if (logged.length > 1) {
-          showToast(`Logged ${logged.length} recurring expenses`)
-        }
-      }
+      // local setup and the update check run together so a slow network
+      // doesn't add its full latency on top of an already-fast local boot
+      const [, updateCheck] = await Promise.all([
+        (async () => {
+          await ensureSeeded()
+          const row = await db.kv.get('settings')
+          const s: Settings = { ...DEFAULT_SETTINGS, ...((row?.value as Partial<Settings>) ?? {}) }
+          if (s.initialized && s.pinHash) setLocked(true)
+          if (s.initialized) {
+            const logged = await runDueRules(s.currency)
+            if (logged.length === 1) {
+              showToast(`Logged ${logged[0].name} — ${formatMinor(logged[0].amountMinor, s.currency)} (recurring)`)
+            } else if (logged.length > 1) {
+              showToast(`Logged ${logged.length} recurring expenses`)
+            }
+          }
+        })(),
+        checkForUpdate()
+      ])
+      if (updateCheck.status === 'update') setForceUpdate(updateCheck.info)
       setReady(true)
-      const update = await autoCheckForUpdate()
-      if (update) showToast(`Taily v${update.version} is out — grab it in Settings`)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -122,6 +133,10 @@ export default function App() {
   }, [pendingAdd, ready, locked, settings.initialized])
 
   if (!settingsLoaded || !ready) return null
+
+  if (forceUpdate) {
+    return <UpdateGate info={forceUpdate} onRecheck={setForceUpdate} />
+  }
 
   if (locked && settings.pinHash) {
     return <LockScreen pinHash={settings.pinHash} onUnlock={() => setLocked(false)} />
