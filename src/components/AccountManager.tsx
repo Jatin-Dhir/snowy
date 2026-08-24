@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
-import { addAccount, renameAccount, setAccountArchived } from '../db/accounts'
+import { addAccount, renameAccount, setAccountArchived, setAccountBalance } from '../db/accounts'
 import { allLiveTxns } from '../db/repo'
 import { balanceByAccount } from '../db/stats'
 import { formatMinor } from '../lib/money'
@@ -15,10 +15,21 @@ export function AccountManager({ open, currency, onClose }: { open: boolean; cur
   const [newName, setNewName] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
+  const [editingBalance, setEditingBalance] = useState<string | null>(null)
+  const [editBalanceValue, setEditBalanceValue] = useState('')
+
+  // scrim taps bypass the header X, so clear any half-finished edit whenever
+  // the sheet is dismissed — reopening should never land mid-edit
+  useEffect(() => {
+    if (open) return
+    setNewName('')
+    setEditing(null)
+    setEditingBalance(null)
+  }, [open])
 
   const accounts = useLiveQuery(() => db.accounts.orderBy('sort').toArray(), []) ?? []
   const allTxns = useLiveQuery(() => allLiveTxns(), []) ?? []
-  const balances = balanceByAccount(allTxns)
+  const balances = balanceByAccount(allTxns, accounts)
   const active = accounts.filter((a) => !a.archived)
   const archived = accounts.filter((a) => a.archived)
 
@@ -38,6 +49,20 @@ export function AccountManager({ open, currency, onClose }: { open: boolean; cur
     setEditing(null)
   }
 
+  function startEditBalance(id: string, currentMinor: number) {
+    setEditingBalance(id)
+    setEditBalanceValue((currentMinor / 100).toFixed(2).replace(/\.00$/, ''))
+  }
+
+  async function saveBalance(id: string, currentMinor: number) {
+    const target = Math.round(parseFloat(editBalanceValue || '0') * 100)
+    if (isFinite(target)) {
+      await setAccountBalance(id, target, currentMinor)
+      haptic('success')
+    }
+    setEditingBalance(null)
+  }
+
   return (
     <Sheet open={open} onClose={onClose} label="Accounts" style={{ gap: 10 }}>
       <div className="row-between">
@@ -47,7 +72,8 @@ export function AccountManager({ open, currency, onClose }: { open: boolean; cur
         </button>
       </div>
       <span className="caption" style={{ fontSize: 12.5 }}>
-        Wherever money moves from — banks, wallets, cash, cards. Add as many as you live with.
+        Wherever money moves from — banks, wallets, cash, cards. Add as many as you live with. Tap a
+        balance to set it directly.
       </span>
 
       <div style={{ display: 'flex', gap: 8 }}>
@@ -66,65 +92,99 @@ export function AccountManager({ open, currency, onClose }: { open: boolean; cur
         </button>
       </div>
 
-      {active.map((a) => (
-        <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
-          <span className="txn-icon" style={{ background: 'var(--pos-soft)', color: 'var(--accent)', width: 34, height: 34 }}>
-            <Icon name="wallet" size={16} />
-          </span>
-          {editing === a.id ? (
-            <>
-              <input
-                className="field"
-                value={editName}
-                maxLength={30}
-                style={{ flex: 1, padding: '8px 12px' }}
-                onChange={(e) => setEditName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') void saveRename(a.id)
-                }}
-              />
-              <button className="icon-btn" style={{ color: 'var(--pos)' }} onClick={() => void saveRename(a.id)} aria-label="Save name">
-                <Icon name="check" size={15} strokeWidth={2.4} />
-              </button>
-            </>
-          ) : (
-            <>
-              <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: 14.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {a.name}
+      {active.map((a) => {
+        const bal = balances.get(a.id) ?? 0
+        return (
+          <div key={a.id} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '6px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="txn-icon" style={{ background: 'var(--pos-soft)', color: 'var(--accent)', width: 34, height: 34 }}>
+                <Icon name="wallet" size={16} />
               </span>
-              <span
-                className="mono"
-                style={{ fontWeight: 700, fontSize: 13.5, color: (balances.get(a.id) ?? 0) < 0 ? 'var(--red)' : 'var(--muted)' }}
-              >
-                {formatMinor(balances.get(a.id) ?? 0, currency)}
-              </span>
-              <button
-                className="icon-btn"
-                onClick={() => {
-                  setEditing(a.id)
-                  setEditName(a.name)
-                }}
-                aria-label={`Rename ${a.name}`}
-              >
-                <Icon name="pencil" size={14} />
-              </button>
-              {active.length > 1 && (
+              {editing === a.id ? (
+                <>
+                  <input
+                    className="field"
+                    value={editName}
+                    maxLength={30}
+                    style={{ flex: 1, padding: '8px 12px' }}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') void saveRename(a.id)
+                    }}
+                  />
+                  <button className="icon-btn" style={{ color: 'var(--pos)' }} onClick={() => void saveRename(a.id)} aria-label="Save name">
+                    <Icon name="check" size={15} strokeWidth={2.4} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: 14.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {a.name}
+                  </span>
+                  <button
+                    className="icon-btn"
+                    onClick={() => {
+                      setEditing(a.id)
+                      setEditName(a.name)
+                    }}
+                    aria-label={`Rename ${a.name}`}
+                  >
+                    <Icon name="pencil" size={14} />
+                  </button>
+                  {active.length > 1 && (
+                    <button
+                      className="icon-btn"
+                      style={{ color: 'var(--red)' }}
+                      onClick={() => {
+                        void setAccountArchived(a.id, true)
+                        showToast(`${a.name} hidden — its history stays`)
+                      }}
+                      aria-label={`Hide ${a.name}`}
+                    >
+                      <Icon name="x" size={14} strokeWidth={2.2} />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+
+            {editingBalance === a.id ? (
+              <div style={{ display: 'flex', gap: 8, paddingLeft: 44 }}>
+                <input
+                  className="field mono"
+                  type="number"
+                  inputMode="decimal"
+                  autoFocus
+                  value={editBalanceValue}
+                  onChange={(e) => setEditBalanceValue(e.target.value)}
+                  style={{ flex: 1, padding: '8px 12px' }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void saveBalance(a.id, bal)
+                  }}
+                />
                 <button
                   className="icon-btn"
-                  style={{ color: 'var(--red)' }}
-                  onClick={() => {
-                    void setAccountArchived(a.id, true)
-                    showToast(`${a.name} hidden — its history stays`)
-                  }}
-                  aria-label={`Hide ${a.name}`}
+                  style={{ color: 'var(--pos)' }}
+                  onClick={() => void saveBalance(a.id, bal)}
+                  aria-label={`Save balance for ${a.name}`}
                 >
-                  <Icon name="x" size={14} strokeWidth={2.2} />
+                  <Icon name="check" size={15} strokeWidth={2.4} />
                 </button>
-              )}
-            </>
-          )}
-        </div>
-      ))}
+              </div>
+            ) : (
+              <button
+                style={{ alignSelf: 'flex-end', paddingRight: 2 }}
+                onClick={() => startEditBalance(a.id, bal)}
+                aria-label={`Set balance for ${a.name}`}
+              >
+                <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: bal < 0 ? 'var(--red)' : 'var(--muted)' }}>
+                  {formatMinor(bal, currency)}
+                </span>
+              </button>
+            )}
+          </div>
+        )
+      })}
 
       {archived.length > 0 && (
         <>

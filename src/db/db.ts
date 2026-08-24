@@ -28,6 +28,8 @@ export interface Account {
   name: string
   sort: number
   archived?: 0 | 1
+  /** manual correction so balance can start from what you actually have, not just what's been logged since */
+  openingBalanceMinor?: number
 }
 
 export interface Category {

@@ -1,4 +1,4 @@
-import type { Txn } from './db'
+import type { Account, Txn } from './db'
 import { daysInMonth, todayISO, weekDaysOf } from '../lib/dates'
 
 export function isOut(t: Txn): boolean {
@@ -16,19 +16,22 @@ export function isRealSpend(t: Txn): boolean {
   return isOut(t) && t.categoryId !== 'savings'
 }
 
-/** Net money in your hands right now — every account, income minus all outflow. Savings hasn't left you, so it still counts here. */
-export function totalBalance(txns: Txn[]): number {
-  return txns.reduce((acc, t) => acc + (isOut(t) ? -t.amountMinor : t.amountMinor), 0)
-}
-
-/** Same, split by account — what's actually in each wallet. */
-export function balanceByAccount(txns: Txn[]): Map<string, number> {
+/** Same, split by account — what's actually in each wallet, including any manual starting balance. */
+export function balanceByAccount(txns: Txn[], accounts: Account[]): Map<string, number> {
   const m = new Map<string, number>()
+  for (const a of accounts) m.set(a.id, a.openingBalanceMinor ?? 0)
   for (const t of txns) {
     const delta = isOut(t) ? -t.amountMinor : t.amountMinor
     m.set(t.accountId, (m.get(t.accountId) ?? 0) + delta)
   }
   return m
+}
+
+/** Net money in your hands right now — every account, income minus all outflow. Savings hasn't left you, so it still counts here. */
+export function totalBalance(txns: Txn[], accounts: Account[]): number {
+  let total = 0
+  for (const v of balanceByAccount(txns, accounts).values()) total += v
+  return total
 }
 
 /** Total money OUT — income never counts as spending. */

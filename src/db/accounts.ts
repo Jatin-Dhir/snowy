@@ -23,3 +23,16 @@ export async function renameAccount(id: string, name: string): Promise<void> {
 export async function setAccountArchived(id: string, archived: boolean): Promise<void> {
   await db.accounts.update(id, { archived: archived ? 1 : 0 })
 }
+
+/**
+ * Set an account's balance to a specific figure — for the money that was
+ * already there before you started logging. Nudges the opening balance by
+ * the gap between what's shown now and what you typed, so it always lands
+ * exactly on the number you entered regardless of transaction history.
+ */
+export async function setAccountBalance(id: string, targetMinor: number, currentComputedMinor: number): Promise<void> {
+  const a = await db.accounts.get(id)
+  if (!a) return
+  const delta = targetMinor - currentComputedMinor
+  await db.accounts.update(id, { openingBalanceMinor: (a.openingBalanceMinor ?? 0) + delta })
+}

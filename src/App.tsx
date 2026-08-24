@@ -6,6 +6,7 @@ import { runDueRules } from './db/recurring'
 import { formatMinor } from './lib/money'
 import { checkForUpdate, type UpdateInfo } from './lib/updater'
 import { applyCustomAccent, clearCustomAccent } from './lib/theme'
+import { syncStatusBar } from './lib/statusbar'
 import { LockScreen } from './components/LockScreen'
 import { TabBar, type Tab } from './components/TabBar'
 import { Toast } from './components/Toast'
@@ -90,6 +91,7 @@ export default function App() {
       else if (settings.accent in PRESET_HUES) applyCustomAccent(PRESET_HUES[settings.accent], resolved === 'dark')
       else clearCustomAccent()
       localStorage.setItem('tally.fx', JSON.stringify({ haptics: settings.haptics, sounds: settings.sounds }))
+      void syncStatusBar(resolved === 'dark')
       const meta = document.querySelector('meta[name="theme-color"]')
       if (meta) {
         requestAnimationFrame(() => {

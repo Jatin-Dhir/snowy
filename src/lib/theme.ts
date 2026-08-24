@@ -11,10 +11,15 @@ export function applyCustomAccent(hue: number, dark: boolean): void {
     s.setProperty('--pos', `hsl(${hue} 62% 74%)`)
     s.setProperty('--pos-soft', `hsl(${hue} 38% 17%)`)
   } else {
-    s.setProperty('--accent', `hsl(${hue} 58% 62%)`)
-    s.setProperty('--on-accent', `hsl(${hue} 55% 15%)`)
-    s.setProperty('--pos', `hsl(${hue} 52% 50%)`)
-    s.setProperty('--pos-soft', `hsl(${hue} 62% 91%)`)
+    // light mode's own pale background (~94% lightness) makes a merely
+    // "medium" accent read as dark and muddy by contrast, even though the
+    // same numbers look fine in isolation — lift lightness and trim
+    // saturation so it reads as genuinely pastel against that background,
+    // the way the dark-mode accent already pops softly against its own
+    s.setProperty('--accent', `hsl(${hue} 60% 73%)`)
+    s.setProperty('--on-accent', `hsl(${hue} 40% 22%)`)
+    s.setProperty('--pos', `hsl(${hue} 56% 56%)`)
+    s.setProperty('--pos-soft', `hsl(${hue} 58% 93%)`)
   }
   s.setProperty('--fab-glow', `0 10px 24px hsl(${hue} 60% 55% / 0.35)`)
 }

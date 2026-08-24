@@ -12,7 +12,6 @@ import {
   restoreTxn
 } from '../db/repo'
 import { addToGoal } from '../db/goals'
-import { learnFrequents } from '../db/suggest'
 import { safeToSpend, saveSuggestion, weekBars, sum, onDay, byCategory, totalBalance, balanceByAccount } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
@@ -59,8 +58,8 @@ export function Home({
   const allTxns = useLiveQuery(() => allLiveTxns(), []) ?? []
   const [loansOpen, setLoansOpen] = useState(false)
   const [balanceOpen, setBalanceOpen] = useState(false)
-  const balance = useMemo(() => totalBalance(allTxns), [allTxns])
-  const byAccountBalance = useMemo(() => balanceByAccount(allTxns), [allTxns])
+  const balance = useMemo(() => totalBalance(allTxns, accounts), [allTxns, accounts])
+  const byAccountBalance = useMemo(() => balanceByAccount(allTxns, accounts), [allTxns, accounts])
   const [saveHidden, setSaveHidden] = useState(() => localStorage.getItem('taily.save.hidden') === todayISO())
 
   const sts = useMemo(
@@ -72,7 +71,6 @@ export function Home({
   const monthSpent = useMemo(() => sum(monthTxns), [monthTxns])
   const maxBar = Math.max(...bars.map((b) => b.total), 1)
   const todayTxns = useMemo(() => onDay(monthTxns, today), [monthTxns, today])
-  const frequents = useMemo(() => learnFrequents(recent, categories), [recent, categories])
   // savings nudge: goals are the "saving is set up" signal; pick the one closest to done
   const saveGoal = useMemo(() => {
     const open = goals.filter((g) => g.savedMinor < g.targetMinor)
@@ -222,20 +220,6 @@ export function Home({
   const dateLabel = fromISO(today)
     .toLocaleString('en-IN', { weekday: 'long', month: 'short', day: 'numeric' })
     .replace(',', ' ·')
-
-  async function quickAdd(f: (typeof frequents)[number]) {
-    const txn = await addTxn({
-      amountMinor: f.amountMinor,
-      currency,
-      categoryId: f.categoryId,
-      accountId: f.accountId,
-      note: f.label === categories.find((c) => c.id === f.categoryId)?.name ? '' : f.label
-    })
-    haptic('success')
-    showToast(`Saved ${formatMinor(f.amountMinor, currency)} · ${f.label}`, () => {
-      void removeTxnPermanently(txn.id)
-    })
-  }
 
   return (
     <div className="screen">
@@ -455,35 +439,6 @@ export function Home({
           ))}
         </div>
       </div>
-
-      {frequents.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <span className="label">Frequent · one tap logs it</span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {frequents.map((f) => {
-              const cat = categories.find((c) => c.id === f.categoryId)
-              return (
-                <button
-                  key={f.key}
-                  className="card"
-                  style={{ flex: 1, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 3, textAlign: 'left', borderRadius: 14 }}
-                  onClick={() => void quickAdd(f)}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                    <span className="dot" style={{ width: 7, height: 7, borderRadius: 4, background: cat?.color ?? '#7A8794', flexShrink: 0 }} />
-                    <span style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {f.label}
-                    </span>
-                  </span>
-                  <span className="mono muted" style={{ fontWeight: 600, fontSize: 13 }}>
-                    {formatMinor(f.amountMinor, currency)}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {selecting ? (
