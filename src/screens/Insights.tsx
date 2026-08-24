@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { txnsBetween } from '../db/repo'
-import { byCategory, incomeSum, isOut, projectMonth, sum } from '../db/stats'
+import { byCategory, incomeSum, isRealSpend, projectMonth, sum } from '../db/stats'
 import { currencySymbol, formatMinor } from '../lib/money'
 import { adviceFor, smartNotes } from '../lib/smart'
 import { LoansSheet } from '../components/LoansSheet'
@@ -99,7 +99,9 @@ export function Insights({ currency }: { currency: string }) {
 
   // the monthly report: real numbers first, advice second
   const report = useMemo(() => {
-    const outs = monthTxns.filter(isOut)
+    // "heaviest day" / "per day" / "no-spend days" describe purchase habits —
+    // a savings tuck-away shouldn't make a day look artificially heavy
+    const outs = monthTxns.filter(isRealSpend)
     const daysElapsed = isCurrent ? Math.max(1, parseInt(today.slice(8, 10), 10)) : daysInMonth(monthKey)
     const byDay = new Map<string, number>()
     for (const t of outs) byDay.set(t.dateISO, (byDay.get(t.dateISO) ?? 0) + t.amountMinor)

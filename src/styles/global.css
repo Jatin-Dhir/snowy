@@ -453,6 +453,12 @@ button.pill:active {
   margin: -26px 6px 0;
   box-shadow: var(--raise), var(--fab-glow);
   transition: transform 340ms var(--ease-spring), box-shadow 340ms var(--ease-soft);
+  /* holding this button triggers voice capture — without these, Android's
+     native long-press text-selection/callout can hijack the gesture around
+     the same ~500ms mark and cancel the pointer sequence before it fires */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .fab:active {

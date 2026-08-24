@@ -565,7 +565,7 @@ export function SettingsSheet({
           Taily v{APP_VERSION} · built by Jatin Dhir
         </span>
 
-        <AccountManager open={accountsOpen} onClose={() => setAccountsOpen(false)} />
+        <AccountManager open={accountsOpen} currency={settings.currency} onClose={() => setAccountsOpen(false)} />
         <ProfilesSheet open={profilesOpen} onClose={() => setProfilesOpen(false)} />
 
         {importPlan && (

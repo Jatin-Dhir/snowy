@@ -28,7 +28,10 @@ export function TabBar({
   const holdTimer = useRef<number | null>(null)
   const holdFired = useRef(false)
 
-  function holdStart() {
+  function holdStart(e: React.PointerEvent) {
+    // stop Android's native long-press text-selection/callout from grabbing
+    // this gesture out from under the hold-to-speak timer
+    e.preventDefault()
     holdFired.current = false
     holdTimer.current = window.setTimeout(() => {
       holdFired.current = true

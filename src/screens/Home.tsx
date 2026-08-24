@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
-import { txnsForMonth, txnsBetween, recentTxns, addTxn, removeTxnPermanently, softDeleteTxn, restoreTxn } from '../db/repo'
+import {
+  txnsForMonth,
+  txnsBetween,
+  recentTxns,
+  allLiveTxns,
+  addTxn,
+  removeTxnPermanently,
+  softDeleteTxn,
+  restoreTxn
+} from '../db/repo'
 import { addToGoal } from '../db/goals'
 import { learnFrequents } from '../db/suggest'
-import { safeToSpend, saveSuggestion, weekBars, sum, onDay, byCategory } from '../db/stats'
+import { safeToSpend, saveSuggestion, weekBars, sum, onDay, byCategory, totalBalance, balanceByAccount } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
 import { weeklyAnomalies } from '../lib/smart'
@@ -47,7 +56,11 @@ export function Home({
   const loans = useLiveQuery(() => db.loans.toArray(), []) ?? []
   const goals = useLiveQuery(() => db.goals.toArray(), []) ?? []
   const accounts = useLiveQuery(() => db.accounts.toArray(), []) ?? []
+  const allTxns = useLiveQuery(() => allLiveTxns(), []) ?? []
   const [loansOpen, setLoansOpen] = useState(false)
+  const [balanceOpen, setBalanceOpen] = useState(false)
+  const balance = useMemo(() => totalBalance(allTxns), [allTxns])
+  const byAccountBalance = useMemo(() => balanceByAccount(allTxns), [allTxns])
   const [saveHidden, setSaveHidden] = useState(() => localStorage.getItem('taily.save.hidden') === todayISO())
 
   const sts = useMemo(
@@ -294,6 +307,25 @@ export function Home({
         </div>
       </div>
 
+      <button
+        className="card"
+        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 14, textAlign: 'left' }}
+        onClick={() => setBalanceOpen(true)}
+      >
+        <span className="txn-icon" style={{ background: 'var(--pos-soft)', color: 'var(--accent)', width: 36, height: 36 }}>
+          <Icon name="wallet" size={18} />
+        </span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: 'block', fontWeight: 700, fontSize: 14 }}>Balance</span>
+          <span className="caption" style={{ fontSize: 12 }}>
+            Everything you've received, minus everything spent or saved
+          </span>
+        </span>
+        <span className="mono" style={{ fontWeight: 700, fontSize: 16, color: balance < 0 ? 'var(--red)' : 'var(--ink)' }}>
+          {formatMinor(balance, currency)}
+        </span>
+      </button>
+
       {visibleAlerts.map((a) => (
         <div
           key={a.key}
@@ -521,6 +553,45 @@ export function Home({
       )}
 
       <LoansSheet open={loansOpen} currency={currency} onClose={() => setLoansOpen(false)} />
+
+      {balanceOpen && (
+        <Sheet open onClose={() => setBalanceOpen(false)} label="Balance" style={{ gap: 10 }}>
+          <div className="row-between">
+            <span className="label" style={{ letterSpacing: '0.14em' }}>Balance</span>
+            <button className="icon-btn" onClick={() => setBalanceOpen(false)} aria-label="Close">
+              <Icon name="x" size={14} strokeWidth={2.2} />
+            </button>
+          </div>
+          <div className="well" style={{ alignItems: 'center' }}>
+            <span className="label" style={{ fontSize: 9.5 }}>Total, across every account</span>
+            <span className="well-num" style={{ color: balance < 0 ? 'var(--red)' : undefined }}>
+              {formatMinor(balance, currency)}
+            </span>
+          </div>
+          <span className="label" style={{ fontSize: 10, paddingTop: 4 }}>By account</span>
+          {accounts
+            .filter((a) => !a.archived)
+            .map((a) => {
+              const acctBalance = byAccountBalance.get(a.id) ?? 0
+              return (
+                <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
+                  <span className="txn-icon" style={{ background: 'var(--sunken)', color: 'var(--muted)', width: 32, height: 32 }}>
+                    <Icon name="wallet" size={15} />
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {a.name}
+                  </span>
+                  <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: acctBalance < 0 ? 'var(--red)' : 'var(--ink)' }}>
+                    {formatMinor(acctBalance, currency)}
+                  </span>
+                </div>
+              )
+            })}
+          <span className="caption" style={{ fontSize: 11.5, paddingTop: 4 }}>
+            Received money adds here; every expense, including savings tucked away, comes off it.
+          </span>
+        </Sheet>
+      )}
 
       {dayOpen && (
         <Sheet open onClose={() => setDayOpen(null)} label="Day detail" style={{ gap: 8 }}>

@@ -2,18 +2,23 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { addAccount, renameAccount, setAccountArchived } from '../db/accounts'
+import { allLiveTxns } from '../db/repo'
+import { balanceByAccount } from '../db/stats'
+import { formatMinor } from '../lib/money'
 import { Icon } from './Icon'
 import { Sheet } from './Sheet'
 import { haptic, useUi } from '../state/ui'
 
 /** Name every place money lives — banks, wallets, cash, other people's cards. */
-export function AccountManager({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AccountManager({ open, currency, onClose }: { open: boolean; currency: string; onClose: () => void }) {
   const { showToast } = useUi()
   const [newName, setNewName] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
 
   const accounts = useLiveQuery(() => db.accounts.orderBy('sort').toArray(), []) ?? []
+  const allTxns = useLiveQuery(() => allLiveTxns(), []) ?? []
+  const balances = balanceByAccount(allTxns)
   const active = accounts.filter((a) => !a.archived)
   const archived = accounts.filter((a) => a.archived)
 
@@ -86,6 +91,12 @@ export function AccountManager({ open, onClose }: { open: boolean; onClose: () =
             <>
               <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: 14.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {a.name}
+              </span>
+              <span
+                className="mono"
+                style={{ fontWeight: 700, fontSize: 13.5, color: (balances.get(a.id) ?? 0) < 0 ? 'var(--red)' : 'var(--muted)' }}
+              >
+                {formatMinor(balances.get(a.id) ?? 0, currency)}
               </span>
               <button
                 className="icon-btn"

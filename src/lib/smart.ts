@@ -1,7 +1,7 @@
 // On-device intelligence: note-memory categorization, anomaly detection,
 // and generated insight notes. Deterministic, instant, fully offline.
 import type { Category, Txn } from '../db/db'
-import { isOut, sum } from '../db/stats'
+import { isOut, isRealSpend, sum } from '../db/stats'
 import { addDaysISO, daysInMonth, fromISO, todayISO, weekDaysOf } from './dates'
 import { formatMinor } from './money'
 
@@ -65,7 +65,7 @@ export function weeklyAnomalies(txns: Txn[], categories: Category[], today = tod
   const out: Anomaly[] = []
 
   for (const cat of categories) {
-    if (cat.archived) continue
+    if (cat.archived || cat.id === 'savings') continue
     const catTx = txns.filter((t) => isOut(t) && t.categoryId === cat.id)
     const thisWeek = sum(catTx.filter((t) => t.dateISO >= weekStart && t.dateISO <= today))
     if (thisWeek < 50000) continue // ignore small numbers (< ₹500)
@@ -101,18 +101,23 @@ export interface AdviceInput {
 /** Personalised, rule-based "how to improve" tips — all computed on-device. */
 export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonthly, currency }: AdviceInput): string[] {
   const outs = monthTxns.filter(isOut)
-  const spent = sum(outs)
+  const spent = sum(outs) // includes savings — what the budget/pace actually tracks
   if (spent <= 0) return ['Log a few expenses first — the more Taily sees, the sharper the advice gets.']
   const tips: string[] = []
 
+  // everything below is about purchase habits, not money moved to savings —
+  // a big tuck-away shouldn't win "top category" or read as a spending leak
+  const realOuts = outs.filter(isRealSpend)
+  const realSpend = sum(realOuts)
+
   const totals = new Map<string, number>()
-  for (const t of outs) {
+  for (const t of realOuts) {
     if (t.categoryId) totals.set(t.categoryId, (totals.get(t.categoryId) ?? 0) + t.amountMinor)
   }
   const top = [...totals.entries()].sort((a, b) => b[1] - a[1])[0]
-  if (top) {
+  if (top && realSpend > 0) {
     const cat = categories.find((c) => c.id === top[0])
-    const share = Math.round((top[1] / spent) * 100)
+    const share = Math.round((top[1] / realSpend) * 100)
     if (cat && share >= 35) {
       const hasBudget = budgets.some((b) => b.id === cat.id)
       tips.push(
@@ -146,33 +151,33 @@ export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonth
     tips.push('No monthly budget set — one number in Budgets unlocks safe-to-spend and pace warnings.')
   }
 
-  const weekend = sum(outs.filter((t) => [0, 6].includes(fromISO(t.dateISO).getDay())))
-  const weekendPct = Math.round((weekend / spent) * 100)
+  const weekend = sum(realOuts.filter((t) => [0, 6].includes(fromISO(t.dateISO).getDay())))
+  const weekendPct = realSpend > 0 ? Math.round((weekend / realSpend) * 100) : 0
   if (weekendPct >= 45) {
     tips.push(`${weekendPct}% of spending happens on weekends. Deciding a weekend number on Friday beats regretting it on Monday.`)
   }
 
-  if (rulesMonthly > 0 && rulesMonthly / spent >= 0.15) {
+  if (rulesMonthly > 0 && realSpend > 0 && rulesMonthly / realSpend >= 0.15) {
     tips.push(
       `Subscriptions and fixed payments are ${formatMinor(rulesMonthly, currency)}/month — ${formatMinor(rulesMonthly * 12, currency)} a year. Cancel one you barely use and it compounds quietly.`
     )
   }
 
-  const small = outs.filter((t) => t.amountMinor <= 20000)
+  const small = realOuts.filter((t) => t.amountMinor <= 20000)
   if (small.length >= 12) {
     tips.push(
       `${small.length} small expenses under ${formatMinor(20000, currency)} added up to ${formatMinor(sum(small), currency)}. Little leaks sink the ship — pick one to skip daily.`
     )
   }
 
-  const untagged = outs.filter((t) => !t.categoryId).length
+  const untagged = realOuts.filter((t) => !t.categoryId).length
   if (untagged >= 3) {
     tips.push(`${untagged} expenses are untagged, which blurs every chart here. A quick pass in Activity fixes it.`)
   }
 
   const income = sum(monthTxns.filter((t) => !isOut(t)))
-  if (income > spent) {
-    const kept = Math.round(((income - spent) / income) * 100)
+  if (income > realSpend) {
+    const kept = Math.round(((income - realSpend) / income) * 100)
     tips.push(`You kept ${kept}% of what came in this month. Move it somewhere it can't be spent by accident.`)
   }
 
@@ -181,7 +186,7 @@ export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonth
 
 /** Short generated observations about a month of spending. */
 export function smartNotes(monthTxns: Txn[], categories: Category[], currency: string): string[] {
-  const outs = monthTxns.filter(isOut)
+  const outs = monthTxns.filter(isRealSpend)
   if (outs.length < 3) return []
   const notes: string[] = []
 

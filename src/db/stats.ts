@@ -5,6 +5,32 @@ export function isOut(t: Txn): boolean {
   return (t.kind ?? 'out') === 'out'
 }
 
+/**
+ * A genuine purchase — money out, minus transfers into savings. Savings
+ * still counts as "spent" for budgets and safe-to-spend (it did leave what
+ * you can spend today), but it isn't a purchase habit: it shouldn't win
+ * "biggest hit", crowd out the frequent one-tap tiles, or trip a spending-
+ * spike alert.
+ */
+export function isRealSpend(t: Txn): boolean {
+  return isOut(t) && t.categoryId !== 'savings'
+}
+
+/** Net money in your hands right now — every account, income minus all outflow. Savings hasn't left you, so it still counts here. */
+export function totalBalance(txns: Txn[]): number {
+  return txns.reduce((acc, t) => acc + (isOut(t) ? -t.amountMinor : t.amountMinor), 0)
+}
+
+/** Same, split by account — what's actually in each wallet. */
+export function balanceByAccount(txns: Txn[]): Map<string, number> {
+  const m = new Map<string, number>()
+  for (const t of txns) {
+    const delta = isOut(t) ? -t.amountMinor : t.amountMinor
+    m.set(t.accountId, (m.get(t.accountId) ?? 0) + delta)
+  }
+  return m
+}
+
 /** Total money OUT — income never counts as spending. */
 export function sum(txns: Txn[]): number {
   return txns.reduce((acc, t) => (isOut(t) ? acc + t.amountMinor : acc), 0)

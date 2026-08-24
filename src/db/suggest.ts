@@ -45,7 +45,7 @@ export function learnFrequents(txns: Txn[], categories: Category[], max = 3): Fr
   const catName = (id: string | null) => categories.find((c) => c.id === id)?.name ?? 'Expense'
 
   for (const t of txns) {
-    if (t.ts < cutoff || t.source !== 'manual') continue
+    if (t.ts < cutoff || t.source !== 'manual' || t.categoryId === 'savings') continue
     const key = `${t.categoryId ?? ''}|${t.note.trim().toLowerCase()}|${t.amountMinor}`
     const existing = groups.get(key)
     if (existing) {
