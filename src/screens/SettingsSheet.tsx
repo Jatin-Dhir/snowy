@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, saveSettings, type Settings } from '../db/db'
 import { allLiveTxns } from '../db/repo'
-import { txnsToCsv, downloadCsv, planCsvImport, type ImportPlan } from '../lib/csv'
+import { txnsToCsv, downloadCsv, parseCsv, planImportFromGrid, type ImportPlan } from '../lib/csv'
 import type { SharedFile } from '../lib/shareIntent'
 import { CURRENCIES, formatMinor } from '../lib/money'
 import { fetchRate, type RateInfo } from '../lib/rates'
@@ -89,6 +89,10 @@ export function SettingsSheet({
   const [importPlan, setImportPlan] = useState<ImportPlan | null>(null)
   const [importBusy, setImportBusy] = useState(false)
   const importFile = useRef<HTMLInputElement | null>(null)
+  // a PDF that needs a password before it can be read — holds the bytes so
+  // "Try again" can re-attempt extraction without re-picking/re-sharing
+  const [pdfPassword, setPdfPassword] = useState<{ bytes: Uint8Array; wrong: boolean } | null>(null)
+  const [pdfPasswordValue, setPdfPasswordValue] = useState('')
   const [convert, setConvert] = useState<{ code: string; state: 'loading' | 'error' | RateInfo } | null>(null)
   const [convertBusy, setConvertBusy] = useState(false)
   const hueBar = useRef<HTMLDivElement | null>(null)
@@ -108,6 +112,8 @@ export function SettingsSheet({
     setAccountsOpen(false)
     setProfilesOpen(false)
     setImportPlan(null)
+    setPdfPassword(null)
+    setPdfPasswordValue('')
     setConvert(null)
   }, [open])
 
@@ -159,13 +165,13 @@ export function SettingsSheet({
     showToast(`Exported ${txns.length} entries`)
   }
 
-  async function processImportText(text: string): Promise<void> {
+  async function applyGrid(grid: string[][]): Promise<void> {
     const [cats, accounts, allTxns] = await Promise.all([
       db.categories.toArray(),
       db.accounts.toArray(),
       db.txns.toArray()
     ])
-    const plan = planCsvImport(text, {
+    const plan = planImportFromGrid(grid, {
       categories: cats,
       accounts,
       existingIds: new Set(allTxns.map((t) => t.id)),
@@ -182,21 +188,48 @@ export function SettingsSheet({
     setImportPlan(plan)
   }
 
+  async function processImportText(text: string): Promise<void> {
+    await applyGrid(parseCsv(text))
+  }
+
+  async function processImportPdf(bytes: Uint8Array, password?: string): Promise<void> {
+    const { extractPdfGrid } = await import('../lib/pdfExtract')
+    const result = await extractPdfGrid(bytes, password)
+    if (!result.ok) {
+      if (result.reason === 'password') {
+        setPdfPassword({ bytes, wrong: false })
+      } else if (result.reason === 'wrong-password') {
+        setPdfPassword({ bytes, wrong: true })
+      } else if (result.reason === 'no-text') {
+        showToast("Couldn't find a transaction table in that PDF — is it a scanned image?")
+      } else {
+        showToast("Couldn't read that PDF")
+      }
+      return
+    }
+    setPdfPassword(null)
+    setPdfPasswordValue('')
+    await applyGrid(result.grid)
+  }
+
   async function readImportFile(file: File) {
     try {
-      await processImportText(await file.text())
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        await processImportPdf(new Uint8Array(await file.arrayBuffer()))
+      } else {
+        await processImportText(await file.text())
+      }
     } catch {
       showToast("Couldn't read that file")
     }
   }
 
-  // a CSV shared in from another app lands here already open (App.tsx opens
-  // Settings for us) — process it once, the same way a picked file would be
+  // a statement shared in from another app lands here already open (App.tsx
+  // opens Settings for us) — process it once, same as a picked file would be
   useEffect(() => {
     if (!pendingImport) return
-    void processImportText(pendingImport.text)
-      .catch(() => showToast("Couldn't read that file"))
-      .finally(() => onPendingImportHandled?.())
+    const task = pendingImport.kind === 'pdf' ? processImportPdf(pendingImport.bytes) : processImportText(pendingImport.text)
+    void task.catch(() => showToast("Couldn't read that file")).finally(() => onPendingImportHandled?.())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingImport])
 
@@ -558,8 +591,8 @@ export function SettingsSheet({
           <ActionRow
             icon="arrowUp"
             tint="#B0764A"
-            title="Import a CSV"
-            sub="Ours, a bank statement export — or Share a CSV here from any app"
+            title="Import a statement"
+            sub="CSV, Excel, or PDF — pick one here, or Share it in from any app"
             onClick={() => importFile.current?.click()}
           />
           <span className="caption" style={{ fontSize: 11.5 }}>
@@ -570,7 +603,7 @@ export function SettingsSheet({
         <input
           ref={importFile}
           type="file"
-          accept=".csv,text/csv,text/comma-separated-values"
+          accept=".csv,.pdf,text/csv,text/comma-separated-values,application/pdf"
           hidden
           onChange={(e) => {
             const f = e.target.files?.[0]
@@ -621,6 +654,40 @@ export function SettingsSheet({
             </button>
             <button className="btn ghost" disabled={importBusy} onClick={() => setImportPlan(null)}>
               Cancel
+            </button>
+          </Sheet>
+        )}
+
+        {pdfPassword && (
+          <Sheet open onClose={() => setPdfPassword(null)} label="PDF password" style={{ gap: 12 }}>
+            <div className="row-between">
+              <span className="label" style={{ letterSpacing: '0.14em' }}>This PDF is locked</span>
+              <button className="icon-btn" onClick={() => setPdfPassword(null)} aria-label="Close">
+                <Icon name="x" size={14} strokeWidth={2.2} />
+              </button>
+            </div>
+            <span className="caption" style={{ fontSize: 13 }}>
+              {pdfPassword.wrong
+                ? "That password didn't open it — try again. Banks usually use your PAN, date of birth, or account number."
+                : 'Banks usually protect statement PDFs with a password — often your PAN, date of birth, or account number.'}
+            </span>
+            <input
+              className="field"
+              type="password"
+              placeholder="Password"
+              autoFocus
+              value={pdfPasswordValue}
+              onChange={(e) => setPdfPasswordValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && pdfPasswordValue) void processImportPdf(pdfPassword.bytes, pdfPasswordValue)
+              }}
+            />
+            <button
+              className="btn"
+              disabled={!pdfPasswordValue || importBusy}
+              onClick={() => void processImportPdf(pdfPassword.bytes, pdfPasswordValue)}
+            >
+              Unlock and read it
             </button>
           </Sheet>
         )}

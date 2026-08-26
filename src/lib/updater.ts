@@ -1,6 +1,6 @@
 // In-app updater: checks the GitHub Releases feed for a newer APK.
 // The API allows anonymous, CORS-enabled reads — no keys involved.
-export const APP_VERSION = '2.6.0'
+export const APP_VERSION = '2.7.0'
 const RELEASES_API = 'https://api.github.com/repos/Jatin-Dhir/snowy/releases/latest'
 
 export interface UpdateInfo {

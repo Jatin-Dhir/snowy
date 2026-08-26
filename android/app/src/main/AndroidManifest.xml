@@ -29,12 +29,9 @@
                 <data android:scheme="taily" />
             </intent-filter>
 
-            <!-- Share a CSV/spreadsheet statement export in from another app
-                 (Files, Gmail, Drive, a bank's app) — Settings -> Import CSV.
-                 Deliberately scoped to spreadsheet-ish types only for now,
-                 not PDF: Taily can't parse a PDF statement yet, and showing
-                 up as a share target for a file type it can't handle would
-                 just be confusing. -->
+            <!-- Share a statement in from another app (Files, Gmail, Drive,
+                 a bank's app) — Settings -> Import a statement. CSV/Excel
+                 and PDF both land in the same import-preview flow. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -44,6 +41,7 @@
                 <data android:mimeType="application/csv" />
                 <data android:mimeType="application/vnd.ms-excel" />
                 <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+                <data android:mimeType="application/pdf" />
             </intent-filter>
 
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />

@@ -127,6 +127,9 @@ const HEADER_ALIASES: Record<string, string> = {
   id: 'id'
 }
 
+/** Every column name this importer recognizes — used by the PDF extractor to spot a header row among raw positioned text. */
+export const KNOWN_HEADER_WORDS: Set<string> = new Set(Object.keys(HEADER_ALIASES))
+
 function parseDate(raw: string): string | null {
   const v = raw.trim()
   let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(v)
@@ -167,7 +170,23 @@ export function planCsvImport(
     defaultCurrency: string
   }
 ): ImportPlan | null {
-  const grid = parseCsv(text)
+  return planImportFromGrid(parseCsv(text), ctx)
+}
+
+/**
+ * Same as planCsvImport, but starting from an already-split grid — shared
+ * with the PDF importer, which reconstructs a grid from positioned text
+ * instead of splitting on commas.
+ */
+export function planImportFromGrid(
+  grid: string[][],
+  ctx: {
+    categories: Category[]
+    accounts: Account[]
+    existingIds: Set<string>
+    defaultCurrency: string
+  }
+): ImportPlan | null {
   if (grid.length < 2) return null
   const header = grid[0].map((h) => HEADER_ALIASES[h.trim().toLowerCase()] ?? '')
   const col = (name: string) => header.indexOf(name)
