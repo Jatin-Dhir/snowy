@@ -28,7 +28,17 @@ function matchesQuery(t: Txn, catName: string, q: string): boolean {
   )
 }
 
-export function Activity({ currency, onEdit }: { currency: string; onEdit: (t: Txn) => void }) {
+export function Activity({
+  currency,
+  onEdit,
+  onAdd,
+  onOpenSettings
+}: {
+  currency: string
+  onEdit: (t: Txn) => void
+  onAdd: () => void
+  onOpenSettings: () => void
+}) {
   const { showToast } = useUi()
   const [query, setQuery] = useState('')
   const [catFilter, setCatFilter] = useState<string | null>(null)
@@ -77,6 +87,7 @@ export function Activity({ currency, onEdit }: { currency: string; onEdit: (t: T
 
   const monthKey = currentMonthKey()
   const monthTotal = useMemo(() => sum(txns.filter((t) => t.dateISO.startsWith(monthKey))), [txns, monthKey])
+  const hasFilters = catFilter !== null || accFilter !== null || dateFilter !== null || query.trim() !== ''
 
   const filtered = useMemo(
     () =>
@@ -89,6 +100,15 @@ export function Activity({ currency, onEdit }: { currency: string; onEdit: (t: T
       ),
     [txns, catFilter, accFilter, dateFilter, query, catName]
   )
+  const filteredTotal = useMemo(() => sum(filtered), [filtered])
+
+  function clearFilters() {
+    setQuery('')
+    setCatFilter(null)
+    setAccFilter(null)
+    setDateFilter(null)
+    setShowDatePick(false)
+  }
 
   const shown = filtered.slice(0, limit)
   const groups = useMemo(() => groupByDay(shown), [shown])
@@ -119,9 +139,21 @@ export function Activity({ currency, onEdit }: { currency: string; onEdit: (t: T
       ) : (
         <div className="row-between">
           <span className="screen-title">Activity</span>
-          <span className="mono faint" style={{ fontWeight: 600, fontSize: 12 }}>
-            {monthShort(monthKey)} · {formatMinor(monthTotal, currency)}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="mono faint" style={{ fontWeight: 600, fontSize: 12 }}>
+              {hasFilters
+                ? `${filtered.length} shown · ${formatMinor(filteredTotal, currency)}`
+                : `${monthShort(monthKey)} · ${formatMinor(monthTotal, currency)}`}
+            </span>
+            <button
+              className="icon-btn"
+              style={{ width: 36, height: 36, borderRadius: 18 }}
+              onClick={onOpenSettings}
+              aria-label="Settings"
+            >
+              <Icon name="gear" size={18} strokeWidth={1.6} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -236,10 +268,21 @@ export function Activity({ currency, onEdit }: { currency: string; onEdit: (t: T
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {groups.length === 0 ? (
-          <div className="empty">
-            {txns.length === 0
-              ? 'Your ledger is empty. Add your first expense and it lands here.'
-              : 'Nothing matches that search.'}
+          <div className="empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <span>
+              {txns.length === 0
+                ? 'Your ledger is empty. Add your first expense and it lands here.'
+                : 'Nothing matches that search.'}
+            </span>
+            {txns.length === 0 ? (
+              <button className="btn" style={{ width: 'auto', padding: '10px 22px' }} onClick={onAdd}>
+                Add an expense
+              </button>
+            ) : (
+              <button className="btn ghost" style={{ width: 'auto', padding: '10px 22px' }} onClick={clearFilters}>
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
           groups.map((g) => (

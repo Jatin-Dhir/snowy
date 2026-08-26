@@ -201,11 +201,21 @@ export default function App() {
             onEdit={openEdit}
             onOpenSettings={() => setSettingsOpen(true)}
             onAdd={openAdd}
+            onOpenBudgets={() => goTab('budgets')}
           />
         )}
-        {tab === 'activity' && <Activity currency={settings.currency} onEdit={openEdit} />}
-        {tab === 'budgets' && <Budgets currency={settings.currency} />}
-        {tab === 'insights' && <Insights currency={settings.currency} />}
+        {tab === 'activity' && (
+          <Activity
+            currency={settings.currency}
+            onEdit={openEdit}
+            onAdd={openAdd}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+        )}
+        {tab === 'budgets' && <Budgets currency={settings.currency} onOpenSettings={() => setSettingsOpen(true)} />}
+        {tab === 'insights' && (
+          <Insights currency={settings.currency} onAdd={openAdd} onOpenSettings={() => setSettingsOpen(true)} />
+        )}
       </div>
 
       <TabBar tab={tab} onTab={goTab} onAdd={openAdd} onVoice={() => setVoiceOpen(true)} />

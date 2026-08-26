@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
+import { setAccountBalance } from '../db/accounts'
 import {
   txnsForMonth,
   txnsBetween,
@@ -15,7 +16,7 @@ import { addToGoal } from '../db/goals'
 import { safeToSpend, saveSuggestion, weekBars, sum, onDay, byCategory, totalBalance, balanceByAccount } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
-import { weeklyAnomalies } from '../lib/smart'
+import { guessAccount, weeklyAnomalies } from '../lib/smart'
 import { notifyAlerts, syncLoanReminders } from '../lib/notify'
 import { LoansSheet } from '../components/LoansSheet'
 import { useAnimatedNumber } from '../lib/useAnimatedNumber'
@@ -30,12 +31,14 @@ export function Home({
   currency,
   onEdit,
   onOpenSettings,
-  onAdd
+  onAdd,
+  onOpenBudgets
 }: {
   currency: string
   onEdit: (t: Txn) => void
   onOpenSettings: () => void
   onAdd: () => void
+  onOpenBudgets: () => void
 }) {
   const { showToast } = useUi()
   const today = todayISO()
@@ -58,6 +61,8 @@ export function Home({
   const allTxns = useLiveQuery(() => allLiveTxns(), []) ?? []
   const [loansOpen, setLoansOpen] = useState(false)
   const [balanceOpen, setBalanceOpen] = useState(false)
+  const [editingBalance, setEditingBalance] = useState<string | null>(null)
+  const [editBalanceValue, setEditBalanceValue] = useState('')
   const balance = useMemo(() => totalBalance(allTxns, accounts), [allTxns, accounts])
   const byAccountBalance = useMemo(() => balanceByAccount(allTxns, accounts), [allTxns, accounts])
   const [saveHidden, setSaveHidden] = useState(() => localStorage.getItem('taily.save.hidden') === todayISO())
@@ -94,7 +99,7 @@ export function Home({
       amountMinor: amt,
       currency,
       categoryId: 'savings',
-      accountId: accounts.find((a) => !a.archived)?.id ?? 'upi',
+      accountId: guessAccount(accounts, recent) ?? 'upi',
       kind: 'out',
       note: saveGoal.name
     })
@@ -108,6 +113,24 @@ export function Home({
       localStorage.removeItem('taily.save.hidden')
       setSaveHidden(false)
     })
+  }
+
+  useEffect(() => {
+    if (!balanceOpen) setEditingBalance(null)
+  }, [balanceOpen])
+
+  function startEditBalance(id: string, currentMinor: number) {
+    setEditingBalance(id)
+    setEditBalanceValue((currentMinor / 100).toFixed(2).replace(/\.00$/, ''))
+  }
+
+  async function saveBalance(id: string, currentMinor: number) {
+    const target = Math.round(parseFloat(editBalanceValue || '0') * 100)
+    if (isFinite(target)) {
+      await setAccountBalance(id, target, currentMinor)
+      haptic('success')
+    }
+    setEditingBalance(null)
   }
 
   const nextBill = upcomingRules(rules, 3)[0]
@@ -276,7 +299,9 @@ export function Home({
             </span>
           </div>
         ) : (
-          <span className="caption">Set a monthly budget in Budgets to unlock safe-to-spend.</span>
+          <button className="caption" style={{ textAlign: 'left', textDecoration: 'underline', textUnderlineOffset: 3 }} onClick={onOpenBudgets}>
+            Set a monthly budget in Budgets to unlock safe-to-spend.
+          </button>
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
@@ -529,21 +554,51 @@ export function Home({
             .map((a) => {
               const acctBalance = byAccountBalance.get(a.id) ?? 0
               return (
-                <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
-                  <span className="txn-icon" style={{ background: 'var(--sunken)', color: 'var(--muted)', width: 32, height: 32 }}>
-                    <Icon name="wallet" size={15} />
-                  </span>
-                  <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {a.name}
-                  </span>
-                  <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: acctBalance < 0 ? 'var(--red)' : 'var(--ink)' }}>
-                    {formatMinor(acctBalance, currency)}
-                  </span>
+                <div key={a.id} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '4px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span className="txn-icon" style={{ background: 'var(--sunken)', color: 'var(--muted)', width: 32, height: 32 }}>
+                      <Icon name="wallet" size={15} />
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {a.name}
+                    </span>
+                    {editingBalance !== a.id && (
+                      <button onClick={() => startEditBalance(a.id, acctBalance)} aria-label={`Edit balance for ${a.name}`}>
+                        <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: acctBalance < 0 ? 'var(--red)' : 'var(--ink)' }}>
+                          {formatMinor(acctBalance, currency)}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                  {editingBalance === a.id && (
+                    <div style={{ display: 'flex', gap: 8, paddingLeft: 42 }}>
+                      <input
+                        className="field mono"
+                        type="number"
+                        inputMode="decimal"
+                        autoFocus
+                        value={editBalanceValue}
+                        onChange={(e) => setEditBalanceValue(e.target.value)}
+                        style={{ flex: 1, padding: '8px 12px' }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') void saveBalance(a.id, acctBalance)
+                        }}
+                      />
+                      <button
+                        className="icon-btn"
+                        style={{ color: 'var(--pos)' }}
+                        onClick={() => void saveBalance(a.id, acctBalance)}
+                        aria-label={`Save balance for ${a.name}`}
+                      >
+                        <Icon name="check" size={15} strokeWidth={2.4} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )
             })}
           <span className="caption" style={{ fontSize: 11.5, paddingTop: 4 }}>
-            Received money adds here; every expense, including savings tucked away, comes off it.
+            Tap a balance to set it directly. Received money adds here; every expense, including savings tucked away, comes off it.
           </span>
         </Sheet>
       )}

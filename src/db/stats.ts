@@ -104,11 +104,16 @@ export interface PaceInfo {
   state: 'ok' | 'warn' | 'over'
 }
 
+/**
+ * state is pace-relative, not a static fraction cutoff — "warn" means
+ * spending faster than the days elapsed would predict, the same comparison
+ * the pace label text uses, so the color and the words never disagree.
+ */
 export function pace(spent: number, budget: number, todayIso = todayISO()): PaceInfo {
   const monthKey = todayIso.slice(0, 7)
   const dayFraction = parseInt(todayIso.slice(8, 10), 10) / daysInMonth(monthKey)
   const fraction = budget > 0 ? spent / budget : 0
-  const state: PaceInfo['state'] = fraction > 1 ? 'over' : fraction >= 0.8 ? 'warn' : 'ok'
+  const state: PaceInfo['state'] = fraction > 1 ? 'over' : fraction > dayFraction + 0.05 ? 'warn' : 'ok'
   return { spent, budget, fraction, dayFraction, state }
 }
 

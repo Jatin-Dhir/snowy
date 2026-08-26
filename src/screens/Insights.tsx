@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { txnsBetween } from '../db/repo'
-import { byCategory, incomeSum, isRealSpend, projectMonth, sum } from '../db/stats'
+import { byCategory, incomeSum, isRealSpend, pace, projectMonth, sum } from '../db/stats'
 import { currencySymbol, formatMinor } from '../lib/money'
 import { adviceFor, smartNotes } from '../lib/smart'
 import { LoansSheet } from '../components/LoansSheet'
@@ -34,16 +34,28 @@ function fmtCompact(minor: number, currency: string): string {
   return `${sym}${scale(v, big.div)}${big.suf}`
 }
 
-export function Insights({ currency }: { currency: string }) {
+export function Insights({
+  currency,
+  onAdd,
+  onOpenSettings
+}: {
+  currency: string
+  onAdd: () => void
+  onOpenSettings: () => void
+}) {
   const nowKey = currentMonthKey()
   const [monthKey, setMonthKey] = useState(nowKey)
   const [reportOpen, setReportOpen] = useState(false)
+  const [showRest, setShowRest] = useState(false)
   const today = todayISO()
   const isCurrent = monthKey === nowKey
+
+  useEffect(() => setShowRest(false), [monthKey])
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
   const budgets = useLiveQuery(() => db.budgets.toArray(), []) ?? []
+  const overallBudget = useLiveQuery(() => db.budgets.get('overall'), [])
 
   const windowFrom = monthRange(addMonths(monthKey, -5)).from
   const windowTo = monthRange(monthKey).to
@@ -87,6 +99,16 @@ export function Insights({ currency }: { currency: string }) {
     }))
   }, [windowTxns, monthKey])
 
+  const budgetCtx = useMemo(() => {
+    if (!overallBudget || overallBudget.amountMinor <= 0) return null
+    const pct = Math.round((spent / overallBudget.amountMinor) * 100)
+    const budgetLabel = formatMinor(overallBudget.amountMinor, currency)
+    if (!isCurrent) return { pct, budgetLabel, paceLabel: null as string | null }
+    const p = pace(spent, overallBudget.amountMinor)
+    const paceLabel = p.state === 'over' ? 'over' : p.state === 'warn' ? 'ahead of pace' : 'on pace'
+    return { pct, budgetLabel, paceLabel }
+  }, [overallBudget, spent, isCurrent, currency])
+
   const notes = useMemo(() => smartNotes(monthTxns, categories, currency), [monthTxns, categories, currency])
   const chartMax = Math.max(...sixMonths.map((m) => m.total), 1)
   const activeRules = rules.filter((r) => !r.paused)
@@ -128,6 +150,31 @@ export function Insights({ currency }: { currency: string }) {
     }
   }, [monthTxns, windowTxns, breakdown, prevKey, spent, isCurrent, today, monthKey])
 
+  const catRow = (r: { total: number; name: string; color: string }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span style={{ width: 8, height: 8, borderRadius: 4, background: r.color, flexShrink: 0 }} />
+      <span
+        style={{
+          flex: 1,
+          minWidth: 0,
+          fontWeight: 500,
+          fontSize: 14,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
+        }}
+      >
+        {r.name}
+      </span>
+      <span className="mono" style={{ fontWeight: 600, fontSize: 13.5 }}>
+        {formatMinor(r.total, currency)}
+      </span>
+      <span className="mono faint" style={{ fontSize: 11.5, width: 34, textAlign: 'right' }}>
+        {Math.round((r.total / spent) * 100)}%
+      </span>
+    </div>
+  )
+
   const W = 318
   const H = 102
   const base = 82
@@ -156,11 +203,30 @@ export function Insights({ currency }: { currency: string }) {
           >
             <Icon name="chevronRight" size={16} />
           </button>
+          <button
+            className="icon-btn"
+            style={{ width: 36, height: 36, borderRadius: 18, marginLeft: 4 }}
+            onClick={onOpenSettings}
+            aria-label="Settings"
+          >
+            <Icon name="gear" size={18} strokeWidth={1.6} />
+          </button>
         </span>
       </div>
 
       {monthTxns.length === 0 ? (
-        <div className="empty">No expenses in {monthLabel(monthKey)}. Log a few and this screen starts answering questions.</div>
+        <div className="empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <span>No expenses in {monthLabel(monthKey)}. Log a few and this screen starts answering questions.</span>
+          {isCurrent ? (
+            <button className="btn" style={{ width: 'auto', padding: '10px 22px' }} onClick={onAdd}>
+              Add an expense
+            </button>
+          ) : (
+            <button className="btn ghost" style={{ width: 'auto', padding: '10px 22px' }} onClick={() => setMonthKey(nowKey)}>
+              Jump to this month
+            </button>
+          )}
+        </div>
       ) : (
         <>
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '13px 20px' }}>
@@ -179,6 +245,11 @@ export function Insights({ currency }: { currency: string }) {
                 </span>
               )}
             </div>
+            {budgetCtx && (
+              <span className="caption">
+                {budgetCtx.pct}% of your {budgetCtx.budgetLabel} budget{budgetCtx.paceLabel ? ` · ${budgetCtx.paceLabel}` : ''}
+              </span>
+            )}
             {isCurrent && (
               <span className="caption">Projected {formatMinor(projected, currency)} by month end.</span>
             )}
@@ -191,35 +262,9 @@ export function Insights({ currency }: { currency: string }) {
 
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 13, padding: '15px 20px' }}>
             <span className="label">Where it went</span>
-            {[
-              ...breakdown.top,
-              ...(breakdown.restTotal > 0
-                ? [{ id: '__rest', total: breakdown.restTotal, name: 'Everything else', color: 'var(--faint-future)' }]
-                : [])
-            ].map((r) => (
+            {breakdown.top.map((r) => (
               <div key={String(r.id)} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 4, background: r.color, flexShrink: 0 }} />
-                  <span
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      fontWeight: 500,
-                      fontSize: 14,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}
-                  >
-                    {r.name}
-                  </span>
-                  <span className="mono" style={{ fontWeight: 600, fontSize: 13.5 }}>
-                    {formatMinor(r.total, currency)}
-                  </span>
-                  <span className="mono faint" style={{ fontSize: 11.5, width: 34, textAlign: 'right' }}>
-                    {Math.round((r.total / spent) * 100)}%
-                  </span>
-                </div>
+                {catRow(r)}
                 <div className="bar-track" style={{ height: 6 }}>
                   <div
                     className="bar-fill"
@@ -228,6 +273,60 @@ export function Insights({ currency }: { currency: string }) {
                 </div>
               </div>
             ))}
+            {breakdown.restTotal > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <button
+                  style={{ display: 'flex', flexDirection: 'column', gap: 5, width: '100%' }}
+                  onClick={() => setShowRest((v) => !v)}
+                  aria-expanded={showRest}
+                  aria-label={showRest ? 'Hide the rest of your categories' : 'Show the rest of your categories'}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {catRow({ total: breakdown.restTotal, name: 'Everything else', color: 'var(--faint-future)' })}
+                    </div>
+                    <span
+                      className="faint"
+                      style={{ display: 'flex', transform: showRest ? 'rotate(90deg)' : undefined, transition: 'transform .15s' }}
+                    >
+                      <Icon name="chevronRight" size={13} />
+                    </span>
+                  </div>
+                  <div className="bar-track" style={{ height: 6 }}>
+                    <div
+                      className="bar-fill"
+                      style={{ width: `${Math.max(2, (breakdown.restTotal / spent) * 100)}%`, background: 'var(--faint-future)' }}
+                    />
+                  </div>
+                </button>
+                {showRest && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 18, paddingTop: 2 }}>
+                    {breakdown.all.slice(4).map((r) => (
+                      <div key={String(r.id)} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: 3, background: r.color, flexShrink: 0 }} />
+                        <span
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            fontSize: 13,
+                            fontWeight: 500,
+                            color: 'var(--muted)',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          {r.name}
+                        </span>
+                        <span className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)' }}>
+                          {formatMinor(r.total, currency)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {notes.length > 0 && (

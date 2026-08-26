@@ -26,15 +26,19 @@ export function TransactionRow({
   const color = cat?.color ?? '#7A8794'
   const isIn = (txn.kind ?? 'out') === 'in'
   const title = txn.note.trim() || cat?.name || (isIn ? 'Received' : 'Untagged')
-  const subParts = [cat?.name ?? (isIn ? 'Money in' : 'Untagged'), fmtTime(txn.ts)]
+  const catLabel = cat?.name ?? (isIn ? 'Money in' : 'Untagged')
+  // don't repeat the tag as both the title and the first word of the
+  // subtitle — the common case is exactly a tag-only entry with no note
+  const subParts = [...(catLabel === title ? [] : [catLabel]), fmtTime(txn.ts)]
   if (txn.source === 'recurring') subParts.push('auto')
   const isFresh = Date.now() - txn.createdAt < 1600
 
   const pressTimer = useRef<number | null>(null)
   const longFired = useRef(false)
 
-  function pressStart() {
+  function pressStart(e: React.PointerEvent) {
     if (!onLongPress) return
+    e.preventDefault()
     longFired.current = false
     pressTimer.current = window.setTimeout(() => {
       longFired.current = true

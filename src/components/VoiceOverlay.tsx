@@ -4,6 +4,7 @@ import { db } from '../db/db'
 import { addTxn, recentTxns, removeTxnPermanently } from '../db/repo'
 import { formatMinor } from '../lib/money'
 import { parseSpeech } from '../lib/parseSpeech'
+import { guessAccount } from '../lib/smart'
 import { listenOnce, stopListening } from '../lib/voice'
 import { Icon } from './Icon'
 import { haptic, useUi } from '../state/ui'
@@ -38,9 +39,27 @@ export function VoiceOverlay({
     setHeard('')
 
     void (async () => {
+      // the recognizer's own top guess isn't always the one that actually
+      // makes sense as a transaction — score every ranked alternate by what
+      // parseSpeech can do with it (an amount beats none, a matched tag beats
+      // none) and keep the recognizer's own order only to break ties
+      const pickBest = (candidates: string[]): string => {
+        let bestIdx = 0
+        let bestScore = -1
+        candidates.forEach((c, i) => {
+          const p = parseSpeech(c, catRef.current, recentRef.current)
+          const score = (p.amountMinor ? 2 : 0) + (p.categoryId ? 1 : 0)
+          if (score > bestScore) {
+            bestScore = score
+            bestIdx = i
+          }
+        })
+        return candidates[bestIdx]
+      }
+
       const result = await listenOnce((t) => {
         if (!closedRef.current) setHeard(t)
-      })
+      }, pickBest)
       if (closedRef.current) return
       onClose()
 
@@ -62,13 +81,12 @@ export function VoiceOverlay({
         showToast(`Heard "${result.text}" — but no amount. Try "250 shopping".`)
         return
       }
-      const activeAcc = accRef.current.filter((a) => !a.archived)
       const cat = parsed.categoryId ? catRef.current.find((c) => c.id === parsed.categoryId) : null
       const txn = await addTxn({
         amountMinor: parsed.amountMinor,
         currency,
         categoryId: parsed.categoryId,
-        accountId: activeAcc[0]?.id ?? 'upi',
+        accountId: guessAccount(accRef.current, recentRef.current) ?? 'upi',
         kind: parsed.kind,
         note: parsed.note
       })

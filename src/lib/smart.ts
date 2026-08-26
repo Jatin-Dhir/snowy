@@ -1,6 +1,6 @@
 // On-device intelligence: note-memory categorization, anomaly detection,
 // and generated insight notes. Deterministic, instant, fully offline.
-import type { Category, Txn } from '../db/db'
+import type { Account, Category, Txn } from '../db/db'
 import { isOut, isRealSpend, sum } from '../db/stats'
 import { addDaysISO, daysInMonth, fromISO, todayISO, weekDaysOf } from './dates'
 import { formatMinor } from './money'
@@ -49,6 +49,20 @@ export function guessCategory(note: string, txns: Txn[]): string | null {
     }
   }
   return bestScore >= 2 ? best : null
+}
+
+/** Whichever active account was used most in the last 30 days — falls back to the first active account. */
+export function guessAccount(accounts: Account[], recent: Txn[]): string | null {
+  const active = accounts.filter((a) => !a.archived)
+  if (active.length === 0) return null
+  const cutoff = Date.now() - 30 * 86400000
+  const counts = new Map<string, number>()
+  for (const t of recent) {
+    if (t.ts < cutoff || !active.some((a) => a.id === t.accountId)) continue
+    counts.set(t.accountId, (counts.get(t.accountId) ?? 0) + 1)
+  }
+  const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]
+  return (top ? active.find((a) => a.id === top[0]) : undefined)?.id ?? active[0].id
 }
 
 export interface Anomaly {

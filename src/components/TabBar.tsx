@@ -1,6 +1,8 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { haptic } from '../state/ui'
+
+const HINT_KEY = 'taily.voicehint.seen'
 
 export type Tab = 'home' | 'activity' | 'budgets' | 'insights'
 
@@ -28,10 +30,29 @@ export function TabBar({
   const holdTimer = useRef<number | null>(null)
   const holdFired = useRef(false)
 
+  // teach the hold-to-speak gesture once, ever — it's otherwise undiscoverable
+  const [showHint, setShowHint] = useState(() => !localStorage.getItem(HINT_KEY))
+  const [hintLeaving, setHintLeaving] = useState(false)
+
+  function dismissHint() {
+    if (!showHint || hintLeaving) return
+    localStorage.setItem(HINT_KEY, '1')
+    setHintLeaving(true)
+    window.setTimeout(() => setShowHint(false), 220)
+  }
+
+  useEffect(() => {
+    if (!showHint) return
+    const t = window.setTimeout(dismissHint, 4500)
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showHint])
+
   function holdStart(e: React.PointerEvent) {
     // stop Android's native long-press text-selection/callout from grabbing
     // this gesture out from under the hold-to-speak timer
     e.preventDefault()
+    dismissHint()
     holdFired.current = false
     holdTimer.current = window.setTimeout(() => {
       holdFired.current = true
@@ -89,6 +110,7 @@ export function TabBar({
               holdFired.current = false
               return
             }
+            dismissHint()
             haptic('medium')
             onAdd()
           }}
@@ -99,6 +121,18 @@ export function TabBar({
           onContextMenu={(e) => e.preventDefault()}
           aria-label="Add expense — hold to speak"
         >
+          {showHint && (
+            <span
+              className={`voice-hint${hintLeaving ? ' leaving' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                dismissHint()
+              }}
+            >
+              <Icon name="mic" size={12} strokeWidth={2.4} />
+              Hold to speak
+            </span>
+          )}
           <Icon name="plus" size={24} strokeWidth={2.2} />
         </button>
         {TABS.slice(2).map(item)}

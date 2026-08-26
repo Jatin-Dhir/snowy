@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Category, type Txn } from '../db/db'
+import { addAccount } from '../db/accounts'
 import { recentTxns, addTxn, updateTxn, softDeleteTxn, restoreTxn, removeTxnPermanently } from '../db/repo'
 import { formatEntry, currencySymbol, formatMinor } from '../lib/money'
-import { guessCategory } from '../lib/smart'
+import { guessAccount, guessCategory } from '../lib/smart'
 import { useAmountEntry } from '../lib/useAmountEntry'
 import { todayISO, addDaysISO } from '../lib/dates'
 import { Icon } from './Icon'
@@ -35,6 +36,7 @@ export function AddSheet({
   const [manageTags, setManageTags] = useState(false)
   const [showNote, setShowNote] = useState(false)
   const [showDate, setShowDate] = useState(false)
+  const [newAccountName, setNewAccountName] = useState('')
 
   const allCategories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const categories = useMemo(() => allCategories.filter((c) => !c.archived), [allCategories])
@@ -43,8 +45,8 @@ export function AddSheet({
   const accountName = accounts.find((a) => a.id === account)?.name ?? account.toUpperCase()
   const recent = useLiveQuery(() => recentTxns(600), []) ?? []
 
-  // Exactly two suggestions: your real habits once they exist (3+ uses in 60
-  // days), otherwise the everyday defaults. "All" always sits in the third spot.
+  // Three one-tap suggestions: your real habits once they exist (3+ uses in
+  // 60 days), otherwise the everyday defaults. "More" always sits after them.
   const suggested = useMemo(() => {
     const cutoff = Date.now() - 60 * 86400000
     const counts = new Map<string, number>()
@@ -57,7 +59,7 @@ export function AddSheet({
       .sort((a, b) => b[1] - a[1])
       .map(([id]) => categories.find((c) => c.id === id))
       .filter(Boolean) as Category[]
-    const fallbackIds = kind === 'in' ? ['payment', 'return', 'salary'] : ['food', 'shopping']
+    const fallbackIds = kind === 'in' ? ['payment', 'return', 'salary'] : ['food', 'shopping', 'transport']
     const fallback = fallbackIds.map((id) => categories.find((c) => c.id === id)).filter(Boolean) as Category[]
     // typing a note the app has seen before pushes its remembered tag to slot 1
     const guessed = note.trim() ? guessCategory(note, recent) : null
@@ -66,7 +68,7 @@ export function AddSheet({
     for (const c of [...(guessedCat ? [guessedCat] : []), ...learned, ...fallback, ...categories]) {
       if (c && !merged.includes(c)) merged.push(c)
     }
-    return merged.slice(0, 2)
+    return merged.slice(0, 3)
   }, [recent, categories, kind, note])
 
   const isEdit = editTxn !== null
@@ -89,7 +91,7 @@ export function AddSheet({
       setKind('out')
       setNote('')
       setDateISO(todayISO())
-      setAccount(activeAccounts[0]?.id ?? 'upi')
+      setAccount(guessAccount(accounts, recent) ?? 'upi')
       setSelectedCat(null)
       setShowNote(false)
       setShowDate(false)
@@ -97,6 +99,7 @@ export function AddSheet({
     setShowAll(false)
     setPickAccount(false)
     setManageTags(false)
+    setNewAccountName('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editTxn])
 
@@ -123,7 +126,7 @@ export function AddSheet({
       ts: dateISO === todayISO() ? Date.now() : new Date(dateISO + 'T12:00:00').getTime()
     })
     haptic('success')
-    const verb = kind === 'in' ? 'Received' : 'Saved'
+    const verb = kind === 'in' ? 'Received' : 'Spent'
     const tagPart = catName ? (autoFiled ? ` · filed as ${catName}` : ` · ${catName}`) : ''
     showToast(`${verb} ${formatMinor(amountMinor, currency)}${tagPart}`, () => {
       void removeTxnPermanently(txn.id)
@@ -155,6 +158,18 @@ export function AddSheet({
       void restoreTxn(editTxn.id)
     })
     onClose()
+  }
+
+  async function createAccount() {
+    const made = await addAccount(newAccountName)
+    if (made) {
+      haptic('success')
+      setAccount(made.id)
+      setNewAccountName('')
+      setPickAccount(false)
+    } else if (newAccountName.trim()) {
+      showToast('An account with that name already exists')
+    }
   }
 
   function tapCategory(id: string | null) {
@@ -362,9 +377,21 @@ export function AddSheet({
                 </button>
               ))}
             </div>
-            <span className="caption" style={{ fontSize: 11.5 }}>
-              Add or rename accounts in Settings → Accounts.
-            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                className="field"
+                placeholder="New account — e.g. HDFC, Paytm"
+                value={newAccountName}
+                maxLength={30}
+                onChange={(e) => setNewAccountName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void createAccount()
+                }}
+              />
+              <button className="btn" style={{ width: 86 }} disabled={!newAccountName.trim()} onClick={() => void createAccount()}>
+                Add
+              </button>
+            </div>
           </Sheet>
         )}
 

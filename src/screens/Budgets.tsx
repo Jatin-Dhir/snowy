@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Goal } from '../db/db'
 import { addGoal, addToGoal, deleteGoal, updateGoal } from '../db/goals'
-import { addTxn, txnsForMonth } from '../db/repo'
+import { addTxn, recentTxns, txnsForMonth } from '../db/repo'
 import { byCategory, pace, projectMonth, sum } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
+import { guessAccount } from '../lib/smart'
 import { currentMonthKey, daysInMonth, monthLabel, todayISO } from '../lib/dates'
 import { Progress } from '../components/Progress'
 import { Icon } from '../components/Icon'
@@ -81,6 +82,7 @@ function GoalDialog({
   const amountMinor = Math.round(parseFloat(amount) * 100) || 0
   const canSave = name.trim().length > 0 && targetMinor > 0
   const accounts = useLiveQuery(() => db.accounts.toArray(), []) ?? []
+  const recent = useLiveQuery(() => recentTxns(600), []) ?? []
 
   async function save() {
     if (!canSave) return
@@ -103,7 +105,7 @@ function GoalDialog({
       amountMinor,
       currency,
       categoryId: 'savings',
-      accountId: accounts.find((a) => !a.archived)?.id ?? 'upi',
+      accountId: guessAccount(accounts, recent) ?? 'upi',
       kind: sign === 1 ? 'out' : 'in',
       note: goal.name
     })
@@ -200,7 +202,7 @@ function GoalDialog({
   )
 }
 
-export function Budgets({ currency }: { currency: string }) {
+export function Budgets({ currency, onOpenSettings }: { currency: string; onOpenSettings: () => void }) {
   const { showToast } = useUi()
   const monthKey = currentMonthKey()
   const today = todayISO()
@@ -246,7 +248,17 @@ export function Budgets({ currency }: { currency: string }) {
     <div className="screen">
       <div className="row-between">
         <span className="screen-title">Budgets</span>
-        <span className="pill">{monthLabel(monthKey)}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="pill">{monthLabel(monthKey)}</span>
+          <button
+            className="icon-btn"
+            style={{ width: 36, height: 36, borderRadius: 18 }}
+            onClick={onOpenSettings}
+            aria-label="Settings"
+          >
+            <Icon name="gear" size={18} strokeWidth={1.6} />
+          </button>
+        </div>
       </div>
 
       {overall && overallPace ? (
@@ -272,11 +284,7 @@ export function Budgets({ currency }: { currency: string }) {
                 color: stateColor(overallPace.state, 'var(--pos)')
               }}
             >
-              {overallPace.state === 'over'
-                ? 'OVER'
-                : overallPace.fraction > overallPace.dayFraction + 0.05
-                  ? 'AHEAD OF PACE'
-                  : 'ON PACE'}
+              {overallPace.state === 'over' ? 'OVER' : overallPace.state === 'warn' ? 'AHEAD OF PACE' : 'ON PACE'}
             </span>
           </div>
           <Progress
@@ -329,7 +337,7 @@ export function Budgets({ currency }: { currency: string }) {
             <Progress fraction={catPace.fraction} color={stateColor(catPace.state, cat.color)} tickFraction={dayFraction} />
             <span className="caption" style={{ fontSize: 12 }}>
               {left >= 0
-                ? `${formatMinor(left, currency)} left${catPace.fraction > catPace.dayFraction + 0.05 ? ' · ahead of pace' : ' · on pace'}`
+                ? `${formatMinor(left, currency)} left${catPace.state === 'warn' ? ' · ahead of pace' : ' · on pace'}`
                 : `Over by ${formatMinor(-left, currency)} — it happens; next month resets`}
             </span>
           </button>
