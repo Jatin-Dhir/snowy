@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, saveSettings, type Settings } from '../db/db'
 import { allLiveTxns } from '../db/repo'
 import { txnsToCsv, downloadCsv, planCsvImport, type ImportPlan } from '../lib/csv'
+import type { SharedFile } from '../lib/shareIntent'
 import { CURRENCIES, formatMinor } from '../lib/money'
 import { fetchRate, type RateInfo } from '../lib/rates'
 import { convertEverything } from '../db/convert'
@@ -66,10 +67,14 @@ function ActionRow({
 export function SettingsSheet({
   open,
   settings,
+  pendingImport,
+  onPendingImportHandled,
   onClose
 }: {
   open: boolean
   settings: Settings
+  pendingImport?: SharedFile | null
+  onPendingImportHandled?: () => void
   onClose: () => void
 }) {
   const { showToast } = useUi()
@@ -154,33 +159,46 @@ export function SettingsSheet({
     showToast(`Exported ${txns.length} entries`)
   }
 
+  async function processImportText(text: string): Promise<void> {
+    const [cats, accounts, allTxns] = await Promise.all([
+      db.categories.toArray(),
+      db.accounts.toArray(),
+      db.txns.toArray()
+    ])
+    const plan = planCsvImport(text, {
+      categories: cats,
+      accounts,
+      existingIds: new Set(allTxns.map((t) => t.id)),
+      defaultCurrency: settings.currency
+    })
+    if (!plan) {
+      showToast("Couldn't read that file — it needs date and amount columns")
+      return
+    }
+    if (plan.txns.length === 0) {
+      showToast(`Nothing new in that file — ${plan.duplicates} entries are already here`)
+      return
+    }
+    setImportPlan(plan)
+  }
+
   async function readImportFile(file: File) {
     try {
-      const text = await file.text()
-      const [cats, accounts, allTxns] = await Promise.all([
-        db.categories.toArray(),
-        db.accounts.toArray(),
-        db.txns.toArray()
-      ])
-      const plan = planCsvImport(text, {
-        categories: cats,
-        accounts,
-        existingIds: new Set(allTxns.map((t) => t.id)),
-        defaultCurrency: settings.currency
-      })
-      if (!plan) {
-        showToast("Couldn't read that file — it needs date and amount columns")
-        return
-      }
-      if (plan.txns.length === 0) {
-        showToast(`Nothing new in that file — ${plan.duplicates} entries are already here`)
-        return
-      }
-      setImportPlan(plan)
+      await processImportText(await file.text())
     } catch {
       showToast("Couldn't read that file")
     }
   }
+
+  // a CSV shared in from another app lands here already open (App.tsx opens
+  // Settings for us) — process it once, the same way a picked file would be
+  useEffect(() => {
+    if (!pendingImport) return
+    void processImportText(pendingImport.text)
+      .catch(() => showToast("Couldn't read that file"))
+      .finally(() => onPendingImportHandled?.())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingImport])
 
   async function applyImport(plan: ImportPlan) {
     setImportBusy(true)
@@ -541,7 +559,7 @@ export function SettingsSheet({
             icon="arrowUp"
             tint="#B0764A"
             title="Import a CSV"
-            sub="Bring entries back in — ours or any date+amount file"
+            sub="Ours, a bank statement export — or Share a CSV here from any app"
             onClick={() => importFile.current?.click()}
           />
           <span className="caption" style={{ fontSize: 11.5 }}>

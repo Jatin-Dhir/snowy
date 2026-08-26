@@ -5,6 +5,7 @@ import { ensureSeeded } from './db/seed'
 import { runDueRules } from './db/recurring'
 import { formatMinor } from './lib/money'
 import { checkForUpdate, type UpdateInfo } from './lib/updater'
+import { checkSharedFile, type SharedFile } from './lib/shareIntent'
 import { applyCustomAccent, clearCustomAccent } from './lib/theme'
 import { syncStatusBar } from './lib/statusbar'
 import { LockScreen } from './components/LockScreen'
@@ -42,6 +43,7 @@ export default function App() {
   // never throw the user back to the lock screen
   const [locked, setLocked] = useState(false)
   const [pendingAdd, setPendingAdd] = useState(false)
+  const [pendingImport, setPendingImport] = useState<SharedFile | null>(null)
   // a confirmed newer release — blocks entry until installed. Only ever set
   // from a positive 'update' result, never from a network error or timeout,
   // so being offline never locks anyone out of their own data.
@@ -125,6 +127,22 @@ export default function App() {
     return () => sub?.remove()
   }, [])
 
+  // a CSV statement shared in from another app (Files, Gmail, Drive) —
+  // checked once at boot (covers a cold start launched directly via Share)
+  // and again on every live share while the app's already running
+  useEffect(() => {
+    void checkSharedFile().then((f) => {
+      if (f) setPendingImport(f)
+    })
+    function onShare() {
+      void checkSharedFile().then((f) => {
+        if (f) setPendingImport(f)
+      })
+    }
+    window.addEventListener('sendIntentReceived', onShare)
+    return () => window.removeEventListener('sendIntentReceived', onShare)
+  }, [])
+
   useEffect(() => {
     if (!pendingAdd || !ready || !settings.initialized || locked) return
     setPendingAdd(false)
@@ -133,6 +151,13 @@ export default function App() {
     setAddOpen(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingAdd, ready, locked, settings.initialized])
+
+  useEffect(() => {
+    if (!pendingImport || !ready || !settings.initialized || locked) return
+    dismissToast()
+    setSettingsOpen(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingImport, ready, locked, settings.initialized])
 
   if (!settingsLoaded || !ready) return null
 
@@ -197,7 +222,13 @@ export default function App() {
         }}
       />
 
-      <SettingsSheet open={settingsOpen} settings={settings} onClose={() => setSettingsOpen(false)} />
+      <SettingsSheet
+        open={settingsOpen}
+        settings={settings}
+        pendingImport={pendingImport}
+        onPendingImportHandled={() => setPendingImport(null)}
+        onClose={() => setSettingsOpen(false)}
+      />
       <Toast />
     </div>
   )

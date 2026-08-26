@@ -109,14 +109,20 @@ export interface ImportPlan {
 }
 
 const HEADER_ALIASES: Record<string, string> = {
-  date: 'date', day: 'date',
+  date: 'date', day: 'date', 'transaction date': 'date', 'txn date': 'date', 'value date': 'date',
   time: 'time',
   kind: 'kind', type: 'kind', direction: 'kind',
-  amount: 'amount', value: 'amount', amt: 'amount',
+  amount: 'amount', value: 'amount', amt: 'amount', 'transaction amount': 'amount',
+  // most Indian bank statement exports (SBI/HDFC/ICICI/Axis/Kotak…) use two
+  // separate columns instead of one signed amount — whichever has a value
+  // for a given row decides that row's direction
+  debit: 'debit', 'debit amount': 'debit', 'withdrawal amt': 'debit', 'withdrawal amt.': 'debit', withdrawal: 'debit', 'dr amount': 'debit',
+  credit: 'credit', 'credit amount': 'credit', 'deposit amt': 'credit', 'deposit amt.': 'credit', deposit: 'credit', 'cr amount': 'credit',
   currency: 'currency',
   category: 'category', tag: 'category',
   account: 'account', wallet: 'account', 'paid from': 'account',
   note: 'note', notes: 'note', description: 'note', memo: 'note',
+  narration: 'note', particulars: 'note', details: 'note', 'transaction details': 'note', remarks: 'note',
   source: 'source',
   id: 'id'
 }
@@ -165,7 +171,8 @@ export function planCsvImport(
   if (grid.length < 2) return null
   const header = grid[0].map((h) => HEADER_ALIASES[h.trim().toLowerCase()] ?? '')
   const col = (name: string) => header.indexOf(name)
-  if (col('date') < 0 || col('amount') < 0) return null
+  const debitCreditMode = col('amount') < 0 && (col('debit') >= 0 || col('credit') >= 0)
+  if (col('date') < 0 || (col('amount') < 0 && !debitCreditMode)) return null
 
   const catByName = new Map(ctx.categories.map((c) => [c.name.toLowerCase(), c.name]))
   const accByName = new Map(ctx.accounts.map((a) => [a.name.toLowerCase(), a.name]))
@@ -177,7 +184,10 @@ export function planCsvImport(
   let badRows = 0
 
   const kindCol = col('kind')
-  const hasNegatives = kindCol < 0 && grid.slice(1).some((r) => parseFloat((r[col('amount')] ?? '').replace(/[^0-9.\-]/g, '')) < 0)
+  const hasNegatives =
+    !debitCreditMode &&
+    kindCol < 0 &&
+    grid.slice(1).some((r) => parseFloat((r[col('amount')] ?? '').replace(/[^0-9.\-]/g, '')) < 0)
 
   for (const r of grid.slice(1)) {
     const cell = (name: string) => {
@@ -185,7 +195,27 @@ export function planCsvImport(
       return i >= 0 ? (r[i] ?? '').trim() : ''
     }
     const dateISO = parseDate(cell('date'))
-    const amountRaw = parseAmount(cell('amount'))
+
+    let amountRaw: number | null
+    let kind: 'out' | 'in' = 'out'
+    if (debitCreditMode) {
+      // exactly one of the two is populated per row in a real statement;
+      // if a row somehow has both, treat it as a debit — the conservative
+      // read, since missing an expense is worse than missing income
+      const debit = parseAmount(cell('debit'))
+      const credit = parseAmount(cell('credit'))
+      if (debit) {
+        amountRaw = debit
+        kind = 'out'
+      } else if (credit) {
+        amountRaw = credit
+        kind = 'in'
+      } else {
+        amountRaw = null
+      }
+    } else {
+      amountRaw = parseAmount(cell('amount'))
+    }
     if (!dateISO || amountRaw === null || amountRaw === 0) {
       badRows++
       continue
@@ -197,7 +227,6 @@ export function planCsvImport(
     }
     if (id) seenIds.add(id)
 
-    let kind: 'out' | 'in' = 'out'
     const kindRaw = cell('kind').toLowerCase()
     if (kindRaw) kind = ['in', 'income', 'received', 'credit', 'deposit'].includes(kindRaw) ? 'in' : 'out'
     else if (hasNegatives) kind = amountRaw < 0 ? 'out' : 'in'
