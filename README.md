@@ -25,6 +25,10 @@ A fast, soft, offline-first expense tracker. Log an expense in under three secon
 Only the sideloaded APK polls GitHub for updates. The build mode decides: `vite build` is the sideload channel,
 `--mode play` is Play, `--mode web` is the hosted web app (see `src/lib/distribution.ts`).
 
+**Taily Pro** (statement import, encrypted backups, recurring payments, profiles, any accent color) is a one-time
+purchase in the Play build, through Google Play Billing (`src/lib/pro.ts`, `BillingPlugin.java` in the play
+flavor). The web app and the sideloaded APK have no store to pay through, so they include Pro.
+
 ## Build
 
 ```bash

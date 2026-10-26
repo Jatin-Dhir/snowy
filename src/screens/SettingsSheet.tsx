@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, saveSettings, type Settings } from '../db/db'
 import { allLiveTxns } from '../db/repo'
-import { txnsToCsv, downloadCsv, parseCsv, planImportFromGrid, type ImportPlan } from '../lib/csv'
+import { txnsToCsv, parseCsv, planImportFromGrid, type ImportPlan } from '../lib/csv'
+import { saveFile } from '../lib/saveFile'
+import { hasPro, openProSheet, PRO_FOR_SALE, useProState } from '../lib/pro'
 import type { SharedFile } from '../lib/shareIntent'
 import { CURRENCIES, formatMinor } from '../lib/money'
 import { fetchRate, type RateInfo } from '../lib/rates'
@@ -12,10 +14,11 @@ import { PRIVACY_URL, SELF_UPDATE } from '../lib/distribution'
 import { applyCustomAccent } from '../lib/theme'
 import { clearPinFailures, hashPin, recordPinFailure, verifyPin } from '../lib/pin'
 import { todayISO } from '../lib/dates'
-import { currentProfile } from '../lib/profiles'
+import { currentProfile, profileSlug } from '../lib/profiles'
 import { TAG_COLORS, TAG_ICONS } from '../db/seed'
 import { AccountManager } from '../components/AccountManager'
 import { ProfilesSheet } from '../components/ProfilesSheet'
+import { BackupSheet } from '../components/BackupSheet'
 import { Icon } from '../components/Icon'
 import { PinPad } from '../components/PinPad'
 import { Sheet } from '../components/Sheet'
@@ -38,6 +41,7 @@ function ActionRow({
   title,
   sub,
   danger,
+  locked,
   onClick
 }: {
   icon: string
@@ -45,6 +49,8 @@ function ActionRow({
   title: string
   sub: string
   danger?: boolean
+  /** a Taily Pro feature that isn't unlocked yet */
+  locked?: boolean
   onClick: () => void
 }) {
   return (
@@ -53,8 +59,18 @@ function ActionRow({
         <Icon name={icon} size={18} />
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: 'block', fontWeight: 700, fontSize: 14, color: danger ? 'var(--red)' : 'var(--ink)' }}>
+        <span
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontWeight: 700,
+            fontSize: 14,
+            color: danger ? 'var(--red)' : 'var(--ink)'
+          }}
+        >
           {title}
+          {locked && <span className="pro-tag">Pro</span>}
         </span>
         <span className="caption" style={{ fontSize: 11.5 }}>{sub}</span>
       </span>
@@ -79,6 +95,9 @@ export function SettingsSheet({
   onClose: () => void
 }) {
   const { showToast } = useUi()
+  const pro = useProState()
+  const locked = !pro.owned
+  const [backupOpen, setBackupOpen] = useState(false)
   const [update, setUpdate] = useState<'idle' | 'checking' | UpdateCheck>('idle')
   const [pinMode, setPinMode] = useState<PinMode>(null)
   const [firstPin, setFirstPin] = useState('')
@@ -112,6 +131,7 @@ export function SettingsSheet({
     setCurrencyOpen(false)
     setAccountsOpen(false)
     setProfilesOpen(false)
+    setBackupOpen(false)
     setImportPlan(null)
     setPdfPassword(null)
     setPdfPasswordValue('')
@@ -133,36 +153,10 @@ export function SettingsSheet({
     }
     const accounts = await db.accounts.toArray()
     const csv = txnsToCsv(txns, categories, accounts)
-    const profileSlug = currentProfile().name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'main'
-    const filename = `taily-${profileSlug}-${todayISO()}.csv`
-    let native = false
-    try {
-      const { Capacitor } = await import('@capacitor/core')
-      native = Capacitor.isNativePlatform()
-    } catch {
-      /* web */
-    }
-    if (native) {
-      // never fall through to the browser download in the app — it would
-      // silently do nothing and then claim success
-      try {
-        const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
-        const res = await Filesystem.writeFile({
-          path: filename,
-          data: csv,
-          directory: Directory.Cache,
-          encoding: Encoding.UTF8
-        })
-        const { Share } = await import('@capacitor/share')
-        await Share.share({ title: filename, files: [res.uri] })
-        showToast(`Exported ${txns.length} entries`)
-      } catch (e) {
-        const msg = e instanceof Error ? e.message.toLowerCase() : ''
-        showToast(msg.includes('cancel') ? 'Export canceled' : "Couldn't export — try again")
-      }
-      return
-    }
-    showToast((await downloadCsv(csv, filename)) ? `Exported ${txns.length} entries` : 'Export canceled')
+    const result = await saveFile(csv, `taily-${profileSlug()}-${todayISO()}.csv`, 'text/csv')
+    showToast(
+      result === 'saved' ? `Exported ${txns.length} entries` : result === 'canceled' ? 'Export canceled' : "Couldn't export — try again"
+    )
   }
 
   async function applyGrid(grid: string[][]): Promise<void> {
@@ -228,6 +222,11 @@ export function SettingsSheet({
   // opens Settings for us) — process it once, same as a picked file would be
   useEffect(() => {
     if (!pendingImport) return
+    // without Pro, the Pro sheet explains instead; once bought, share the statement again
+    if (!hasPro('import')) {
+      onPendingImportHandled?.()
+      return
+    }
     const task = pendingImport.kind === 'pdf' ? processImportPdf(pendingImport.bytes) : processImportText(pendingImport.text)
     void task.catch(() => showToast("Couldn't read that file")).finally(() => onPendingImportHandled?.())
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -452,7 +451,7 @@ export function SettingsSheet({
               title="Custom"
               onClick={() => {
                 haptic('selection')
-                setShowCustom((v) => !v)
+                if (hasPro('color')) setShowCustom((v) => !v)
               }}
               style={{
                 width: 36,
@@ -527,6 +526,19 @@ export function SettingsSheet({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span className="label" style={{ fontSize: 10.5 }}>More</span>
+          {PRO_FOR_SALE && (
+            <ActionRow
+              icon="star"
+              tint="#C9952B"
+              title={pro.owned ? 'Taily Pro' : 'Get Taily Pro'}
+              sub={
+                pro.owned
+                  ? 'Unlocked. Thank you for backing Taily'
+                  : `Statement import, encrypted backups, recurring payments and more${pro.price ? ` · ${pro.price} once` : ''}`
+              }
+              onClick={openProSheet}
+            />
+          )}
           <ActionRow
             icon="person"
             tint="#C75D8D"
@@ -594,11 +606,20 @@ export function SettingsSheet({
             onClick={() => void exportCsv()}
           />
           <ActionRow
+            icon="shield"
+            tint="#3F9E8C"
+            title="Encrypted backup"
+            sub="Everything in one password-locked file, or restore one on a new phone"
+            locked={locked}
+            onClick={() => hasPro('backup') && setBackupOpen(true)}
+          />
+          <ActionRow
             icon="arrowUp"
             tint="#B0764A"
             title="Import a statement"
             sub="CSV, Excel, or PDF — pick one here, or Share it in from any app"
-            onClick={() => importFile.current?.click()}
+            locked={locked}
+            onClick={() => hasPro('import') && importFile.current?.click()}
           />
           <span className="caption" style={{ fontSize: 11.5 }}>
             Everything lives on this device. No account, no cloud, no ads.
@@ -626,6 +647,7 @@ export function SettingsSheet({
 
         <AccountManager open={accountsOpen} currency={settings.currency} onClose={() => setAccountsOpen(false)} />
         <ProfilesSheet open={profilesOpen} onClose={() => setProfilesOpen(false)} />
+        <BackupSheet open={backupOpen} onClose={() => setBackupOpen(false)} />
 
         {importPlan && (
           <Sheet open onClose={() => !importBusy && setImportPlan(null)} label="Import CSV" style={{ gap: 12 }}>

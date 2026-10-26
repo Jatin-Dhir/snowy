@@ -62,8 +62,8 @@ export async function checkSharedFile(): Promise<SharedFile | null> {
  * The share plugin copies every shared file into the app's own files folder
  * and never removes it, so statements used to pile up there (and ride along
  * in phone backups). checkSharedFile now deletes each copy once it's read;
- * this sweeps up copies left by older builds, plus CSV exports from earlier
- * sessions, which wait in the cache folder until Android clears it.
+ * this sweeps up copies left by older builds, plus CSV exports and backups
+ * from earlier sessions, which wait in the cache folder until Android clears it.
  */
 export async function clearLeftoverFiles(): Promise<void> {
   try {
@@ -77,7 +77,7 @@ export async function clearLeftoverFiles(): Promise<void> {
       }
     }
     await sweep(Directory.Data, /\.(csv|tsv|txt|pdf|xlsx?)$/i)
-    await sweep(Directory.Cache, /^taily-.*\.csv$/i)
+    await sweep(Directory.Cache, /^taily-.*\.(csv|json)$/i)
   } catch {
     /* nothing to sweep, or no access: harmless */
   }

@@ -12,6 +12,7 @@ public class MainActivity extends BridgeActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     registerPlugin(PrivacyScreenPlugin.class);
+    registerPlugins(FlavorPlugins.all());
     super.onCreate(savedInstanceState);
   }
 

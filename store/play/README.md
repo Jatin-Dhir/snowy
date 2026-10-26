@@ -2,9 +2,9 @@
 
 ## What is ready
 
-- A signed release bundle: `releases/taily-play-v2.10.0.aab` (package `com.jatindhir.taily`, version 20 / 2.10.0,
+- A signed release bundle: `releases/taily-play-v2.11.0.aab` (package `com.jatindhir.taily`, version 21 / 2.11.0,
   targets Android 16 / API 36)
-- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.10.0.apk`
+- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.11.0.apk`
 - A privacy policy at https://jatin-dhir.github.io/snowy/privacy.html (also linked from Settings in the app)
 - Listing copy (`listing.md`), data-safety answers (`data-safety.md`), release notes (`whats-new.txt`)
 - Graphics in `graphics/` (icon, feature graphic, screenshots)
@@ -32,6 +32,27 @@ Upload-key certificate, SHA-256 (public):
    opted in for 14 days. Recruit 15 to 20; people drop out and a drop below 12 can reset the clock.
 6. After 14 days: Dashboard, **Apply for production**, answer the questions, wait for review, then create the
    production release.
+
+## Taily Pro (the in-app purchase)
+
+Pro is one non-consumable, one-time product, sold only in the Play build. The sideloaded APK and the web app
+include Pro for free (they have no store to pay through). The app looks for the product id `taily_pro`.
+
+1. **Payments profile**: Play Console, Setup, Payments profile. Google needs it (bank account and tax details)
+   before you can sell anything.
+2. **Upload a build first** (Internal testing is enough). Play only lets you create products once an uploaded
+   bundle contains the billing permission, and this one does.
+3. **Create the product**: Monetize with Play, Products, One-time products, Create.
+   - Product ID: `taily_pro` (exactly this, and it can never be reused or renamed)
+   - Name: Taily Pro
+   - Description: Statement import, encrypted backups, recurring payments, profiles and any accent color.
+   - Price: ₹199 for India; let Play convert it for other countries. Activate it.
+4. **License testing**: Setup, License testing. Add your own Gmail and your testers' so their purchases are free
+   test purchases (otherwise closed testers pay real money).
+5. On a phone: Settings, Get Taily Pro, Unlock. Restore a purchase works after a reinstall or on a new phone.
+
+Until the product exists and is active, the Pro sheet says Google Play isn't offering Pro and the Unlock button
+stays disabled; nothing crashes.
 
 ## Regenerating the graphics
 
@@ -87,8 +108,9 @@ be reset through Play Console support, but that takes days.
   https://developer.android.com/google/play/requirements/target-sdk
 - No native libraries, so the 16 KB page-size requirement does not apply.
 - Permissions are internet, microphone (voice entry), vibration, notifications, and boot-completed (restores
-  scheduled reminders). The exact-alarm permission that the notifications plugin declares is removed; Taily only
-  sets ordinary reminders.
+  scheduled reminders), plus Google Play Billing for Taily Pro, which brings network-state with it (Play build
+  only). The exact-alarm permission that the notifications plugin declares is removed; Taily only sets ordinary
+  reminders.
 - No self-update code in the Play bundle: Play policy only allows updating through Play.
 
 ## Security hardening (2.10.0)

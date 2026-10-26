@@ -74,7 +74,8 @@
   --pos: #6d9aff;
   --pos-soft: #16233f;
   --amber: #e09858;
-  --red: #d06258;
+  /* 4.7:1 on the sheet background; #d06258 was 4.3:1, too faint for small error text */
+  --red: #d66a60;
   --bar-idle: #272e36;
   --bar-empty: #1b2026;
   --faint-future: #414954;
@@ -309,6 +310,19 @@ select {
   letter-spacing: 0.11em;
   text-transform: uppercase;
   color: var(--faint);
+}
+
+/* marks a Settings row that needs Taily Pro (Play build, not bought yet) */
+.pro-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 /* soft extruded surface */
@@ -1002,7 +1016,8 @@ button.chip:active {
   border: none;
   border-radius: var(--r-sm);
   padding: 11px 14px;
-  font-size: 15px;
+  /* 16px or more, or iPhone Safari zooms the whole page when a field is tapped */
+  font-size: 16px;
   color: var(--ink);
   box-shadow: var(--inset-sm);
   transition: box-shadow 240ms var(--ease-soft);

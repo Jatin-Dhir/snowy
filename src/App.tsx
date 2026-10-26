@@ -8,6 +8,8 @@ import { checkForUpdate, type UpdateInfo } from './lib/updater'
 import { DISTRIBUTION } from './lib/distribution'
 import { checkSharedFile, clearLeftoverFiles, type SharedFile } from './lib/shareIntent'
 import { syncPrivacyScreen } from './lib/privacyScreen'
+import { initPro } from './lib/pro'
+import { ProSheet } from './components/ProSheet'
 import type { ParsedSpeech } from './lib/parseSpeech'
 import { applyCustomAccent, clearCustomAccent } from './lib/theme'
 import { syncStatusBar } from './lib/statusbar'
@@ -209,6 +211,11 @@ export default function App() {
     if (settingsRow !== undefined) void syncPrivacyScreen(!!settings.pinHash)
   }, [settingsRow, settings.pinHash])
 
+  // Play build only: the Pro price, and whether this Google account owns it
+  useEffect(() => {
+    void initPro()
+  }, [])
+
   // the web app's ledger lives only in this browser: ask it not to evict it
   // under storage pressure (once the person has actually started tracking)
   useEffect(() => {
@@ -306,6 +313,7 @@ export default function App() {
         onPendingImportHandled={() => setPendingImport(null)}
         onClose={() => setSettingsOpen(false)}
       />
+      <ProSheet />
       <Toast />
       {locked && settings.pinHash && <LockScreen pinHash={settings.pinHash} onUnlock={() => setLocked(false)} />}
     </div>

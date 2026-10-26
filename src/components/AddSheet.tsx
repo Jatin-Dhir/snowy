@@ -240,11 +240,11 @@ export function AddSheet({
   return (
     <Sheet open={open} onClose={onClose} label={isEdit ? 'Edit expense' : 'New expense'}>
         <div className="row-between">
-          <span className="seg" role="tablist" aria-label="Money direction">
-            <button className={kind === 'out' ? 'on' : ''} onClick={() => setKind('out')} aria-label="Money out">
+          <span className="seg" role="group" aria-label="Money direction">
+            <button className={kind === 'out' ? 'on' : ''} aria-pressed={kind === 'out'} onClick={() => setKind('out')}>
               <Icon name="minus" size={12} strokeWidth={2.8} /> Spent
             </button>
-            <button className={kind === 'in' ? 'on' : ''} onClick={() => setKind('in')} aria-label="Money in">
+            <button className={kind === 'in' ? 'on' : ''} aria-pressed={kind === 'in'} onClick={() => setKind('in')}>
               <Icon name="plus" size={12} strokeWidth={2.8} /> Received
             </button>
           </span>

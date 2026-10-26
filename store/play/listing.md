@@ -30,17 +30,21 @@ Know where it went
 
 Keep track of people and payments
 • Lent and borrowed: who owes whom, with reminders and a settled history
-• Recurring payments log themselves on their day
 • Several accounts (UPI, cash, card, or your own), each with its own balance
-
-Bring your history in
-• Import a bank statement from a CSV or PDF, or share one straight into Taily from your files, email or bank app
-• Export everything to CSV whenever you like
 
 Made for India, works anywhere
 • Rupees by default, with live conversion if you switch currency
 • Light and dark themes with soft pastel accent colours
-• Optional app lock with a 4-digit PIN
+• App lock with a 4-digit PIN that locks again when you step away
+• Export everything to CSV whenever you like
+
+Taily Pro: pay once, keep it for good
+• Import bank statements from CSV, Excel or PDF, or share one straight in from your files, email or bank app
+• Encrypted backups: your whole ledger in one password-locked file, ready for a new phone
+• Recurring payments that log themselves on their day
+• Profiles: separate books for family, a shop or a trip
+• Any accent colour you like
+No subscription. Everything else in Taily is free.
 
 Private by design
 Taily keeps your entries on your device and never uploads them. Read the full policy at jatin-dhir.github.io/snowy/privacy.html

@@ -4,7 +4,7 @@
 // so for them every check answers "latest" without touching the network.
 import { SELF_UPDATE } from './distribution'
 
-export const APP_VERSION = '2.10.0'
+export const APP_VERSION = '2.11.0'
 const RELEASES_API = 'https://api.github.com/repos/Jatin-Dhir/snowy/releases/latest'
 
 export interface UpdateInfo {

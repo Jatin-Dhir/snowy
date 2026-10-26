@@ -47,6 +47,14 @@ make. The third is settled in the app itself.
 
 Over-disclosing is never penalised; under-disclosing can be.
 
+## Taily Pro purchases (2.11.0)
+
+Still "No data collected". Google's Data safety help says data a payment service like Google Play's billing
+system collects doesn't need declaring when the app never accesses it and the service collects it directly
+under its own terms, and that data processed only on the device and never sent off it isn't "collected" at all.
+Taily asks Play only whether `taily_pro` is owned and keeps that yes/no on the phone. Source:
+https://support.google.com/googleplay/android-developer/answer/10787469
+
 ## Other App content forms
 
 - Privacy policy URL: https://jatin-dhir.github.io/snowy/privacy.html

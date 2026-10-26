@@ -7,6 +7,7 @@ import {
   switchProfile,
   type Profile
 } from '../lib/profiles'
+import { hasPro } from '../lib/pro'
 import { Icon } from './Icon'
 import { Sheet } from './Sheet'
 import { haptic, useUi } from '../state/ui'
@@ -29,6 +30,7 @@ export function ProfilesSheet({ open, onClose }: { open: boolean; onClose: () =>
   }
 
   function create() {
+    if (!hasPro('profiles')) return
     const made = addProfile(newName)
     if (made) {
       haptic('success')

@@ -47,6 +47,11 @@ export function currentDbName(): string {
   return dbNameFor(loadProfiles().current)
 }
 
+/** The current profile's name as a filename piece: "Mom's Shop" → "mom-s-shop". */
+export function profileSlug(): string {
+  return currentProfile().name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'main'
+}
+
 export function addProfile(name: string): Profile | null {
   const clean = name.trim()
   if (!clean) return null

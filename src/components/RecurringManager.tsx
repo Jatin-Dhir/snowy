@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Rule } from '../db/db'
 import { addRule, deleteRule, restoreRule, togglePauseRule, updateRule } from '../db/recurring'
+import { hasPro } from '../lib/pro'
 import { formatMinor } from '../lib/money'
 import { todayISO } from '../lib/dates'
 import { Icon } from './Icon'
@@ -40,6 +41,8 @@ export function RecurringManager({ currency }: { currency: string }) {
   const formCat = catOf(form.cat)
 
   function openAdd() {
+    // payments already set up keep running either way; adding new ones is Pro
+    if (!hasPro('recurring')) return
     setForm(emptyForm())
     setFormOpen('add')
   }
