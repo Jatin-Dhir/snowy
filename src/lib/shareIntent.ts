@@ -47,15 +47,38 @@ export async function checkSharedFile(): Promise<SharedFile | null> {
     const isPdf = item.type === 'application/pdf' || path.toLowerCase().endsWith('.pdf')
 
     const { Filesystem, Encoding } = await import('@capacitor/filesystem')
-    if (isPdf) {
-      const file = await Filesystem.readFile({ path }) // no encoding = raw, base64-encoded
-      if (typeof file.data !== 'string' || !file.data) return null
-      return { kind: 'pdf', bytes: base64ToBytes(file.data), title }
-    }
-    const file = await Filesystem.readFile({ path, encoding: Encoding.UTF8 })
+    // the import preview works from memory, so the copy (a whole bank
+    // statement) goes as soon as it's read
+    const file = await Filesystem.readFile(isPdf ? { path } : { path, encoding: Encoding.UTF8 }) // no encoding = raw, base64-encoded
+    await Filesystem.deleteFile({ path }).catch(() => undefined)
     if (typeof file.data !== 'string' || !file.data.trim()) return null
-    return { kind: 'text', text: file.data, title }
+    return isPdf ? { kind: 'pdf', bytes: base64ToBytes(file.data), title } : { kind: 'text', text: file.data, title }
   } catch {
     return null
+  }
+}
+
+/**
+ * The share plugin copies every shared file into the app's own files folder
+ * and never removes it, so statements used to pile up there (and ride along
+ * in phone backups). checkSharedFile now deletes each copy once it's read;
+ * this sweeps up copies left by older builds, plus CSV exports from earlier
+ * sessions, which wait in the cache folder until Android clears it.
+ */
+export async function clearLeftoverFiles(): Promise<void> {
+  try {
+    const { Capacitor } = await import('@capacitor/core')
+    if (!Capacitor.isNativePlatform()) return
+    const { Filesystem, Directory } = await import('@capacitor/filesystem')
+    const sweep = async (directory: (typeof Directory)[keyof typeof Directory], name: RegExp) => {
+      const { files } = await Filesystem.readdir({ path: '', directory })
+      for (const f of files) {
+        if (f.type === 'file' && name.test(f.name)) await Filesystem.deleteFile({ path: f.name, directory }).catch(() => undefined)
+      }
+    }
+    await sweep(Directory.Data, /\.(csv|tsv|txt|pdf|xlsx?)$/i)
+    await sweep(Directory.Cache, /^taily-.*\.csv$/i)
+  } catch {
+    /* nothing to sweep, or no access: harmless */
   }
 }

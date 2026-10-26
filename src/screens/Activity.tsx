@@ -9,7 +9,7 @@ import { TransactionRow } from '../components/TransactionRow'
 import { Icon } from '../components/Icon'
 import { haptic, useUi } from '../state/ui'
 
-function matchesQuery(t: Txn, catName: string, q: string): boolean {
+function matchesQuery(t: Txn, catName: string, accountName: string, q: string): boolean {
   const query = q.trim().toLowerCase()
   if (!query) return true
   const gt = query.match(/^>\s*(\d+)$/)
@@ -24,7 +24,7 @@ function matchesQuery(t: Txn, catName: string, q: string): boolean {
   return (
     t.note.toLowerCase().includes(query) ||
     catName.toLowerCase().includes(query) ||
-    t.accountId.includes(query)
+    accountName.toLowerCase().includes(query)
   )
 }
 
@@ -84,6 +84,8 @@ export function Activity({
   const accounts = useLiveQuery(() => db.accounts.orderBy('sort').toArray(), []) ?? []
   const txns = useLiveQuery(() => allLiveTxns(), []) ?? []
   const catName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
+  // search by the name you gave an account, not its internal id
+  const accName = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts])
 
   const monthKey = currentMonthKey()
   const monthTotal = useMemo(() => sum(txns.filter((t) => t.dateISO.startsWith(monthKey))), [txns, monthKey])
@@ -96,9 +98,14 @@ export function Activity({
           (catFilter === null || t.categoryId === catFilter) &&
           (accFilter === null || t.accountId === accFilter) &&
           (dateFilter === null || t.dateISO === dateFilter) &&
-          matchesQuery(t, t.categoryId ? (catName.get(t.categoryId) ?? '') : 'uncategorized', query)
+          matchesQuery(
+            t,
+            t.categoryId ? (catName.get(t.categoryId) ?? '') : 'untagged',
+            accName.get(t.accountId) ?? t.accountId,
+            query
+          )
       ),
-    [txns, catFilter, accFilter, dateFilter, query, catName]
+    [txns, catFilter, accFilter, dateFilter, query, catName, accName]
   )
   const filteredTotal = useMemo(() => sum(filtered), [filtered])
 

@@ -89,8 +89,15 @@ export async function updateRule(
   await db.rules.update(id, { ...patch, ...clearBase, nextRunISO })
 }
 
-export async function deleteRule(id: string): Promise<void> {
+/** Returns the rule as it was, so the toast's Undo can put it back with restoreRule. */
+export async function deleteRule(id: string): Promise<Rule | undefined> {
+  const rule = await db.rules.get(id)
   await db.rules.delete(id)
+  return rule
+}
+
+export async function restoreRule(rule: Rule): Promise<void> {
+  await db.rules.put(rule)
 }
 
 export async function togglePauseRule(id: string): Promise<void> {

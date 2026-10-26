@@ -48,6 +48,13 @@ export async function updateLoanReminder(id: string, remindISO: string | null): 
   await db.loans.update(id, { remindISO, updatedAt: Date.now() })
 }
 
-export async function deleteLoan(id: string): Promise<void> {
+/** Returns the record as it was, so the toast's Undo can put it back with restoreLoan. */
+export async function deleteLoan(id: string): Promise<Loan | undefined> {
+  const loan = await db.loans.get(id)
   await db.loans.delete(id)
+  return loan
+}
+
+export async function restoreLoan(loan: Loan): Promise<void> {
+  await db.loans.put(loan)
 }

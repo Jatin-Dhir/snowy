@@ -27,6 +27,13 @@ export async function addToGoal(id: string, deltaMinor: number): Promise<void> {
   })
 }
 
-export async function deleteGoal(id: string): Promise<void> {
+/** Returns the goal as it was, so the toast's Undo can put it back with restoreGoal. */
+export async function deleteGoal(id: string): Promise<Goal | undefined> {
+  const goal = await db.goals.get(id)
   await db.goals.delete(id)
+  return goal
+}
+
+export async function restoreGoal(goal: Goal): Promise<void> {
+  await db.goals.put(goal)
 }

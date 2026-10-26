@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Category, type Txn } from '../db/db'
 import { addAccount } from '../db/accounts'
 import { recentTxns, addTxn, updateTxn, softDeleteTxn, restoreTxn, removeTxnPermanently } from '../db/repo'
 import { formatEntry, currencySymbol, formatMinor } from '../lib/money'
 import { guessAccount, guessCategory } from '../lib/smart'
+import type { ParsedSpeech } from '../lib/parseSpeech'
 import { useAmountEntry } from '../lib/useAmountEntry'
 import { todayISO, addDaysISO } from '../lib/dates'
 import { Icon } from './Icon'
@@ -16,11 +18,14 @@ import { haptic, useUi } from '../state/ui'
 export function AddSheet({
   open,
   editTxn,
+  draft = null,
   currency,
   onClose
 }: {
   open: boolean
   editTxn: Txn | null
+  /** a voice entry that was missing only its amount */
+  draft?: Omit<ParsedSpeech, 'amountMinor'> | null
   currency: string
   onClose: () => void
 }) {
@@ -37,6 +42,8 @@ export function AddSheet({
   const [showNote, setShowNote] = useState(false)
   const [showDate, setShowDate] = useState(false)
   const [newAccountName, setNewAccountName] = useState('')
+  const noteRef = useRef<HTMLInputElement>(null)
+  const dateRef = useRef<HTMLInputElement>(null)
 
   const allCategories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const categories = useMemo(() => allCategories.filter((c) => !c.archived), [allCategories])
@@ -64,12 +71,15 @@ export function AddSheet({
     // typing a note the app has seen before pushes its remembered tag to slot 1
     const guessed = note.trim() ? guessCategory(note, recent) : null
     const guessedCat = guessed ? categories.find((c) => c.id === guessed) : null
+    // an entry being edited, or a voice entry being finished, always shows its own tag first
+    const ownId = (editTxn ?? draft)?.categoryId
+    const ownCat = ownId ? categories.find((c) => c.id === ownId) : null
     const merged: Category[] = []
-    for (const c of [...(guessedCat ? [guessedCat] : []), ...learned, ...fallback, ...categories]) {
+    for (const c of [...(ownCat ? [ownCat] : []), ...(guessedCat ? [guessedCat] : []), ...learned, ...fallback, ...categories]) {
       if (c && !merged.includes(c)) merged.push(c)
     }
     return merged.slice(0, 3)
-  }, [recent, categories, kind, note])
+  }, [recent, categories, kind, note, editTxn, draft])
 
   const isEdit = editTxn !== null
   const amountMinor = amt.minor
@@ -88,12 +98,12 @@ export function AddSheet({
       setShowDate(editTxn.dateISO !== todayISO())
     } else {
       amt.reset()
-      setKind('out')
-      setNote('')
+      setKind(draft?.kind ?? 'out')
+      setNote(draft?.note ?? '')
       setDateISO(todayISO())
       setAccount(guessAccount(accounts, recent) ?? 'upi')
-      setSelectedCat(null)
-      setShowNote(false)
+      setSelectedCat(draft?.categoryId ?? null)
+      setShowNote(!!draft?.note)
       setShowDate(false)
     }
     setShowAll(false)
@@ -101,7 +111,7 @@ export function AddSheet({
     setManageTags(false)
     setNewAccountName('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, editTxn])
+  }, [open, editTxn, draft])
 
   async function saveNew(categoryId: string | null) {
     if (!canSave) return
@@ -269,8 +279,17 @@ export function AddSheet({
                 className="pill"
                 onClick={() => {
                   if (dateISO === todayISO()) setDateISO(addDaysISO(todayISO(), -1))
-                  else if (dateISO === addDaysISO(todayISO(), -1)) setShowDate(true)
-                  else setDateISO(todayISO())
+                  else if (dateISO === addDaysISO(todayISO(), -1)) {
+                    // a third tap goes straight to the calendar for any other day. The
+                    // field is rendered inside the tap because browsers only open a
+                    // picker (or a keyboard, on iPhone) during the tap itself.
+                    flushSync(() => setShowDate(true))
+                    try {
+                      dateRef.current?.showPicker()
+                    } catch {
+                      dateRef.current?.focus()
+                    }
+                  } else setDateISO(todayISO())
                 }}
               >
                 <Icon name="calendar" size={13} />
@@ -280,7 +299,18 @@ export function AddSheet({
                 <Icon name="wallet" size={13} />
                 {accountName}
               </button>
-              <button className={`pill${showNote ? ' active' : ''}`} onClick={() => setShowNote(!showNote)}>
+              <button
+                className={`pill${showNote ? ' active' : ''}`}
+                onClick={() => {
+                  if (showNote) {
+                    setShowNote(false)
+                    return
+                  }
+                  // opening the note goes straight to typing (rendered within the tap, as above)
+                  flushSync(() => setShowNote(true))
+                  noteRef.current?.focus()
+                }}
+              >
                 <Icon name="pencil" size={13} />
                 Note
               </button>
@@ -290,6 +320,7 @@ export function AddSheet({
               <div style={{ display: 'flex', gap: 8, paddingBottom: 12 }}>
                 {showNote && (
                   <input
+                    ref={noteRef}
                     className="field"
                     placeholder="Note — e.g. Zepto, chai with Ananya"
                     value={note}
@@ -299,6 +330,7 @@ export function AddSheet({
                 )}
                 {showDate && (
                   <input
+                    ref={dateRef}
                     className="field"
                     type="date"
                     value={dateISO}

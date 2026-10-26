@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- What the FileProvider may hand to other apps: only Taily's own folders.
+     The cache holds CSV exports on their way to the share sheet; the
+     app-specific external folder is where the WebView puts camera captures.
+     (Capacitor's template shared the whole of external storage.) -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
+    <external-files-path name="my_images" path="." />
     <cache-path name="my_cache_images" path="." />
 </paths>

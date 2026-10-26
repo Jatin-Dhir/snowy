@@ -82,7 +82,7 @@ export function Insights({
       .map(([id, total]) => ({
         id,
         total,
-        name: id ? (categories.find((c) => c.id === id)?.name ?? 'Other') : 'Uncategorized',
+        name: id ? (categories.find((c) => c.id === id)?.name ?? 'Other') : 'Untagged',
         color: id ? (categories.find((c) => c.id === id)?.color ?? '#7A8794') : '#7A8794'
       }))
       .sort((a, b) => b.total - a.total)
@@ -279,7 +279,7 @@ export function Insights({
                   style={{ display: 'flex', flexDirection: 'column', gap: 5, width: '100%' }}
                   onClick={() => setShowRest((v) => !v)}
                   aria-expanded={showRest}
-                  aria-label={showRest ? 'Hide the rest of your categories' : 'Show the rest of your categories'}
+                  aria-label={showRest ? 'Hide the rest of your tags' : 'Show the rest of your tags'}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>

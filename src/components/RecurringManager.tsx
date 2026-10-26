@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Rule } from '../db/db'
-import { addRule, deleteRule, togglePauseRule, updateRule } from '../db/recurring'
+import { addRule, deleteRule, restoreRule, togglePauseRule, updateRule } from '../db/recurring'
 import { formatMinor } from '../lib/money'
 import { todayISO } from '../lib/dates'
 import { Icon } from './Icon'
@@ -151,8 +151,10 @@ export function RecurringManager({ currency }: { currency: string }) {
           <button
             className="btn danger"
             onClick={() => {
-              void deleteRule(active.id)
-              showToast(`${active.name} removed`)
+              const name = active.name
+              void deleteRule(active.id).then((removed) => {
+                showToast(`${name} removed`, removed ? () => void restoreRule(removed) : undefined)
+              })
               setActive(null)
             }}
           >

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Goal } from '../db/db'
-import { addGoal, addToGoal, deleteGoal, updateGoal } from '../db/goals'
+import { addGoal, addToGoal, deleteGoal, restoreGoal, updateGoal } from '../db/goals'
 import { addTxn, recentTxns, txnsForMonth } from '../db/repo'
 import { byCategory, pace, projectMonth, sum } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
@@ -189,8 +189,9 @@ function GoalDialog({
           <button
             className="btn danger"
             onClick={() => {
-              void deleteGoal(goal.id)
-              showToast(`${goal.name} removed`)
+              void deleteGoal(goal.id).then((removed) => {
+                showToast(`${goal.name} removed`, removed ? () => void restoreGoal(removed) : undefined)
+              })
               onClose()
             }}
           >
@@ -346,7 +347,7 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
 
       {budgetless.length > 0 && (
         <button className="btn ghost" onClick={() => setPickingCategory(true)}>
-          <Icon name="plus" size={16} strokeWidth={2.2} /> Add a category budget
+          <Icon name="plus" size={16} strokeWidth={2.2} /> Add a budget for a tag
         </button>
       )}
 
@@ -433,8 +434,8 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
       )}
 
       {pickingCategory && (
-        <Sheet open onClose={() => setPickingCategory(false)} label="Pick a category" style={{ gap: 10 }}>
-            <span className="label" style={{ letterSpacing: '0.14em' }}>Budget which category?</span>
+        <Sheet open onClose={() => setPickingCategory(false)} label="Pick a tag" style={{ gap: 10 }}>
+            <span className="label" style={{ letterSpacing: '0.14em' }}>Budget which tag?</span>
             <div className="cat-grid">
               {budgetless.map((c) => (
                 <button

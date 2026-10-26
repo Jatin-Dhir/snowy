@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { addTxn, recentTxns, removeTxnPermanently } from '../db/repo'
 import { formatMinor } from '../lib/money'
-import { parseSpeech } from '../lib/parseSpeech'
+import { parseSpeech, type ParsedSpeech } from '../lib/parseSpeech'
 import { guessAccount } from '../lib/smart'
 import { listenOnce, stopListening } from '../lib/voice'
 import { Icon } from './Icon'
@@ -13,11 +13,14 @@ import { haptic, useUi } from '../state/ui'
 export function VoiceOverlay({
   open,
   currency,
-  onClose
+  onClose,
+  onNeedAmount
 }: {
   open: boolean
   currency: string
   onClose: () => void
+  /** heard a note or a tag but no amount: finish it in the add sheet */
+  onNeedAmount: (draft: Omit<ParsedSpeech, 'amountMinor'>) => void
 }) {
   const { showToast } = useUi()
   const [heard, setHeard] = useState('')
@@ -78,7 +81,13 @@ export function VoiceOverlay({
 
       const parsed = parseSpeech(result.text, catRef.current, recentRef.current)
       if (!parsed.amountMinor) {
-        showToast(`Heard "${result.text}" — but no amount. Try "250 shopping".`)
+        // keep what was heard: the add sheet opens with the note and tag in
+        // place, so only the amount is left to type
+        if (parsed.note || parsed.categoryId) {
+          onNeedAmount({ kind: parsed.kind, note: parsed.note, categoryId: parsed.categoryId })
+        } else {
+          showToast(`Heard "${result.text}" — but no amount. Try "250 shopping".`)
+        }
         return
       }
       const cat = parsed.categoryId ? catRef.current.find((c) => c.id === parsed.categoryId) : null

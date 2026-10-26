@@ -1,24 +1,48 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { PinPad } from './PinPad'
 import { TailyMark } from '../screens/Welcome'
-import { hashPin } from '../lib/pin'
+import { saveSettings } from '../db/db'
+import { clearPinFailures, hashPin, isLegacyHash, recordPinFailure, verifyPin } from '../lib/pin'
 import { haptic } from '../state/ui'
 
+/**
+ * Covers the app until the PIN is entered. It sits on top of the mounted app
+ * instead of replacing it, so unlocking after a re-lock lands you exactly
+ * where you were. Everything behind it is inert meanwhile: no focus, no taps,
+ * nothing for a screen reader to read out.
+ */
 export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: () => void }) {
   const [shakeKey, setShakeKey] = useState(0)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const behind = [...document.body.children].filter((el) => el !== rootRef.current)
+    for (const el of behind) el.setAttribute('inert', '')
+    return () => {
+      for (const el of behind) el.removeAttribute('inert')
+    }
+  }, [])
 
   async function tryPin(pin: string) {
-    if ((await hashPin(pin)) === pinHash) {
+    if (await verifyPin(pin, pinHash)) {
+      clearPinFailures()
       haptic('success')
+      if (isLegacyHash(pinHash)) await saveSettings({ pinHash: await hashPin(pin) })
       onUnlock()
     } else {
+      recordPinFailure()
       haptic('heavy')
       setShakeKey((k) => k + 1)
     }
   }
 
-  return (
+  return createPortal(
     <div
+      ref={rootRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Taily is locked"
       style={{
         position: 'fixed',
         inset: 0,
@@ -53,9 +77,11 @@ export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: (
           label="Enter your PIN"
           error="That's not it — try again"
           shakeKey={shakeKey}
+          guarded
           onComplete={(p) => void tryPin(p)}
         />
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

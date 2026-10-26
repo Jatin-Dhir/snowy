@@ -2,9 +2,9 @@
 
 ## What is ready
 
-- A signed release bundle: `releases/taily-play-v2.9.0.aab` (package `com.jatindhir.taily`, version 19 / 2.9.0,
+- A signed release bundle: `releases/taily-play-v2.10.0.aab` (package `com.jatindhir.taily`, version 20 / 2.10.0,
   targets Android 16 / API 36)
-- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.9.0.apk`
+- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.10.0.apk`
 - A privacy policy at https://jatin-dhir.github.io/snowy/privacy.html (also linked from Settings in the app)
 - Listing copy (`listing.md`), data-safety answers (`data-safety.md`), release notes (`whats-new.txt`)
 - Graphics in `graphics/` (icon, feature graphic, screenshots)
@@ -90,3 +90,16 @@ be reset through Play Console support, but that takes days.
   scheduled reminders). The exact-alarm permission that the notifications plugin declares is removed; Taily only
   sets ordinary reminders.
 - No self-update code in the Play bundle: Play policy only allows updating through Play.
+
+## Security hardening (2.10.0)
+
+- Capacitor 8.5.3. 8.5.0 had a published critical advisory (GHSA-rvm3-566m-v7fv, remote content loaded at the
+  app's origin); `npm audit --omit=dev` now reports nothing.
+- Backups carry Taily's data only when they're end-to-end encrypted (`res/xml/data_extraction_rules.xml`,
+  `res/xml/backup_rules.xml`); see `data-safety.md`.
+- App lock: salted PBKDF2 hash of the PIN (older SHA-256 hashes upgrade on the next unlock), a doubling cooldown
+  after every 5 wrong tries, re-lock after a minute in the background, and while the lock is on the window is
+  FLAG_SECURE (no recent-apps preview, no screenshots) via the in-app `PrivacyScreenPlugin`.
+- Statements shared into Taily are deleted from app storage once read; old copies and earlier CSV exports are
+  swept at startup.
+- The FileProvider exposes only Taily's cache and app-specific folders, not all of external storage.

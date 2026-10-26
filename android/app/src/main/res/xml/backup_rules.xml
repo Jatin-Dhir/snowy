@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 9 to 11. Back up Taily's data only when the backup is end-to-end
+     encrypted (client-side encryption, which needs a screen lock). Android 8
+     and older can't meet the condition, so nothing is backed up there. -->
+<full-backup-content>
+    <include domain="root" path="." requireFlags="clientSideEncryption" />
+</full-backup-content>

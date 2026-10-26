@@ -6,7 +6,9 @@ import { runDueRules } from './db/recurring'
 import { formatMinor } from './lib/money'
 import { checkForUpdate, type UpdateInfo } from './lib/updater'
 import { DISTRIBUTION } from './lib/distribution'
-import { checkSharedFile, type SharedFile } from './lib/shareIntent'
+import { checkSharedFile, clearLeftoverFiles, type SharedFile } from './lib/shareIntent'
+import { syncPrivacyScreen } from './lib/privacyScreen'
+import type { ParsedSpeech } from './lib/parseSpeech'
 import { applyCustomAccent, clearCustomAccent } from './lib/theme'
 import { syncStatusBar } from './lib/statusbar'
 import { LockScreen } from './components/LockScreen'
@@ -25,6 +27,10 @@ import { useUi } from './state/ui'
 
 const TAB_ORDER: Tab[] = ['home', 'activity', 'budgets', 'insights']
 
+// with app lock on, coming back after this long in the background asks for the
+// PIN again; quick trips (file picker, share sheet, a permission prompt) don't
+const RELOCK_AFTER_MS = 60_000
+
 export default function App() {
   const { showToast, dismissToast } = useUi()
   const [tab, setTab] = useState<Tab>('home')
@@ -40,10 +46,11 @@ export default function App() {
   const [editTxn, setEditTxn] = useState<Txn | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ready, setReady] = useState(false)
-  // decided once at cold start — setting or changing a PIN mid-session must
-  // never throw the user back to the lock screen
+  // set at cold start and after a minute in the background — setting or
+  // changing a PIN mid-session must never throw the user back to the lock screen
   const [locked, setLocked] = useState(false)
   const [pendingAdd, setPendingAdd] = useState(false)
+  const [addDraft, setAddDraft] = useState<Omit<ParsedSpeech, 'amountMinor'> | null>(null)
   const [pendingImport, setPendingImport] = useState<SharedFile | null>(null)
   // a confirmed newer release — blocks entry until installed. Only ever set
   // from a positive 'update' result, never from a network error or timeout,
@@ -132,9 +139,12 @@ export default function App() {
   // checked once at boot (covers a cold start launched directly via Share)
   // and again on every live share while the app's already running
   useEffect(() => {
-    void checkSharedFile().then((f) => {
-      if (f) setPendingImport(f)
-    })
+    void checkSharedFile()
+      .then((f) => {
+        if (f) setPendingImport(f)
+      })
+      // only after the boot-time check, so it can't sweep away a file that was just shared in
+      .finally(() => void clearLeftoverFiles())
     function onShare() {
       void checkSharedFile().then((f) => {
         if (f) setPendingImport(f)
@@ -160,6 +170,45 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingImport, ready, locked, settings.initialized])
 
+  useEffect(() => {
+    if (!settings.pinHash) return
+    let awaySince: number | null = null
+    const away = () => {
+      awaySince ??= Date.now()
+    }
+    const back = () => {
+      if (awaySince !== null && Date.now() - awaySince >= RELOCK_AFTER_MS) setLocked(true)
+      awaySince = null
+    }
+    const onVisibility = () => (document.visibilityState === 'hidden' ? away() : back())
+    document.addEventListener('visibilitychange', onVisibility)
+    // the WebView's visibility isn't reliable on every Android version, so the
+    // native app also listens to the activity itself
+    let sub: { remove(): void } | undefined
+    let disposed = false
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) return
+        const { App: CapApp } = await import('@capacitor/app')
+        const handle = await CapApp.addListener('appStateChange', ({ isActive }) => (isActive ? back() : away()))
+        if (disposed) void handle.remove()
+        else sub = handle
+      } catch {
+        /* not native */
+      }
+    })()
+    return () => {
+      disposed = true
+      document.removeEventListener('visibilitychange', onVisibility)
+      sub?.remove()
+    }
+  }, [settings.pinHash])
+
+  useEffect(() => {
+    if (settingsRow !== undefined) void syncPrivacyScreen(!!settings.pinHash)
+  }, [settingsRow, settings.pinHash])
+
   // the web app's ledger lives only in this browser: ask it not to evict it
   // under storage pressure (once the person has actually started tracking)
   useEffect(() => {
@@ -171,10 +220,6 @@ export default function App() {
 
   if (forceUpdate) {
     return <UpdateGate info={forceUpdate} onRecheck={setForceUpdate} />
-  }
-
-  if (locked && settings.pinHash) {
-    return <LockScreen pinHash={settings.pinHash} onUnlock={() => setLocked(false)} />
   }
 
   if (!settings.initialized) {
@@ -190,12 +235,14 @@ export default function App() {
 
   function openEdit(t: Txn) {
     dismissToast()
+    setAddDraft(null)
     setEditTxn(t)
     setAddOpen(true)
   }
 
   function openAdd() {
     dismissToast()
+    setAddDraft(null)
     setEditTxn(null)
     setAddOpen(true)
   }
@@ -228,15 +275,27 @@ export default function App() {
 
       <TabBar tab={tab} onTab={goTab} onAdd={openAdd} onVoice={() => setVoiceOpen(true)} />
 
-      <VoiceOverlay open={voiceOpen} currency={settings.currency} onClose={() => setVoiceOpen(false)} />
+      <VoiceOverlay
+        open={voiceOpen}
+        currency={settings.currency}
+        onClose={() => setVoiceOpen(false)}
+        onNeedAmount={(draft) => {
+          dismissToast()
+          setEditTxn(null)
+          setAddDraft(draft)
+          setAddOpen(true)
+        }}
+      />
 
       <AddSheet
         open={addOpen}
         editTxn={editTxn}
+        draft={addDraft}
         currency={settings.currency}
         onClose={() => {
           setAddOpen(false)
           setEditTxn(null)
+          setAddDraft(null)
         }}
       />
 
@@ -248,6 +307,7 @@ export default function App() {
         onClose={() => setSettingsOpen(false)}
       />
       <Toast />
+      {locked && settings.pinHash && <LockScreen pinHash={settings.pinHash} onUnlock={() => setLocked(false)} />}
     </div>
   )
 }

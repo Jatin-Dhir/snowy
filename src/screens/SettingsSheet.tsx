@@ -10,7 +10,7 @@ import { convertEverything } from '../db/convert'
 import { APP_VERSION, checkForUpdate, type UpdateCheck } from '../lib/updater'
 import { PRIVACY_URL, SELF_UPDATE } from '../lib/distribution'
 import { applyCustomAccent } from '../lib/theme'
-import { hashPin } from '../lib/pin'
+import { clearPinFailures, hashPin, recordPinFailure, verifyPin } from '../lib/pin'
 import { todayISO } from '../lib/dates'
 import { currentProfile } from '../lib/profiles'
 import { TAG_COLORS, TAG_ICONS } from '../db/seed'
@@ -316,11 +316,14 @@ export function SettingsSheet({
 
   async function handlePin(pin: string) {
     if (pinMode === 'verify') {
-      if ((await hashPin(pin)) === settings.pinHash) {
+      if (settings.pinHash && (await verifyPin(pin, settings.pinHash))) {
+        clearPinFailures()
         haptic('success')
         setPinShake(0)
         setPinMode('manage')
       } else {
+        // the same cooldown as the lock screen, so Settings can't be used to guess the PIN
+        recordPinFailure()
         haptic('heavy')
         setPinError("That's not it — try again")
         setPinShake((k) => k + 1)
@@ -818,6 +821,10 @@ export function SettingsSheet({
                 <span className="caption" style={{ fontSize: 13 }}>
                   PIN verified. What next?
                 </span>
+                <span className="caption" style={{ fontSize: 12.5 }}>
+                  Taily asks for it when it opens and after a minute in the background. On Android it also stays
+                  out of recent apps and screenshots while the lock is on.
+                </span>
                 <button
                   className="btn"
                   onClick={() => {
@@ -844,7 +851,9 @@ export function SettingsSheet({
                       : 'Type it once more'
                 }
                 error={pinError}
+                hint={pinMode === 'set' ? "Pick one you don't use for UPI or your bank" : undefined}
                 shakeKey={pinShake}
+                guarded={pinMode === 'verify'}
                 onComplete={(p) => void handlePin(p)}
               />
             )}

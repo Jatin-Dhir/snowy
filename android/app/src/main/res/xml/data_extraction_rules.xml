@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12 and newer. Taily's data goes into the phone's Google backup only
+     when that backup is end-to-end encrypted, which needs a screen lock on the
+     phone. Phone-to-phone transfer (cable or Wi-Fi, during setup) keeps the
+     default rules: it never leaves the two devices. -->
+<data-extraction-rules>
+    <cloud-backup disableIfNoEncryptionCapabilities="true">
+        <include domain="root" path="." />
+    </cloud-backup>
+</data-extraction-rules>

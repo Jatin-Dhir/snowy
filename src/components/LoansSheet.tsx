@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Loan } from '../db/db'
-import { addLoan, settleLoan, unsettleLoan, updateLoan, updateLoanReminder, deleteLoan } from '../db/loans'
+import { addLoan, settleLoan, unsettleLoan, updateLoan, updateLoanReminder, deleteLoan, restoreLoan } from '../db/loans'
 import { formatEntry, formatMinor, currencySymbol } from '../lib/money'
 import { useAmountEntry } from '../lib/useAmountEntry'
 import { addDaysISO, fmtDayHeading, fromISO, todayISO } from '../lib/dates'
@@ -508,9 +508,11 @@ export function LoansSheet({
               <button
                 className="btn danger"
                 onClick={() => {
-                  void deleteLoan(active.id)
+                  const person = active.person
+                  void deleteLoan(active.id).then((removed) => {
+                    showToast(`Record with ${person} removed`, removed ? () => void restoreLoan(removed) : undefined)
+                  })
                   setActive(null)
-                  showToast('Removed')
                 }}
               >
                 Delete this record
