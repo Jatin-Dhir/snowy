@@ -3,7 +3,15 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import process from 'node:process'
 
+// The hosted web app lives under its repo's path on GitHub Pages
+// (https://jatin-dhir.github.io/snowy/), so only that build needs a base path.
+// Native builds are served from the WebView's own root. Keep this in step with
+// WEB_URL in src/lib/distribution.ts; WEB_BASE=/ builds for a root-hosted site.
+const WEB_BASE = process.env.WEB_BASE ?? '/snowy/'
+const appBase = (mode: string) => (mode === 'web' ? WEB_BASE : '/')
+
 export default defineConfig(({ mode }) => ({
+  base: appBase(mode),
   plugins: [
     react(),
     VitePWA({
@@ -13,7 +21,8 @@ export default defineConfig(({ mode }) => ({
         name: 'Taily',
         short_name: 'Taily',
         description: 'Three seconds to logged.',
-        start_url: '/',
+        start_url: appBase(mode),
+        scope: appBase(mode),
         display: 'standalone',
         background_color: '#EDF0F5',
         theme_color: '#EDF0F5',
@@ -21,7 +30,7 @@ export default defineConfig(({ mode }) => ({
           {
             name: 'Add expense',
             short_name: 'Add',
-            url: '/?add=1',
+            url: `${appBase(mode)}?add=1`,
             icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }]
           }
         ],

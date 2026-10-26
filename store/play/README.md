@@ -5,7 +5,7 @@
 - A signed release bundle: `releases/taily-play-v2.9.0.aab` (package `com.jatindhir.taily`, version 19 / 2.9.0,
   targets Android 16 / API 36)
 - The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.9.0.apk`
-- A privacy policy at https://taily.jatindhir.com/privacy.html (also linked from Settings in the app)
+- A privacy policy at https://jatin-dhir.github.io/snowy/privacy.html (also linked from Settings in the app)
 - Listing copy (`listing.md`), data-safety answers (`data-safety.md`), release notes (`whats-new.txt`)
 - Graphics in `graphics/` (icon, feature graphic, screenshots)
 

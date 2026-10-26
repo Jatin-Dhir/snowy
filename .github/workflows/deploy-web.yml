@@ -1,7 +1,8 @@
 name: Deploy web app
 
-# The hosted web app at https://taily.jatindhir.com (GitHub Pages, custom domain
-# set in the repo's Pages settings). Redeploys on every push to main that touches
+# The hosted web app at https://jatin-dhir.github.io/snowy/ (GitHub Pages serves a
+# project site under its repo name, and vite.config.ts sets the matching base path).
+# Redeploys on every push to main that touches
 # the app itself, and on demand from the Actions tab.
 on:
   push:

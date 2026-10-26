@@ -49,7 +49,7 @@ Over-disclosing is never penalised; under-disclosing can be.
 
 ## Other App content forms
 
-- Privacy policy URL: https://taily.jatindhir.com/privacy.html
+- Privacy policy URL: https://jatin-dhir.github.io/snowy/privacy.html
 - Ads: No
 - App access: all functionality is available without logging in or any special access
 - Content rating: answer No to every violence, sexual content, language, drugs and gambling question. Category

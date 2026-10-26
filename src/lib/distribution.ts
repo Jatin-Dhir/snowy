@@ -15,6 +15,6 @@ export const DISTRIBUTION: Distribution =
  */
 export const SELF_UPDATE: boolean = DISTRIBUTION === 'sideload'
 
-/** Where the web app and its privacy policy live. */
-export const WEB_ORIGIN = 'https://taily.jatindhir.com'
-export const PRIVACY_URL = `${WEB_ORIGIN}/privacy.html`
+/** Where the hosted web app and its privacy policy live (GitHub Pages, under the repo's path). */
+export const WEB_URL = 'https://jatin-dhir.github.io/snowy/'
+export const PRIVACY_URL = `${WEB_URL}privacy.html`

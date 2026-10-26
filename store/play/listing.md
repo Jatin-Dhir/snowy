@@ -43,7 +43,7 @@ Made for India, works anywhere
 • Optional app lock with a 4-digit PIN
 
 Private by design
-Taily keeps your entries on your device and never uploads them. Read the full policy at taily.jatindhir.com/privacy.html
+Taily keeps your entries on your device and never uploads them. Read the full policy at jatin-dhir.github.io/snowy/privacy.html
 
 ## Category and tags
 
@@ -53,8 +53,8 @@ Taily keeps your entries on your device and never uploads them. Read the full po
 ## Contact details (Console asks for these)
 
 - Email: yours (shown publicly on the listing)
-- Website: https://taily.jatindhir.com
-- Privacy policy URL: https://taily.jatindhir.com/privacy.html
+- Website: https://jatin-dhir.github.io/snowy/
+- Privacy policy URL: https://jatin-dhir.github.io/snowy/privacy.html
 
 ## Graphics (in store/play/graphics/)
 

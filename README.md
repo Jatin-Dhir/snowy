@@ -18,7 +18,7 @@ A fast, soft, offline-first expense tracker. Log an expense in under three secon
 
 | Channel | Where | Updates |
 | --- | --- | --- |
-| Web app (iPhone, anything with a browser) | https://taily.jatindhir.com, installable from the browser | automatically, on every push to `main` |
+| Web app (iPhone, anything with a browser) | https://jatin-dhir.github.io/snowy, installable from the browser | automatically, on every push to `main` |
 | Google Play | see [store/play](store/play/README.md) | through Play |
 | Sideloaded APK | this repository's **Releases** | in-app, once a day (Settings → Check for updates) |
 
