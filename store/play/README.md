@@ -33,6 +33,19 @@ Upload-key certificate, SHA-256 (public):
 6. After 14 days: Dashboard, **Apply for production**, answer the questions, wait for review, then create the
    production release.
 
+## Regenerating the graphics
+
+Everything in `graphics/` is generated from the real app, so it never drifts from the UI. The screenshots show an
+invented month of data, in a throwaway browser profile; your own data is never touched.
+
+```bash
+npx vite --mode play --port 5180     # leave this running
+node scripts/play-graphics.mjs       # in a second terminal
+```
+
+It captures seven 1080 x 2100 screenshots (Google's limit is 2:1) and renders the feature graphic from
+`graphics/src/feature-graphic.html`. It needs Edge or Chrome installed (set `BROWSER` to point at another one).
+
 ## Building a release
 
 ```bash

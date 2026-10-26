@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Taily feature graphic</title>
+    <!--
+      Google Play feature graphic, 1024 x 500. Rendered to JPEG by scripts/play-graphics.mjs.
+
+      Design read: an extension of the app's own soft-neumorphic look, not a new identity.
+      One object carries the idea: the real Add-expense screen, the thing Taily does in three seconds.
+      Ground #edf0f5, ink #1a212b, muted #56616d; the only accent (#2b5fe3) lives inside the screenshot.
+      Type: Plus Jakarta Sans 800 for the name, 600 for the line under it.
+      Left margin 76px, right margin 82px, text block clear of the phone by 130px.
+    -->
+    <style>
+      @font-face {
+        font-family: 'Plus Jakarta Sans';
+        font-weight: 400 800;
+        src: url(../../../../public/fonts/f4-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yw.woff2) format('woff2');
+      }
+      :root {
+        --ground: #edf0f5;
+        --ink: #1a212b;
+        --muted: #56616d;
+        --hi: rgba(255, 255, 255, 0.92);
+        --lo: rgba(140, 150, 165, 0.44);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1024px;
+        height: 500px;
+        overflow: hidden;
+        background: var(--ground);
+      }
+      body {
+        position: relative;
+        font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .brand {
+        position: absolute;
+        left: 76px;
+        top: 148px;
+      }
+      .mark {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+      /* the app's raised-button surface, holding the paw */
+      .paw {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 104px;
+        height: 104px;
+        border-radius: 50%;
+        background: var(--ground);
+        box-shadow: -7px -7px 16px var(--hi), 7px 7px 18px var(--lo);
+      }
+      .paw img {
+        width: 70px;
+        height: 70px;
+        /* the icon is black on white: multiply drops the white onto the ground colour */
+        mix-blend-mode: multiply;
+      }
+      h1 {
+        margin: 0;
+        font-size: 104px;
+        line-height: 0.9;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+      .tag {
+        margin: 30px 0 0;
+        font-size: 31px;
+        line-height: 1.2;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .sub {
+        margin: 12px 0 0;
+        font-size: 19px;
+        line-height: 1.4;
+        font-weight: 500;
+        color: var(--muted);
+      }
+
+      /* one phone, bleeding off the bottom edge */
+      .phone {
+        position: absolute;
+        left: 634px;
+        top: 44px;
+        width: 308px;
+        padding: 8px;
+        border-radius: 46px;
+        background: var(--ink);
+        box-shadow: -10px -10px 22px var(--hi), 12px 14px 30px var(--lo);
+      }
+      .phone img {
+        display: block;
+        width: 100%;
+        border-radius: 38px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="brand">
+      <div class="mark">
+        <span class="paw"><img src="../../../../public/icons/icon-512.png" alt="" /></span>
+        <h1>Taily</h1>
+      </div>
+      <p class="tag">Three seconds to logged.</p>
+      <p class="sub">Private and offline. No account, no ads.</p>
+    </div>
+    <div class="phone"><img src="../phone-02-add.jpg" alt="" /></div>
+  </body>
+</html>

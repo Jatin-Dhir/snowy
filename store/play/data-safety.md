@@ -25,10 +25,10 @@ submitting. This is what the app actually does, and the answers that follow from
 | Is all of the user data collected encrypted in transit? | Not applicable | Nothing is collected. (The one request, for rates, is HTTPS.) |
 | Do you provide a way to request data deletion? | Not applicable | Nothing is collected. Users delete entries or a profile in the app, or uninstall |
 
-## Two judgment calls
+## Three judgment calls
 
-I could not confirm Google's exact treatment of either from its own documentation in this session, so these
-are yours to make.
+I could not confirm Google's exact treatment of any of these from its own documentation in this session, so
+they are yours to make.
 
 1. **Voice entry.** The speech service belongs to the phone (Google or the maker), not to Taily. The default
    above treats it as outside what the app collects. If you would rather over-disclose than risk a mismatch,
@@ -37,6 +37,13 @@ are yours to make.
 2. **The exchange-rate request.** The server sees the person's IP address, as any website would. The request
    itself carries no personal data. If you want to be cautious, declare IP address under Device or other IDs
    as collected, not shared, optional, purpose App functionality.
+
+3. **Android Auto Backup.** `android:allowBackup` is on (Android's default), so if the person has backups
+   enabled on their phone, Android may copy the app's data to their own Google account and restore it on a new
+   phone. That is the operating system's feature, not the developer receiving data, and the privacy policy says
+   so. If you want the "nothing leaves the device" story airtight, set `android:allowBackup="false"` in
+   `android/app/src/main/AndroidManifest.xml`. The trade-off is that nothing restores on a new phone, so people
+   would rely on Export as CSV.
 
 Over-disclosing is never penalised; under-disclosing can be.
 

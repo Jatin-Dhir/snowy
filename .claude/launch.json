@@ -15,6 +15,12 @@
       "port": 4173
     },
     {
+      "name": "taily-play-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--mode", "play", "--port", "5180", "--strictPort"],
+      "port": 5180
+    },
+    {
       "name": "vastu-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "C:\\dev\\projects\\vastuapp", "--", "--port", "5177"],
