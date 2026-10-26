@@ -155,6 +155,12 @@ const PATHS: Record<string, ReactNode> = {
     </>
   ),
   arrowUp: <path d="M12 19V7m0 0-4.5 4.5M12 7l4.5 4.5" />,
+  share: (
+    <>
+      <path d="M12 15V4m0 0L8 8m4-4 4 4" />
+      <path d="M7.5 10H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1.5" />
+    </>
+  ),
   mic: (
     <>
       <rect x="9" y="3" width="6" height="11" rx="3" />

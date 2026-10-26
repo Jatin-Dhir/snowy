@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Play flavor only: a launcher shortcut's targetPackage has to be the app's own
+     id, and the Play build's id differs from the sideload one in src/main. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_add"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_add_short"
+        android:shortcutLongLabel="@string/shortcut_add_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="taily://add"
+            android:targetPackage="com.jatindhir.taily"
+            android:targetClass="com.tally.expense.MainActivity" />
+    </shortcut>
+</shortcuts>

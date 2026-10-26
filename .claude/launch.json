@@ -9,6 +9,12 @@
       "autoPort": true
     },
     {
+      "name": "taily-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "preview", "--mode", "web", "--outDir", "dist-web", "--port", "4173", "--strictPort"],
+      "port": 4173
+    },
+    {
       "name": "vastu-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "C:\\dev\\projects\\vastuapp", "--", "--port", "5177"],

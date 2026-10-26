@@ -1,14 +1,22 @@
 apply plugin: 'com.android.application'
 
+// Upload-key signing for Google Play. keystore.properties is gitignored; the
+// keystore itself lives outside the repo (see store/play/README.md).
+def keystorePropsFile = rootProject.file('keystore.properties')
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+
 android {
+    // Java package of MainActivity. Not the app id — that is set per flavor below.
     namespace = "com.tally.expense"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.tally.expense"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 18
-        versionName "2.8.0"
+        versionCode 19
+        versionName "2.9.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,11 +24,74 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
+    flavorDimensions "channel"
+    productFlavors {
+        // The APK that updates itself from GitHub Releases. Keeps the original
+        // id so every existing install keeps upgrading in place.
+        sideload {
+            dimension "channel"
+            applicationId "com.tally.expense"
+        }
+        // The Google Play build: its own id (permanent once uploaded) and no
+        // self-updater — Play policy only allows updating through Play.
+        play {
+            dimension "channel"
+            applicationId "com.jatindhir.taily"
+        }
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePropsFile.exists()) {
+                storeFile file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
+    }
+}
+
+// A release must never fall back to the debug key — fail early with a clear reason.
+gradle.taskGraph.whenReady { graph ->
+    def wantsRelease = graph.allTasks.any { it.project == project && it.name.contains('Release') }
+    if (wantsRelease && !keystorePropsFile.exists()) {
+        throw new GradleException(
+            "android/keystore.properties is missing. Release builds are signed with the Play upload key — " +
+            "see store/play/README.md.")
+    }
+}
+
+// The web bundle that `cap sync` copied into assets must have been built for the
+// channel being packaged (npm run build = sideload, build:play = play). Otherwise
+// the Play build could ship with the GitHub self-updater, or the sideload APK
+// could lose its updates.
+['sideload', 'play'].each { channel ->
+    tasks.register("verify${channel.capitalize()}Bundle") {
+        doLast {
+            def marker = file('src/main/assets/public/distribution.txt')
+            def actual = marker.exists() ? marker.text.trim() : 'missing'
+            if (actual != channel) {
+                def build = channel == 'play' ? 'npm run build:play' : 'npm run build'
+                throw new GradleException(
+                    "The web bundle in android/app/src/main/assets/public was built for '${actual}', " +
+                    "but this is the '${channel}' variant. Run: ${build} && npx cap sync android")
+            }
+        }
+    }
+}
+tasks.configureEach { task ->
+    if (task.name ==~ /^merge(Sideload|Play)(Debug|Release)Assets$/) {
+        task.dependsOn(task.name.startsWith('mergePlay') ? 'verifyPlayBundle' : 'verifySideloadBundle')
     }
 }
 
@@ -52,4 +123,3 @@ try {
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
-

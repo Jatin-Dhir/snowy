@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import process from 'node:process'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     VitePWA({
@@ -49,7 +49,20 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }),
+    {
+      // Names the channel this bundle was built for (see src/lib/distribution.ts).
+      // android/app/build.gradle reads it and refuses to package a bundle meant
+      // for another channel — e.g. a self-updating build into the Play AAB.
+      name: 'distribution-marker',
+      generateBundle() {
+        this.emitFile({
+          type: 'asset',
+          fileName: 'distribution.txt',
+          source: mode === 'play' ? 'play' : mode === 'web' ? 'web' : 'sideload'
+        })
+      }
+    }
   ],
   server: { host: true, port: Number(process.env.PORT) || 5173 }
-})
+}))

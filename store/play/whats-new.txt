@@ -1,0 +1,1 @@
+First release on Google Play. Log an expense in three seconds, set budgets with a pace line, track lent and borrowed money, and import bank statements from CSV or PDF. Your data stays on your phone.

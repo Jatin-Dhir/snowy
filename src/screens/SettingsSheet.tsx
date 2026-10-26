@@ -8,6 +8,7 @@ import { CURRENCIES, formatMinor } from '../lib/money'
 import { fetchRate, type RateInfo } from '../lib/rates'
 import { convertEverything } from '../db/convert'
 import { APP_VERSION, checkForUpdate, type UpdateCheck } from '../lib/updater'
+import { PRIVACY_URL, SELF_UPDATE } from '../lib/distribution'
 import { applyCustomAccent } from '../lib/theme'
 import { hashPin } from '../lib/pin'
 import { todayISO } from '../lib/dates'
@@ -161,8 +162,7 @@ export function SettingsSheet({
       }
       return
     }
-    downloadCsv(csv, filename)
-    showToast(`Exported ${txns.length} entries`)
+    showToast((await downloadCsv(csv, filename)) ? `Exported ${txns.length} entries` : 'Export canceled')
   }
 
   async function applyGrid(grid: string[][]): Promise<void> {
@@ -552,35 +552,37 @@ export function SettingsSheet({
             sub={settings.pinHash ? 'Change your PIN or turn it off' : 'Set a 4-digit PIN to open Taily'}
             onClick={openPinFlow}
           />
-          <ActionRow
-            icon={update !== 'idle' && update !== 'checking' && update.status === 'update' ? 'download' : 'refresh'}
-            tint="#2B5FE3"
-            title={
-              update === 'idle'
-                ? 'Check for updates'
-                : update === 'checking'
-                  ? 'Checking…'
-                  : update.status === 'update'
-                    ? `Get Taily v${update.info.version}`
-                    : update.status === 'latest'
-                      ? "You're on the latest"
-                      : update.status === 'unavailable'
-                        ? 'Updates'
-                        : 'Check for updates'
-            }
-            sub={
-              update !== 'idle' && update !== 'checking' && update.status === 'update'
-                ? 'Tap to download the new version'
-                : `You have v${APP_VERSION} · checks daily on its own`
-            }
-            onClick={() => {
-              if (update !== 'idle' && update !== 'checking' && update.status === 'update') {
-                window.open(update.info.url, '_blank')
-              } else if (update !== 'checking') {
-                void runUpdateCheck()
+          {SELF_UPDATE && (
+            <ActionRow
+              icon={update !== 'idle' && update !== 'checking' && update.status === 'update' ? 'download' : 'refresh'}
+              tint="#2B5FE3"
+              title={
+                update === 'idle'
+                  ? 'Check for updates'
+                  : update === 'checking'
+                    ? 'Checking…'
+                    : update.status === 'update'
+                      ? `Get Taily v${update.info.version}`
+                      : update.status === 'latest'
+                        ? "You're on the latest"
+                        : update.status === 'unavailable'
+                          ? 'Updates'
+                          : 'Check for updates'
               }
-            }}
-          />
+              sub={
+                update !== 'idle' && update !== 'checking' && update.status === 'update'
+                  ? 'Tap to download the new version'
+                  : `You have v${APP_VERSION} · checks daily on its own`
+              }
+              onClick={() => {
+                if (update !== 'idle' && update !== 'checking' && update.status === 'update') {
+                  window.open(update.info.url, '_blank')
+                } else if (update !== 'checking') {
+                  void runUpdateCheck()
+                }
+              }}
+            />
+          )}
           <ActionRow
             icon="download"
             tint="#2C9A67"
@@ -613,7 +615,10 @@ export function SettingsSheet({
         />
 
         <span className="caption faint" style={{ textAlign: 'center', fontSize: 11 }}>
-          Taily v{APP_VERSION} · built by Jatin Dhir
+          Taily v{APP_VERSION} · built by Jatin Dhir ·{' '}
+          <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+            Privacy policy
+          </a>
         </span>
 
         <AccountManager open={accountsOpen} currency={settings.currency} onClose={() => setAccountsOpen(false)} />

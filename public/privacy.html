@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Taily privacy policy</title>
+    <meta name="description" content="What Taily stores, where it stays, and the few network requests it makes." />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <link rel="stylesheet" href="/fonts.css" />
+    <style>
+      :root {
+        --bg: #edf0f5;
+        --ink: #1a212b;
+        --muted: #56616d;
+        --line: #d3d9e2;
+        --accent: #2b5fe3;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14171b;
+          --ink: #e8ebf0;
+          --muted: #9aa3ae;
+          --line: #2c333b;
+          --accent: #6d9aff;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+        font-size: 16px;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 38rem;
+        margin: 0 auto;
+        padding: 3rem 1.25rem 4rem;
+      }
+      h1 {
+        margin: 0 0 0.25rem;
+        font-size: 1.9rem;
+        line-height: 1.15;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      h2 {
+        margin: 2.4rem 0 0.5rem;
+        padding-top: 1.4rem;
+        border-top: 1px solid var(--line);
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+      p,
+      ul {
+        margin: 0.6rem 0;
+      }
+      ul {
+        padding-left: 1.2rem;
+      }
+      li {
+        margin: 0.35rem 0;
+      }
+      .meta {
+        margin: 0 0 1.6rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .lede {
+        font-size: 1.08rem;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 3px;
+      }
+      a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+        border-radius: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Taily privacy policy</h1>
+      <p class="meta">Last updated 26 October 2026</p>
+
+      <p class="lede">
+        Taily keeps what you enter on your own device. There is no account, no Taily server, no advertising and no
+        analytics. The developer never receives your expenses, notes, budgets or anything else you put into the app.
+      </p>
+
+      <h2>What Taily stores, and where</h2>
+      <p>
+        Everything you add lives in a database on your device: in the app's private storage on Android, or in your
+        browser's storage on the web version. That includes:
+      </p>
+      <ul>
+        <li>expenses and income, with amounts, dates, tags, notes and the account they belong to</li>
+        <li>accounts, budgets, savings goals, recurring payments, and lent and borrowed entries</li>
+        <li>your settings, and your app-lock PIN if you set one (kept as a one-way hash, never as plain text)</li>
+      </ul>
+      <p>Taily does not send any of this anywhere.</p>
+
+      <h2>Permissions on Android, and why</h2>
+      <ul>
+        <li>
+          <strong>Microphone</strong>, only when you hold the + button to add an expense by voice. Your phone's speech
+          recognition turns what you say into text and Taily keeps only that text. Taily never records or stores audio.
+          Depending on your phone, the speech service (provided by Google or your phone's maker) may process audio on
+          the device or on its servers, under its own privacy policy.
+        </li>
+        <li><strong>Notifications</strong>, to remind you about lent or borrowed money and to flag budget alerts.</li>
+        <li><strong>Vibration</strong>, for the small haptic tap when you press things.</li>
+        <li><strong>Internet</strong>, for the requests listed below.</li>
+      </ul>
+      <p>
+        Taily reads a file only when you pick one to import (a bank statement as CSV or PDF) or share one into Taily,
+        and writes one only when you export your data as a CSV.
+      </p>
+
+      <h2>Network requests</h2>
+      <p>
+        When you switch your currency, Taily asks open.er-api.com for the current exchange rate. The request carries
+        the currency code and nothing about you, but like any website that service can see your IP address.
+      </p>
+      <p>
+        The APK distributed outside Google Play also checks this project's public releases page on GitHub to see
+        whether a newer version exists. The Google Play version does not.
+      </p>
+      <p>
+        The web version is served from taily.jatindhir.com, hosted on GitHub Pages. GitHub may keep standard server
+        logs of visits to that site.
+      </p>
+
+      <h2>Backups</h2>
+      <p>
+        If automatic backup is on in your phone's settings, Android may include Taily's data in your Google backup.
+        That is handled by your phone and Google, not by Taily. On the web version your data lives in your browser, so
+        clearing the site's data deletes it. Settings, then Export as CSV, gives you a copy you control.
+      </p>
+
+      <h2>Sharing and selling</h2>
+      <p>Taily does not sell or share your data. It has no advertising, no analytics and no third-party tracking.</p>
+
+      <h2>Keeping and deleting your data</h2>
+      <p>
+        Your data stays on your device until you remove it. You can delete entries, or a whole profile, inside the
+        app. Uninstalling the Android app, or clearing the site data for the web version, erases everything Taily
+        stored. The developer holds no copy, so there is nothing to request from us.
+      </p>
+
+      <h2>Children</h2>
+      <p>Taily is a personal finance tool for adults and is not directed at children.</p>
+
+      <h2>Changes</h2>
+      <p>If this policy changes, this page is updated and the date at the top changes with it.</p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions about this policy: open an issue at
+        <a href="https://github.com/Jatin-Dhir/snowy/issues">github.com/Jatin-Dhir/snowy/issues</a>, or use the
+        developer contact shown on Taily's Google Play page.
+      </p>
+    </main>
+  </body>
+</html>

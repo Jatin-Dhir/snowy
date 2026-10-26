@@ -2,7 +2,13 @@ node_modules/
 dist/
 dev-dist/
 *.apk
+*.aab
 *.log
+
+# Play upload key: never commit these
+*.jks
+*.keystore
+keystore.properties
 
 # Android build outputs
 android/.gradle/
@@ -10,3 +16,6 @@ android/build/
 android/app/build/
 android/local.properties
 android/app/release/
+
+# local web verification build
+dist-web/

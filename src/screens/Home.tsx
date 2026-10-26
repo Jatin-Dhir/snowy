@@ -22,6 +22,7 @@ import { LoansSheet } from '../components/LoansSheet'
 import { useAnimatedNumber } from '../lib/useAnimatedNumber'
 import { currentMonthKey, monthLabel, todayISO, weekDaysOf, weekdayName, fromISO } from '../lib/dates'
 import { TransactionRow } from '../components/TransactionRow'
+import { InstallHint } from '../components/InstallHint'
 import { Icon } from '../components/Icon'
 import { Sheet } from '../components/Sheet'
 import { haptic, useUi } from '../state/ui'
@@ -257,6 +258,8 @@ export function Home({
           <Icon name="gear" size={21} strokeWidth={1.6} />
         </button>
       </div>
+
+      <InstallHint />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <span className="label">{sts.hasBudget ? 'Safe to spend today' : 'Spent today'}</span>

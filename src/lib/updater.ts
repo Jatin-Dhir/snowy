@@ -1,6 +1,10 @@
 // In-app updater: checks the GitHub Releases feed for a newer APK.
 // The API allows anonymous, CORS-enabled reads — no keys involved.
-export const APP_VERSION = '2.8.0'
+// Sideloaded APK only: the Play build and the web app update some other way,
+// so for them every check answers "latest" without touching the network.
+import { SELF_UPDATE } from './distribution'
+
+export const APP_VERSION = '2.9.0'
 const RELEASES_API = 'https://api.github.com/repos/Jatin-Dhir/snowy/releases/latest'
 
 export interface UpdateInfo {
@@ -25,6 +29,7 @@ function isNewer(a: string, b: string): boolean {
 }
 
 export async function checkForUpdate(): Promise<UpdateCheck> {
+  if (!SELF_UPDATE) return { status: 'latest' }
   try {
     const res = await fetch(RELEASES_API, {
       headers: { Accept: 'application/vnd.github+json' },

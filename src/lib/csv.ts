@@ -36,7 +36,24 @@ export function txnsToCsv(txns: Txn[], categories: Category[], accounts: Account
   return '﻿' + [header.join(','), ...rows].join('\r\n')
 }
 
-export function downloadCsv(content: string, filename: string): void {
+/**
+ * Saves a CSV from the browser. An iPhone has no real "download" from a Home
+ * Screen app, so hand the file to the share sheet (Save to Files, Mail, AirDrop)
+ * when it's on offer. Resolves false if the person dismissed the sheet.
+ */
+export async function downloadCsv(content: string, filename: string): Promise<boolean> {
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent) && typeof navigator.canShare === 'function') {
+    const file = new File([content], filename, { type: 'text/csv' })
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: filename })
+        return true
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') return false
+        // Safari wants a fresh tap for share() — fall through to a plain download
+      }
+    }
+  }
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -46,6 +63,7 @@ export function downloadCsv(content: string, filename: string): void {
   a.click()
   a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 4000)
+  return true
 }
 
 /* ---------------------------------- import ---------------------------------- */

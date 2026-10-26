@@ -5,6 +5,7 @@ import { ensureSeeded } from './db/seed'
 import { runDueRules } from './db/recurring'
 import { formatMinor } from './lib/money'
 import { checkForUpdate, type UpdateInfo } from './lib/updater'
+import { DISTRIBUTION } from './lib/distribution'
 import { checkSharedFile, type SharedFile } from './lib/shareIntent'
 import { applyCustomAccent, clearCustomAccent } from './lib/theme'
 import { syncStatusBar } from './lib/statusbar'
@@ -158,6 +159,13 @@ export default function App() {
     setSettingsOpen(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingImport, ready, locked, settings.initialized])
+
+  // the web app's ledger lives only in this browser: ask it not to evict it
+  // under storage pressure (once the person has actually started tracking)
+  useEffect(() => {
+    if (DISTRIBUTION !== 'web' || !ready || !settings.initialized) return
+    void navigator.storage?.persist?.().catch(() => undefined)
+  }, [ready, settings.initialized])
 
   if (!settingsLoaded || !ready) return null
 

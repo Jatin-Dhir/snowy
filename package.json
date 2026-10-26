@@ -1,12 +1,15 @@
 {
   "name": "taily",
   "private": true,
-  "version": "2.8.0",
+  "version": "2.9.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:web": "tsc && vite build --mode web",
+    "build:play": "tsc && vite build --mode play",
     "preview": "vite preview",
+    "preview:web": "vite preview --mode web",
     "icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
