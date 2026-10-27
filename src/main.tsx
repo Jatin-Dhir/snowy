@@ -4,6 +4,7 @@ import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { UiProvider } from './state/ui'
 import { armSounds, armTyping } from './lib/sound'
+import { listenForBack } from './lib/backButton'
 import './styles/global.css'
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
@@ -12,6 +13,7 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 
 armSounds()
 armTyping()
+void listenForBack()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

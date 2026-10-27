@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { onBack } from '../lib/backButton'
 
 // Sheets stack (Add → Tags); the page behind stays frozen while any are up.
 const bodyLock = { count: 0 }
@@ -40,6 +41,16 @@ export function Sheet({
     return () => {
       if (timer.current) window.clearTimeout(timer.current)
     }
+  }, [open])
+
+  // Android's Back closes the sheet opened last, so a sheet inside a sheet goes first
+  const closeRef = useRef(onClose)
+  useEffect(() => {
+    closeRef.current = onClose
+  })
+  useEffect(() => {
+    if (!open) return
+    return onBack(() => closeRef.current())
   }, [open])
 
   const visible = phase !== 'closed'

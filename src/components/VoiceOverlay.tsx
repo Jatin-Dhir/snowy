@@ -8,6 +8,7 @@ import { parseScore, parseSpeech, type ParsedSpeech } from '../lib/parseSpeech'
 import { guessAccount } from '../lib/smart'
 import { addDaysISO, fmtShortDate, todayISO } from '../lib/dates'
 import { DISTRIBUTION } from '../lib/distribution'
+import { onBack } from '../lib/backButton'
 import {
   microphone,
   openAppSettings,
@@ -343,27 +344,10 @@ export function VoiceOverlay({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request?.id])
 
-  // Android's back button cancels
+  // Android's back button cancels (lib/backButton: one listener for the app, last opened goes first)
   useEffect(() => {
-    if (!request || DISTRIBUTION === 'web') return
-    let off: (() => void) | undefined
-    let disposed = false
-    void (async () => {
-      try {
-        const { Capacitor } = await import('@capacitor/core')
-        if (!Capacitor.isNativePlatform()) return
-        const { App: CapApp } = await import('@capacitor/app')
-        const handle = await CapApp.addListener('backButton', () => close())
-        if (disposed) void handle.remove()
-        else off = () => void handle.remove()
-      } catch {
-        /* not native */
-      }
-    })()
-    return () => {
-      disposed = true
-      off?.()
-    }
+    if (!request) return
+    return onBack(() => close())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request?.id])
 

@@ -4,6 +4,7 @@ import { PinPad } from './PinPad'
 import { TailyMark } from '../screens/Welcome'
 import { saveSettings } from '../db/db'
 import { clearPinFailures, hashPin, isLegacyHash, recordPinFailure, verifyPin } from '../lib/pin'
+import { leaveApp, onBack } from '../lib/backButton'
 import { haptic } from '../state/ui'
 
 /**
@@ -23,6 +24,10 @@ export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: (
       for (const el of behind) el.removeAttribute('inert')
     }
   }, [])
+
+  // Back can't reach what's behind the lock (closing a sheet there would lose what was
+  // being entered): it leaves Taily, and the lock stays
+  useEffect(() => onBack(() => void leaveApp(), true), [])
 
   async function tryPin(pin: string) {
     if (await verifyPin(pin, pinHash)) {
