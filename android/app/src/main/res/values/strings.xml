@@ -6,5 +6,12 @@
     <string name="custom_url_scheme">com.tally.expense</string>
     <string name="shortcut_add_short">Add expense</string>
     <string name="shortcut_add_long">Add an expense to Taily</string>
+    <string name="shortcut_voice_short">Speak expense</string>
+    <string name="shortcut_voice_long">Speak an expense to Taily</string>
+    <string name="widget_voice_name">Taily voice</string>
+    <string name="widget_voice_description">Tap the mic and say it, like “250 lunch”. Taily saves it.</string>
+    <string name="widget_voice_action">Speak an expense</string>
+    <string name="widget_add_action">Type an expense</string>
+    <string name="tile_voice_label">Taily</string>
+    <string name="tile_voice_subtitle">Speak an expense</string>
 </resources>
-

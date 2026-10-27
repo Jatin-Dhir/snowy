@@ -17,8 +17,9 @@ Taily is an expense tracker built to stay out of your way. Open it, type the amo
 Everything stays on your phone. There is no account to make, no cloud to sync, and no ads.
 
 Log in a moment
-• Amount-first number pad with one-tap tag suggestions that learn from your own habits
-• Hold the + button and just say it: "250 shopping" or "got 2000 from Rahul"
+• Amount-first number pad with one-tap tag suggestions that learn from your own habits, and keys that click like an iPhone keyboard
+• Hold the + and just say it: "250 shopping", "dhai sau ka khana kal" or "got 2000 from Rahul". You see what Taily understood before it saves, with Undo right there
+• Voice from anywhere: a home-screen widget, a Quick Settings tile and a launcher shortcut start listening the moment you tap them
 • Spent and received, with tags you can rename, recolour and add to
 • Notes are remembered: tag "Zepto" as Groceries once and Taily files it there next time
 

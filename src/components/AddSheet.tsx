@@ -20,6 +20,7 @@ export function AddSheet({
   editTxn,
   draft = null,
   currency,
+  onVoice,
   onClose
 }: {
   open: boolean
@@ -27,6 +28,8 @@ export function AddSheet({
   /** a voice entry that was missing only its amount */
   draft?: Omit<ParsedSpeech, 'amountMinor'> | null
   currency: string
+  /** say it instead: listens hands-free, no holding the + */
+  onVoice?: () => void
   onClose: () => void
 }) {
   const { showToast } = useUi()
@@ -100,11 +103,11 @@ export function AddSheet({
       amt.reset()
       setKind(draft?.kind ?? 'out')
       setNote(draft?.note ?? '')
-      setDateISO(todayISO())
-      setAccount(guessAccount(accounts, recent) ?? 'upi')
+      setDateISO(draft?.dateISO ?? todayISO())
+      setAccount(draft?.accountId ?? guessAccount(accounts, recent) ?? 'upi')
       setSelectedCat(draft?.categoryId ?? null)
       setShowNote(!!draft?.note)
-      setShowDate(false)
+      setShowDate(!!draft?.dateISO && draft.dateISO !== addDaysISO(todayISO(), -1))
     }
     setShowAll(false)
     setPickAccount(false)
@@ -252,6 +255,11 @@ export function AddSheet({
             {isEdit && (
               <button className="icon-btn" onClick={() => void deleteEdit()} aria-label="Delete">
                 <Icon name="trash" size={15} />
+              </button>
+            )}
+            {!isEdit && onVoice && (
+              <button className="icon-btn" onClick={onVoice} aria-label="Say it instead">
+                <Icon name="mic" size={15} strokeWidth={2} />
               </button>
             )}
             <button className="icon-btn" onClick={onClose} aria-label="Close">

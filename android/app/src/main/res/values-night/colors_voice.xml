@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark theme: Taily's sheet surface, its hairline edge and the dark sky accent. -->
+<resources>
+    <color name="voice_surface">#1B2127</color>
+    <color name="voice_edge">#2C333C</color>
+    <color name="voice_ink">#E8EBF0</color>
+    <color name="voice_button">#262E37</color>
+    <color name="voice_press">#24E8EBF0</color>
+    <color name="voice_accent">#81ADDA</color>
+    <color name="voice_on_accent">#0F1F2E</color>
+</resources>

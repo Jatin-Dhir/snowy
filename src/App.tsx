@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, DEFAULT_SETTINGS, type Settings, type Txn } from './db/db'
 import { ensureSeeded } from './db/seed'
@@ -10,14 +10,14 @@ import { checkSharedFile, clearLeftoverFiles, type SharedFile } from './lib/shar
 import { syncPrivacyScreen } from './lib/privacyScreen'
 import { initPro } from './lib/pro'
 import { ProSheet } from './components/ProSheet'
-import type { ParsedSpeech } from './lib/parseSpeech'
-import { applyCustomAccent, clearCustomAccent } from './lib/theme'
+import { onVoiceLaunch, setVoicePrefs, takeVoiceLaunch, type VoiceLaunch } from './lib/voice'
+import { applyCustomAccent, clearCustomAccent, PRESET_HUES, widgetAccent } from './lib/theme'
 import { syncStatusBar } from './lib/statusbar'
 import { LockScreen } from './components/LockScreen'
 import { TabBar, type Tab } from './components/TabBar'
 import { Toast } from './components/Toast'
 import { AddSheet } from './components/AddSheet'
-import { VoiceOverlay } from './components/VoiceOverlay'
+import { VoiceOverlay, type VoiceDraft, type VoiceRequest } from './components/VoiceOverlay'
 import { UpdateGate } from './components/UpdateGate'
 import { Home } from './screens/Home'
 import { Activity } from './screens/Activity'
@@ -44,7 +44,13 @@ export default function App() {
     setTab(next)
   }
   const [addOpen, setAddOpen] = useState(false)
-  const [voiceOpen, setVoiceOpen] = useState(false)
+  const [voice, setVoice] = useState<VoiceRequest | null>(null)
+  // the finger on the + while it listens, and whether it has slid off (letting go then cancels)
+  const [voiceHolding, setVoiceHolding] = useState(false)
+  const [voiceAway, setVoiceAway] = useState(false)
+  const voiceCount = useRef(0)
+  // the widget, the tile or the shortcut asked to listen; opened once the app is ready and unlocked
+  const [voiceLaunch, setVoiceLaunch] = useState<VoiceLaunch | null>(null)
   const [editTxn, setEditTxn] = useState<Txn | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ready, setReady] = useState(false)
@@ -52,7 +58,7 @@ export default function App() {
   // changing a PIN mid-session must never throw the user back to the lock screen
   const [locked, setLocked] = useState(false)
   const [pendingAdd, setPendingAdd] = useState(false)
-  const [addDraft, setAddDraft] = useState<Omit<ParsedSpeech, 'amountMinor'> | null>(null)
+  const [addDraft, setAddDraft] = useState<VoiceDraft | null>(null)
   const [pendingImport, setPendingImport] = useState<SharedFile | null>(null)
   // a confirmed newer release — blocks entry until installed. Only ever set
   // from a positive 'update' result, never from a network error or timeout,
@@ -97,8 +103,6 @@ export default function App() {
       const root = document.documentElement
       root.dataset.theme = resolved
       root.dataset.accent = settings.accent
-      // pastel presets share the custom formula at fixed hues; mono/cream stay CSS-driven
-      const PRESET_HUES: Record<string, number> = { blue: 210, lavender: 262, pink: 335, green: 150 }
       if (settings.accent === 'custom') applyCustomAccent(settings.accentHue, resolved === 'dark')
       else if (settings.accent in PRESET_HUES) applyCustomAccent(PRESET_HUES[settings.accent], resolved === 'dark')
       else clearCustomAccent()
@@ -171,6 +175,52 @@ export default function App() {
     setSettingsOpen(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingImport, ready, locked, settings.initialized])
+
+  // voice from the widget, the tile or the launcher shortcut: at cold start, and
+  // whenever one is used while Taily is already open
+  useEffect(() => {
+    let off: (() => void) | undefined
+    let disposed = false
+    const take = () =>
+      void takeVoiceLaunch().then((launch) => {
+        if (launch && !disposed) setVoiceLaunch(launch)
+      })
+    take()
+    void onVoiceLaunch(take).then((o) => {
+      if (disposed) o()
+      else off = o
+    })
+    return () => {
+      disposed = true
+      off?.()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!voiceLaunch || !ready) return
+    // not set up yet: a launch from before onboarding means nothing now
+    if (!settings.initialized) {
+      setVoiceLaunch(null)
+      return
+    }
+    if (locked) return
+    setVoiceLaunch(null)
+    setAddOpen(false)
+    setSettingsOpen(false)
+    openVoice('free', voiceLaunch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceLaunch, ready, locked, settings.initialized])
+
+  // what a launch from outside the app needs: listen at once only without app lock
+  // (with a PIN, it listens after unlocking), haptics, and the accent the widget wears
+  useEffect(() => {
+    if (settingsRow === undefined) return
+    void setVoicePrefs({
+      instant: !settings.pinHash,
+      haptics: settings.haptics,
+      appearance: widgetAccent(settings.accent, settings.accentHue)
+    })
+  }, [settingsRow, settings.pinHash, settings.haptics, settings.accent, settings.accentHue])
 
   useEffect(() => {
     if (!settings.pinHash) return
@@ -254,6 +304,12 @@ export default function App() {
     setAddOpen(true)
   }
 
+  function openVoice(mode: 'hold' | 'free', launch: VoiceLaunch | null = null) {
+    dismissToast()
+    voiceCount.current++
+    setVoice({ id: voiceCount.current, mode, launch })
+  }
+
   return (
     <div className="app">
       <div key={tab} className={`tab-host ${slideDir}`}>
@@ -280,18 +336,40 @@ export default function App() {
         )}
       </div>
 
-      <TabBar tab={tab} onTab={goTab} onAdd={openAdd} onVoice={() => setVoiceOpen(true)} />
+      <TabBar
+        tab={tab}
+        onTab={goTab}
+        onAdd={openAdd}
+        onVoiceStart={() => {
+          setVoiceHolding(true)
+          setVoiceAway(false)
+          openVoice('hold')
+        }}
+        onVoiceAway={setVoiceAway}
+        onVoiceEnd={(away) => {
+          setVoiceAway(away)
+          setVoiceHolding(false)
+        }}
+      />
 
       <VoiceOverlay
-        open={voiceOpen}
+        request={voice}
+        holding={voiceHolding}
+        away={voiceAway}
         currency={settings.currency}
-        onClose={() => setVoiceOpen(false)}
+        onClose={() => {
+          setVoice(null)
+          setVoiceHolding(false)
+          setVoiceAway(false)
+        }}
         onNeedAmount={(draft) => {
           dismissToast()
           setEditTxn(null)
           setAddDraft(draft)
           setAddOpen(true)
         }}
+        onType={openAdd}
+        onEdit={openEdit}
       />
 
       <AddSheet
@@ -299,6 +377,12 @@ export default function App() {
         editTxn={editTxn}
         draft={addDraft}
         currency={settings.currency}
+        onVoice={() => {
+          setAddOpen(false)
+          setEditTxn(null)
+          setAddDraft(null)
+          openVoice('free')
+        }}
         onClose={() => {
           setAddOpen(false)
           setEditTxn(null)

@@ -5,13 +5,17 @@ A fast, soft, offline-first expense tracker. Log an expense in under three secon
 ## What it does
 
 - **3-second logging** — amount-first numpad, one-tap tag chips, save on touch
+- **Voice** — hold + and say it ("250 lunch", "dhai sau ka khana kal"), or tap the home-screen widget, the Quick
+  Settings tile or the "Speak expense" shortcut; Taily shows what it understood, saves it, and offers Undo. The
+  Android side is Taily's own plugin (`VoicePlugin.java`, rules in `VoiceSession.java` with JVM tests)
 - **Money in & out** — spent / received, with everyday tags you can fully customize
 - **Budgets with pace** — monthly + per-category envelopes, over-budget warnings and notifications
 - **Insights** — where it went, six-month trend with forecast, smart notes
 - **Lent & borrowed** — note who owes you, get reminded, keep the settled record
 - **On-device intelligence** — learns your notes and files untagged expenses automatically
 - **Themes** — 8 accent colors (including a creamy space) × light/dark × three surface styles (Soft neumorphic, Clay, Bubble)
-- **Haptics & sounds** — real haptic engine feedback with individual toggles
+- **Haptics & sounds** — real haptic engine feedback with individual toggles; the numpad, PIN pad and text fields click
+  like an iPhone keyboard (`src/assets/sounds`, the same recordings as Studio's typing sound)
 - Local-first: no account, no cloud, no ads. Export CSV anytime.
 
 ## Three ways to get Taily

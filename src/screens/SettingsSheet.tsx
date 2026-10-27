@@ -15,6 +15,7 @@ import { applyCustomAccent } from '../lib/theme'
 import { clearPinFailures, hashPin, recordPinFailure, verifyPin } from '../lib/pin'
 import { todayISO } from '../lib/dates'
 import { currentProfile, profileSlug } from '../lib/profiles'
+import { addVoiceTile, pinVoiceWidget, voiceShortcuts } from '../lib/voice'
 import { TAG_COLORS, TAG_ICONS } from '../db/seed'
 import { AccountManager } from '../components/AccountManager'
 import { ProfilesSheet } from '../components/ProfilesSheet'
@@ -118,6 +119,25 @@ export function SettingsSheet({
   const hueBar = useRef<HTMLDivElement | null>(null)
   const [dragHue, setDragHue] = useState<number | null>(null)
   const dragHueRef = useRef<number | null>(null)
+  // the Android app only: what this phone lets Taily add for voice from outside the app
+  const [voiceExtras, setVoiceExtras] = useState<{ widget: boolean; tile: boolean } | null>(null)
+
+  useEffect(() => {
+    if (open) void voiceShortcuts().then(setVoiceExtras)
+  }, [open])
+
+  async function addWidget() {
+    haptic('selection')
+    if (!(await pinVoiceWidget())) showToast('Long-press your home screen, tap Widgets, then Taily voice')
+  }
+
+  async function addTile() {
+    haptic('selection')
+    const result = await addVoiceTile()
+    if (result === 'added') showToast('Taily is in Quick Settings now')
+    else if (result === 'already') showToast('Taily is already in Quick Settings')
+    else if (result !== 'dismissed') showToast('Pull down Quick Settings, tap the pencil, and drag Taily in')
+  }
   const [showCustom, setShowCustom] = useState(settings.accent === 'custom')
 
   // Settings can close from under its sub-sheets (scrim tap above them) —
@@ -523,6 +543,36 @@ export function SettingsSheet({
             </button>
           </div>
         </div>
+
+        {voiceExtras && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span className="label" style={{ fontSize: 10.5 }}>Voice from anywhere</span>
+            {voiceExtras.widget && (
+              <ActionRow
+                icon="mic"
+                tint="#E0784F"
+                title="Add the home-screen widget"
+                sub="Tap its mic and say it, like “250 lunch”"
+                onClick={() => void addWidget()}
+              />
+            )}
+            {voiceExtras.tile && (
+              <ActionRow
+                icon="grid"
+                tint="#6C7FE0"
+                title="Add to Quick Settings"
+                sub="Pull down from any app, tap Taily, say it"
+                onClick={() => void addTile()}
+              />
+            )}
+            {!voiceExtras.widget && !voiceExtras.tile && (
+              <span className="caption" style={{ fontSize: 11.5 }}>
+                Long-press your home screen, tap Widgets, and drag Taily voice in. Or long-press the Taily icon and
+                pick Speak expense.
+              </span>
+            )}
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span className="label" style={{ fontSize: 10.5 }}>More</span>

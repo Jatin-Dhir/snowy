@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NumPad } from './NumPad'
-import { haptic } from '../state/ui'
+import { keyFeedback } from '../state/ui'
 import { formatWait, pinCooldownMs } from '../lib/pin'
 
 /**
@@ -39,7 +39,7 @@ export function PinPad({
 
   function digit(d: string) {
     if (waiting || entry.length >= 4) return
-    haptic('light')
+    keyFeedback('key')
     const next = entry + d
     setEntry(next)
     // outside the state updater: React may run an updater twice, which would submit the PIN twice
@@ -102,7 +102,7 @@ export function PinPad({
           onDigit={digit}
           onDot={() => undefined}
           onBackspace={() => {
-            haptic('light')
+            keyFeedback('delete')
             setEntry((e) => e.slice(0, -1))
           }}
         />

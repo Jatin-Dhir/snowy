@@ -2,9 +2,9 @@
 
 ## What is ready
 
-- A signed release bundle: `releases/taily-play-v2.11.0.aab` (package `com.jatindhir.taily`, version 21 / 2.11.0,
+- A signed release bundle: `releases/taily-play-v2.12.0.aab` (package `com.jatindhir.taily`, version 22 / 2.12.0,
   targets Android 16 / API 36)
-- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.11.0.apk`
+- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.12.0.apk`
 - A privacy policy at https://jatin-dhir.github.io/snowy/privacy.html (also linked from Settings in the app)
 - Listing copy (`listing.md`), data-safety answers (`data-safety.md`), release notes (`whats-new.txt`)
 - Graphics in `graphics/` (icon, feature graphic, screenshots)
@@ -107,9 +107,9 @@ be reset through Play Console support, but that takes days.
 - New apps and updates must target Android 16 (API 36) from 31 August 2026. Taily targets 36.
   https://developer.android.com/google/play/requirements/target-sdk
 - No native libraries, so the 16 KB page-size requirement does not apply.
-- Permissions are internet, microphone (voice entry), vibration, notifications, and boot-completed (restores
-  scheduled reminders), plus Google Play Billing for Taily Pro, which brings network-state with it (Play build
-  only). The exact-alarm permission that the notifications plugin declares is removed; Taily only sets ordinary
+- Permissions are internet, network state (voice asks for the on-device speech model when offline), microphone
+  (voice entry), vibration, notifications, and boot-completed (restores scheduled reminders), plus Google Play
+  Billing for Taily Pro (Play build only). The home-screen widget and the Quick Settings tile need no permission. The exact-alarm permission that the notifications plugin declares is removed; Taily only sets ordinary
   reminders.
 - No self-update code in the Play bundle: Play policy only allows updating through Play.
 

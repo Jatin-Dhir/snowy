@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 7.1, before adaptive icons: the disc and the mic in one drawing -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="@color/voice_accent"
+        android:pathData="M0,24a24,24 0,1 1,48 0a24,24 0,1 1,-48 0z" />
+    <group
+        android:translateX="12"
+        android:translateY="12">
+        <path
+            android:pathData="M9,6a3,3 0,0 1,6 0v5a3,3 0,0 1,-6 0z M5.5,11a6.5,6.5 0,0 0,13 0 M12,17.5V21 M8.5,21h7"
+            android:strokeWidth="2"
+            android:strokeColor="@color/voice_on_accent"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>

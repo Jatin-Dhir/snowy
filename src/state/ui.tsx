@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react'
-import { fxSettings, playSound } from '../lib/sound'
+import { fxSettings, playKey, playSound, type KeyKind } from '../lib/sound'
 
 interface ToastState {
   message: string
@@ -38,6 +38,17 @@ function getHaptics(): Promise<HapticsModule | null> {
 /** Real haptic engine in the app (vibration fallback on the web) + a click sound. */
 export function haptic(kind: HapticKind = 'light'): void {
   playSound(kind)
+  vibrate(kind)
+}
+
+/** A key on Taily's own keypads: the iPhone keyboard's click and the lightest tick. */
+export function keyFeedback(kind: KeyKind): void {
+  playKey(kind)
+  vibrate('light')
+}
+
+/** The vibration alone: for moments the microphone could hear a sound. */
+export function vibrate(kind: HapticKind = 'light'): void {
   if (!fxSettings().haptics) return
   void getHaptics().then((mod) => {
     if (mod) {

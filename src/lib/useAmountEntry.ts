@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { entryToMinor, minorToEntry } from './money'
-import { haptic } from '../state/ui'
+import { keyFeedback } from '../state/ui'
 
 /** Shared numpad amount state: rupee digits + optional paise, functional updates. */
 export function useAmountEntry() {
   const [entry, setEntry] = useState<{ r: string; p: string | null }>({ r: '', p: null })
 
   function digit(d: string) {
-    haptic('light')
+    keyFeedback('key')
     setEntry((e) => {
       if (e.p !== null) return e.p.length < 2 ? { ...e, p: e.p + d } : e
       if (e.r.length >= 8) return e
@@ -16,12 +16,12 @@ export function useAmountEntry() {
   }
 
   function dot() {
-    haptic('light')
+    keyFeedback('key')
     setEntry((e) => (e.p === null ? { ...e, p: '' } : e))
   }
 
   function backspace() {
-    haptic('light')
+    keyFeedback('delete')
     setEntry((e) => {
       if (e.p !== null) return e.p.length > 0 ? { ...e, p: e.p.slice(0, -1) } : { ...e, p: null }
       return { ...e, r: e.r.slice(0, -1) }

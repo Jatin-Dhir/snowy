@@ -3,9 +3,21 @@
      id, and the Play build's id differs from the sideload one in src/main. -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
+        android:shortcutId="quick_voice"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_voice"
+        android:shortcutShortLabel="@string/shortcut_voice_short"
+        android:shortcutLongLabel="@string/shortcut_voice_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="taily://voice?from=shortcut"
+            android:targetPackage="com.jatindhir.taily"
+            android:targetClass="com.tally.expense.MainActivity" />
+    </shortcut>
+    <shortcut
         android:shortcutId="quick_add"
         android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_shortcut_add"
         android:shortcutShortLabel="@string/shortcut_add_short"
         android:shortcutLongLabel="@string/shortcut_add_long">
         <intent

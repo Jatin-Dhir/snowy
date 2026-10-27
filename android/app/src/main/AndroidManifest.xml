@@ -54,6 +54,31 @@
 
         </activity>
 
+        <!-- Voice from anywhere: the home-screen widget and the Quick Settings tile.
+             Both open MainActivity with taily://voice, where VoicePlugin starts listening. -->
+        <receiver
+            android:name=".VoiceWidget"
+            android:exported="false"
+            android:label="@string/widget_voice_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_voice_info" />
+        </receiver>
+
+        <service
+            android:name=".VoiceTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_voice"
+            android:label="@string/tile_voice_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -70,6 +95,15 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- voice asks the recognizer for its on-device model when there's no connection -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Android 11+ hides other apps' services unless asked for: this finds the phone's speech recognizer -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 
     <!-- The notifications plugin declares this for its optional exact-alarm mode.
          Taily only sets ordinary reminders (10:00 on the day), never exact ones,

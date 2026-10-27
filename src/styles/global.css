@@ -474,12 +474,35 @@ button.pill:active {
   margin: -26px 6px 0;
   box-shadow: var(--raise), var(--fab-glow);
   transition: transform 340ms var(--ease-spring), box-shadow 340ms var(--ease-soft);
+  /* the hold-to-speak gesture owns this touch: a drifting finger must not
+     turn into a scroll and cancel it */
+  touch-action: none;
 }
 
 .fab:active {
   transform: scale(0.88);
   box-shadow: var(--raise-sm), var(--fab-glow);
   transition-duration: 40ms, 40ms;
+}
+
+/* while a press could still become a hold: a ring gathers round the button,
+   then the voice screen's own mic takes its place */
+.fab::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  transform: scale(0.82);
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+  pointer-events: none;
+}
+
+.fab.arming::before {
+  opacity: 0.6;
+  transform: scale(1);
+  transition: opacity 300ms linear, transform 300ms var(--ease-soft);
 }
 
 .voice-hint {
@@ -1265,26 +1288,316 @@ button.weekbar-col:disabled {
   }
 }
 
-/* ---------- voice capture ---------- */
-.voice-pulse {
-  width: 72px;
-  height: 72px;
-  border-radius: 36px;
-  background: var(--accent);
+/* ---------- voice capture ----------
+   The panel rises from the + it was held from; the mic sits exactly where the
+   + is, under the finger, its halo following the voice. */
+.voice-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.voice-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+  pointer-events: auto;
+  animation: fade-in 200ms var(--ease-soft);
+  transition: opacity 200ms ease-out;
+}
+
+/* saved: the app is usable again while the card shows what was saved */
+.voice-scrim.clear {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.voice-panel {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: calc(118px + env(safe-area-inset-bottom));
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--sheet-bg);
+  border: 1px solid var(--edge);
+  border-radius: calc(var(--r-lg) + 4px);
+  box-shadow: var(--sheet-shadow);
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* a long sentence, or the page zoomed to 200%: it scrolls rather than leaving the screen */
+  max-height: calc(100dvh - 140px - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+  outline: none;
+  transform-origin: 50% 100%;
+  animation: voice-rise 240ms var(--ease-water);
+}
+
+@keyframes voice-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+}
+
+.voice-layer.leaving .voice-panel {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
+}
+
+.voice-layer.leaving .voice-scrim,
+.voice-layer.leaving .voice-mic {
+  opacity: 0;
+  transition: opacity 160ms ease-out;
+}
+
+.voice-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  min-height: 18px;
+}
+
+.voice-status.away {
+  color: var(--red);
+}
+
+.voice-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--pos);
+  flex: none;
+}
+
+/* the microphone isn't open yet, or the answer is on its way */
+.voice-dot.wait {
+  background: var(--faint);
+  animation: soft-pulse 1s ease-in-out infinite;
+}
+
+.voice-status.away .voice-dot {
+  background: var(--red);
+}
+
+.voice-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--pos-soft);
+  color: var(--pos);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.voice-status.saved {
+  color: var(--ink);
+}
+
+.voice-caption {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.32;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+  min-height: 25px;
+}
+
+.voice-caption.hint {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* what Taily understood, as it will be saved */
+.voice-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.voice-amount {
+  font-weight: 700;
+  font-size: 20px;
+  margin-right: 4px;
+  color: var(--ink);
+}
+
+.voice-amount.in {
+  color: var(--pos);
+}
+
+/* no amount heard yet: muted text (amber text is 3.9:1 on the light sheet), amber only on the dot */
+.voice-amount.missing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  font-family: var(--font-ui);
+}
+
+.voice-amount.missing::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--amber);
+}
+
+/* one stable live region per panel, so every outcome is announced */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.voice-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--sunken);
+  box-shadow: var(--inset-sm);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  max-width: 100%;
+}
+
+.voice-chip .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  flex: none;
+}
+
+.voice-chip.note {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voice-foot {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.voice-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.voice-actions .btn {
+  flex: 1;
+  width: auto;
+}
+
+.voice-fail-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.voice-fail-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* the mic, exactly where the + is */
+.voice-mic {
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  border-radius: 29px;
+  pointer-events: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: voice-pulse 1.4s ease-in-out infinite;
+  transition: opacity 150ms ease-out;
 }
 
-@keyframes voice-pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent);
+/* held: the finger is on the real + underneath, which keeps the touch */
+.voice-mic.held {
+  pointer-events: none;
+}
+
+.voice-mic.away {
+  opacity: 0.45;
+}
+
+.voice-halo {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  will-change: transform;
+}
+
+/* the browser gives no microphone level: breathe instead */
+.voice-halo.idle {
+  animation: voice-breathe 1.8s ease-in-out infinite;
+}
+
+@keyframes voice-breathe {
+  0%,
+  100% {
+    transform: scale(0.94);
   }
   50% {
-    transform: scale(1.07);
-    box-shadow: 0 0 0 14px color-mix(in srgb, var(--accent) 0%, transparent);
+    transform: scale(1.12);
+  }
+}
+
+.voice-mic-core {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 29px;
+  background: var(--accent);
+  color: var(--on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--raise), var(--fab-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-halo {
+    transform: none !important;
+    opacity: 0.4;
   }
 }
 /* ---------- first-run onboarding ---------- */

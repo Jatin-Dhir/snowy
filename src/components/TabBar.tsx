@@ -1,8 +1,15 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
-import { haptic } from '../state/ui'
+import { haptic, vibrate } from '../state/ui'
 
 const HINT_KEY = 'taily.voicehint.seen'
+
+/** Held this long, the + listens instead of opening the add sheet. */
+const HOLD_MS = 300
+/** Moving this far before the hold lands means the finger is doing something else. */
+const DRIFT_PX = 24
+/** Sliding this far off the button while listening arms cancel. */
+const AWAY_PX = 72
 
 export type Tab = 'home' | 'activity' | 'budgets' | 'insights'
 
@@ -17,18 +24,28 @@ export function TabBar({
   tab,
   onTab,
   onAdd,
-  onVoice
+  onVoiceStart,
+  onVoiceAway,
+  onVoiceEnd
 }: {
   tab: Tab
   onTab: (t: Tab) => void
   onAdd: () => void
-  onVoice: () => void
+  /** the hold landed: start listening while the finger stays down */
+  onVoiceStart: () => void
+  /** the finger slid off the button (letting go now cancels), or came back */
+  onVoiceAway: (away: boolean) => void
+  /** the finger lifted; `away` if it was off the button */
+  onVoiceEnd: (away: boolean) => void
 }) {
   const [ind, setInd] = useState<{ left: number; width: number } | null>(null)
+  const [arming, setArming] = useState(false)
   const dockRef = useRef<HTMLDivElement | null>(null)
   const btnRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({})
   const holdTimer = useRef<number | null>(null)
-  const holdFired = useRef(false)
+  const press = useRef<{ id: number; x: number; y: number; voice: boolean; away: boolean } | null>(null)
+  // when a pointer last finished a press, so the click the browser sends after it is ignored
+  const pointerDoneAt = useRef(0)
 
   // teach the hold-to-speak gesture once, ever — it's otherwise undiscoverable
   const [showHint, setShowHint] = useState(() => !localStorage.getItem(HINT_KEY))
@@ -48,22 +65,87 @@ export function TabBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHint])
 
-  function holdStart(e: React.PointerEvent) {
-    // stop Android's native long-press text-selection/callout from grabbing
-    // this gesture out from under the hold-to-speak timer
-    e.preventDefault()
-    dismissHint()
-    holdFired.current = false
-    holdTimer.current = window.setTimeout(() => {
-      holdFired.current = true
-      haptic('heavy')
-      onVoice()
-    }, 420)
-  }
-
-  function holdCancel() {
+  function clearHold() {
     if (holdTimer.current) window.clearTimeout(holdTimer.current)
     holdTimer.current = null
+    setArming(false)
+  }
+
+  function onPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
+    if (e.button !== 0) return
+    // a press whose release never arrived must not leave the + stuck
+    if (press.current) {
+      clearHold()
+      press.current = null
+    }
+    // the hint bubble lives inside the button: tapping it only dismisses it
+    if ((e.target as HTMLElement).closest('.voice-hint')) {
+      dismissHint()
+      return
+    }
+    // stop Android's long-press callout and text selection from taking the gesture
+    e.preventDefault()
+    dismissHint()
+    // the finger stays this button's even as the voice screen opens on top of it
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      /* capture unavailable: pointerleave can't fire anyway with touch-action none */
+    }
+    press.current = { id: e.pointerId, x: e.clientX, y: e.clientY, voice: false, away: false }
+    setArming(true)
+    holdTimer.current = window.setTimeout(() => {
+      holdTimer.current = null
+      setArming(false)
+      const p = press.current
+      if (!p) return
+      p.voice = true
+      vibrate('heavy')
+      onVoiceStart()
+    }, HOLD_MS)
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLButtonElement>) {
+    const p = press.current
+    if (!p || e.pointerId !== p.id) return
+    const distance = Math.hypot(e.clientX - p.x, e.clientY - p.y)
+    if (!p.voice) {
+      if (distance > DRIFT_PX) {
+        clearHold()
+        press.current = null
+      }
+      return
+    }
+    const away = distance > AWAY_PX
+    if (away !== p.away) {
+      p.away = away
+      vibrate('selection')
+      onVoiceAway(away)
+    }
+  }
+
+  function onPointerUp(e: React.PointerEvent<HTMLButtonElement>) {
+    const p = press.current
+    if (!p || e.pointerId !== p.id) return
+    press.current = null
+    pointerDoneAt.current = performance.now()
+    clearHold()
+    if (p.voice) {
+      onVoiceEnd(p.away)
+    } else {
+      haptic('medium')
+      onAdd()
+    }
+  }
+
+  function onPointerCancel(e: React.PointerEvent<HTMLButtonElement>) {
+    const p = press.current
+    if (!p || e.pointerId !== p.id) return
+    press.current = null
+    pointerDoneAt.current = performance.now()
+    clearHold()
+    // the system took the touch (a permission prompt, the notification shade): keep listening hands-free
+    if (p.voice) onVoiceEnd(false)
   }
 
   useLayoutEffect(() => {
@@ -104,20 +186,18 @@ export function TabBar({
         {ind && <span className="dock-ind" style={{ left: ind.left, width: ind.width }} />}
         {TABS.slice(0, 2).map(item)}
         <button
-          className="fab"
+          className={`fab${arming ? ' arming' : ''}`}
+          data-voice-anchor=""
+          // a keyboard or a screen reader presses without a pointer; a finger's press was handled on pointerup
           onClick={() => {
-            if (holdFired.current) {
-              holdFired.current = false
-              return
-            }
-            dismissHint()
+            if (performance.now() - pointerDoneAt.current < 800) return
             haptic('medium')
             onAdd()
           }}
-          onPointerDown={holdStart}
-          onPointerUp={holdCancel}
-          onPointerLeave={holdCancel}
-          onPointerCancel={holdCancel}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
           onContextMenu={(e) => e.preventDefault()}
           aria-label="Add expense — hold to speak"
         >
