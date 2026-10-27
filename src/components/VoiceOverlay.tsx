@@ -237,7 +237,10 @@ export function VoiceOverlay({
       // a permission prompt took the screen, and the finger with it: carry on hands-free
       if (modeRef.current === 'hold' && !holdingRef.current) toFree()
       session.current = startVoice({ hold: modeRef.current === 'hold' }, on)
-    })()
+    })().catch(() => {
+      // whatever went wrong, the screen must never sit on "Getting the mic ready…"
+      if (live()) setView({ kind: 'failed', reason: 'error' })
+    })
   }
 
   async function finish(alternatives: Alternative[], mine: number) {

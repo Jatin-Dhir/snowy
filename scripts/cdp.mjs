@@ -19,7 +19,8 @@ const CANDIDATES = [
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-export async function launch({ port = 9333 } = {}) {
+/** `args`: extra browser flags, after the defaults. */
+export async function launch({ port = 9333, args = [] } = {}) {
   const exe = CANDIDATES.find((p) => existsSync(p))
   if (!exe) throw new Error('No Edge or Chrome found. Set BROWSER to its full path.')
   const profile = mkdtempSync(join(tmpdir(), 'taily-cdp-'))
@@ -33,13 +34,15 @@ export async function launch({ port = 9333 } = {}) {
       '--no-default-browser-check',
       '--hide-scrollbars',
       '--mute-audio',
+      ...args,
       'about:blank'
     ],
     { stdio: 'ignore' }
   )
 
+  // a busy machine can take a while to bring the browser up
   let up = false
-  for (let i = 0; i < 100 && !up; i++) {
+  for (let i = 0; i < 240 && !up; i++) {
     try {
       up = (await fetch(`http://127.0.0.1:${port}/json/version`)).ok
     } catch {

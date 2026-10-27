@@ -1,0 +1,187 @@
+/* The film's own surface: Taily's tokens (src/styles/global.css), at video scale. */
+:root {
+  --bg: #edf0f5;
+  --ink: #1a212b;
+  --muted: #56616d;
+  --faint: #87919e;
+  --line: #d9dee6;
+  --sky: #91bae3;
+  --on-sky: #22384f;
+  --night: #14171b;
+  --night-ink: #e8ebf0;
+  --night-muted: #9aa3ae;
+  --font-ui: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-num: 'Space Grotesk', 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  background: #000;
+}
+
+#stage {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+  font-kerning: normal;
+}
+
+.abs {
+  position: absolute;
+}
+
+/* ---- headlines: every word rises out of its own line box, on the beat */
+.take {
+  position: absolute;
+}
+.eyebrow {
+  display: block;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.line {
+  display: block;
+  white-space: nowrap;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+}
+.w {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  vertical-align: top;
+  padding: 0.02em 0.06em 0.12em;
+  margin: -0.02em -0.06em -0.12em;
+}
+.w + .w {
+  margin-left: 0.2em;
+}
+.wi {
+  display: inline-block;
+  position: relative;
+  will-change: transform;
+}
+/* a highlighted word sits on a chip, like the app's tag chips */
+.w.pill {
+  padding: 0.02em 0.32em 0.12em;
+  margin-left: 0.04em;
+}
+.w.pill + .w,
+.w + .w.pill {
+  margin-left: 0.14em;
+}
+.pb {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0.08em;
+  bottom: 0.06em;
+  border-radius: 999px;
+  transform-origin: 0 50%;
+  background: var(--sky);
+}
+
+/* ---- the phone */
+.body {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(150deg, #3a414b 0%, #15181d 18%, #0d0f12 60%, #1b1f25 100%);
+}
+.screen {
+  position: absolute;
+  overflow: hidden;
+  background: var(--bg);
+}
+.status {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  font-weight: 600;
+  z-index: 3;
+}
+.status svg {
+  display: block;
+}
+.app {
+  position: absolute;
+  left: 0;
+  overflow: hidden;
+}
+.app img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  z-index: 3;
+}
+.tap {
+  position: absolute;
+  border-radius: 50%;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+/* ---- the home screen the widget lives on */
+.home {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    radial-gradient(90% 55% at 12% 8%, #cddff3 0%, rgba(205, 223, 243, 0) 62%),
+    radial-gradient(85% 60% at 92% 88%, #e2daf3 0%, rgba(226, 218, 243, 0) 60%),
+    linear-gradient(180deg, #eef2f8 0%, #e5eaf2 100%);
+}
+.widget {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  background: #edf0f5;
+  border: 1px solid #d9dee6;
+}
+.disc {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* ---- the lifted voice cards */
+.card {
+  position: absolute;
+  overflow: hidden;
+  background: #edf0f5;
+}
+.card img {
+  position: absolute;
+  display: block;
+}
+
+/* ---- numbers */
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}

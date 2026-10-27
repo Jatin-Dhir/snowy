@@ -82,7 +82,9 @@ export function Activity({
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const accounts = useLiveQuery(() => db.accounts.orderBy('sort').toArray(), []) ?? []
-  const txns = useLiveQuery(() => allLiveTxns(), []) ?? []
+  // undefined until the first read: the empty state waits for it rather than flashing on every visit
+  const loaded = useLiveQuery(() => allLiveTxns(), [])
+  const txns = loaded ?? []
   const catName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
   // search by the name you gave an account, not its internal id
   const accName = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts])
@@ -274,7 +276,7 @@ export function Activity({
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {groups.length === 0 ? (
+        {loaded === undefined ? null : groups.length === 0 ? (
           <div className="empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
             <span>
               {txns.length === 0

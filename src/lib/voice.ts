@@ -109,13 +109,17 @@ interface VoicePlugin {
   addListener(event: 'voiceLaunch', listener: (e: { source: string }) => void): Promise<PluginListenerHandle>
 }
 
-let plugin: Promise<VoicePlugin | null> | null = null
+// The plugin travels inside an object, never as a promise's value: resolving a
+// promise with a Capacitor plugin makes JavaScript look for a .then on it, which
+// Capacitor forwards to Android as a call to a method that doesn't exist
+// ("Voice.then() is not implemented") and the promise never settles.
+let plugin: Promise<{ api: VoicePlugin } | null> | null = null
 
-function native(): Promise<VoicePlugin | null> {
+function native(): Promise<{ api: VoicePlugin } | null> {
   plugin ??= (async () => {
     try {
       const { Capacitor, registerPlugin } = await import('@capacitor/core')
-      return Capacitor.isNativePlatform() ? registerPlugin<VoicePlugin>('Voice') : null
+      return Capacitor.isNativePlatform() ? { api: registerPlugin<VoicePlugin>('Voice') } : null
     } catch {
       return null
     }
@@ -393,9 +397,9 @@ export function startVoice(options: VoiceOptions, on: VoiceHandlers): VoiceSessi
   let inner: VoiceSession | null = null
   let stopWanted = false
   let cancelled = false
-  void native().then((api) => {
+  void native().then((n) => {
     if (cancelled) return
-    inner = api ? nativeSession(api, options, on) : webSession(options, on)
+    inner = n ? nativeSession(n.api, options, on) : webSession(options, on)
     if (stopWanted) inner.stop()
   })
   return {
@@ -414,7 +418,7 @@ export function startVoice(options: VoiceOptions, on: VoiceHandlers): VoiceSessi
 }
 
 export async function voiceAvailable(): Promise<boolean> {
-  const api = await native()
+  const api = (await native())?.api ?? null
   if (!api) return webRecognizer() !== null
   try {
     return (await api.available()).available
@@ -429,7 +433,7 @@ export async function voiceAvailable(): Promise<boolean> {
  * The browser asks for itself when listening starts.
  */
 export async function microphone(ask: boolean): Promise<'granted' | 'prompt' | 'denied' | 'blocked'> {
-  const api = await native()
+  const api = (await native())?.api ?? null
   if (!api) return 'granted'
   try {
     const now = (await api.checkPermissions()).microphone
@@ -445,7 +449,7 @@ export async function microphone(ask: boolean): Promise<'granted' | 'prompt' | '
 
 /** A launch from the widget, the tile or the shortcut, taken once. */
 export async function takeVoiceLaunch(): Promise<VoiceLaunch | null> {
-  const api = await native()
+  const api = (await native())?.api ?? null
   if (!api) return null
   try {
     // listening first, so nothing said between the snapshot and the screen is lost
@@ -481,7 +485,7 @@ export async function takeVoiceLaunch(): Promise<VoiceLaunch | null> {
 
 /** Called when the widget or tile is used while Taily is already open. */
 export async function onVoiceLaunch(listener: () => void): Promise<() => void> {
-  const api = await native()
+  const api = (await native())?.api ?? null
   if (!api) return () => undefined
   try {
     const handle = await api.addListener('voiceLaunch', () => listener())
@@ -493,7 +497,7 @@ export async function onVoiceLaunch(listener: () => void): Promise<() => void> {
 
 /** What a launch from outside the app needs and can't read for itself. */
 export async function setVoicePrefs(prefs: Parameters<VoicePlugin['setPrefs']>[0]): Promise<void> {
-  const api = await native()
+  const api = (await native())?.api ?? null
   if (!api) return
   try {
     await api.setPrefs(prefs)
@@ -503,13 +507,13 @@ export async function setVoicePrefs(prefs: Parameters<VoicePlugin['setPrefs']>[0
 }
 
 export async function openAppSettings(): Promise<void> {
-  const api = await native()
+  const api = (await native())?.api ?? null
   await api?.openSettings().catch(() => undefined)
 }
 
 /** Which of the widget and the tile this phone can add from inside the app; null off Android. */
 export async function voiceShortcuts(): Promise<{ widget: boolean; tile: boolean } | null> {
-  const api = await native()
+  const api = (await native())?.api ?? null
   if (!api) return null
   try {
     return await api.shortcuts()
@@ -519,7 +523,7 @@ export async function voiceShortcuts(): Promise<{ widget: boolean; tile: boolean
 }
 
 export async function pinVoiceWidget(): Promise<boolean> {
-  const api = await native()
+  const api = (await native())?.api ?? null
   if (!api) return false
   try {
     return (await api.pinWidget()).shown
@@ -529,7 +533,7 @@ export async function pinVoiceWidget(): Promise<boolean> {
 }
 
 export async function addVoiceTile(): Promise<'added' | 'already' | 'dismissed' | 'unsupported' | 'error'> {
-  const api = await native()
+  const api = (await native())?.api ?? null
   if (!api) return 'unsupported'
   try {
     return (await api.addTile()).result

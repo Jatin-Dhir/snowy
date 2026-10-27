@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { txnsBetween } from '../db/repo'
@@ -59,7 +59,9 @@ export function Insights({
 
   const windowFrom = monthRange(addMonths(monthKey, -5)).from
   const windowTo = monthRange(monthKey).to
-  const windowTxns = useLiveQuery(() => txnsBetween(windowFrom, windowTo), [windowFrom, windowTo]) ?? []
+  // undefined until the first read: the empty state waits for it rather than flashing on every visit
+  const windowLoaded = useLiveQuery(() => txnsBetween(windowFrom, windowTo), [windowFrom, windowTo])
+  const windowTxns = windowLoaded ?? []
 
   const monthTxns = useMemo(() => windowTxns.filter((t) => monthKeyOf(t.dateISO) === monthKey), [windowTxns, monthKey])
   const spent = sum(monthTxns)
@@ -150,7 +152,8 @@ export function Insights({
     }
   }, [monthTxns, windowTxns, breakdown, prevKey, spent, isCurrent, today, monthKey])
 
-  const catRow = (r: { total: number; name: string; color: string }) => (
+  // `after` follows the name (the rest row's chevron), so the amount and % columns line up on every row
+  const catRow = (r: { total: number; name: string; color: string }, after?: ReactNode) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       <span style={{ width: 8, height: 8, borderRadius: 4, background: r.color, flexShrink: 0 }} />
       <span
@@ -165,6 +168,7 @@ export function Insights({
         }}
       >
         {r.name}
+        {after}
       </span>
       <span className="mono" style={{ fontWeight: 600, fontSize: 13.5 }}>
         {formatMinor(r.total, currency)}
@@ -214,7 +218,7 @@ export function Insights({
         </span>
       </div>
 
-      {monthTxns.length === 0 ? (
+      {windowLoaded === undefined ? null : monthTxns.length === 0 ? (
         <div className="empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
           <span>No expenses in {monthLabel(monthKey)}. Log a few and this screen starts answering questions.</span>
           {isCurrent ? (
@@ -276,22 +280,26 @@ export function Insights({
             {breakdown.restTotal > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <button
-                  style={{ display: 'flex', flexDirection: 'column', gap: 5, width: '100%' }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 5, width: '100%', textAlign: 'start' }}
                   onClick={() => setShowRest((v) => !v)}
                   aria-expanded={showRest}
                   aria-label={showRest ? 'Hide the rest of your tags' : 'Show the rest of your tags'}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      {catRow({ total: breakdown.restTotal, name: 'Everything else', color: 'var(--faint-future)' })}
-                    </div>
+                  {catRow(
+                    { total: breakdown.restTotal, name: 'Everything else', color: 'var(--faint-future)' },
                     <span
                       className="faint"
-                      style={{ display: 'flex', transform: showRest ? 'rotate(90deg)' : undefined, transition: 'transform .15s' }}
+                      style={{
+                        display: 'inline-flex',
+                        marginLeft: 4,
+                        verticalAlign: '-2px',
+                        transform: showRest ? 'rotate(90deg)' : undefined,
+                        transition: 'transform .15s'
+                      }}
                     >
                       <Icon name="chevronRight" size={13} />
                     </span>
-                  </div>
+                  )}
                   <div className="bar-track" style={{ height: 6 }}>
                     <div
                       className="bar-fill"

@@ -17,7 +17,7 @@ import java.util.Map;
  * The home-screen widget: a capsule like the app's dock. The mic starts
  * listening the moment it's tapped (VoicePlugin begins before the app has
  * even drawn); the + opens the add sheet. One cell wide it's the mic alone,
- * two cells the mic and the +, three or more spells it out.
+ * two cells the mic and the +, three says "Speak", four or more spells it out.
  */
 public class VoiceWidget extends AppWidgetProvider {
 
@@ -44,13 +44,17 @@ public class VoiceWidget extends AppWidgetProvider {
       Map<SizeF, RemoteViews> sizes = new ArrayMap<>();
       sizes.put(new SizeF(40f, 40f), layout(context, R.layout.widget_voice_mic));
       sizes.put(new SizeF(100f, 40f), layout(context, R.layout.widget_voice_compact));
-      sizes.put(new SizeF(170f, 40f), layout(context, R.layout.widget_voice));
+      // three cells: the full label would be cut to "Speak an exp…" (seen on a Pixel launcher)
+      sizes.put(new SizeF(170f, 40f), layout(context, R.layout.widget_voice_medium));
+      sizes.put(new SizeF(250f, 40f), layout(context, R.layout.widget_voice));
       return new RemoteViews(sizes);
     }
     int width = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0);
-    int res = width == 0 || width >= 170
+    int res = width == 0 || width >= 250
         ? R.layout.widget_voice
-        : width >= 100 ? R.layout.widget_voice_compact : R.layout.widget_voice_mic;
+        : width >= 170
+            ? R.layout.widget_voice_medium
+            : width >= 100 ? R.layout.widget_voice_compact : R.layout.widget_voice_mic;
     return layout(context, res);
   }
 

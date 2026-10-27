@@ -19,3 +19,13 @@ android/app/release/
 
 # local web verification build
 dist-web/
+
+# promo film: everything here is rebuilt by store/promo's scripts (see store/promo/README.md)
+store/promo/build/
+store/promo/out/
+store/promo/shots/
+store/promo/music/*.wav
+store/promo/music/*.err
+store/promo/music/*.json
+store/promo/music/v2.m4a
+store/promo/music/v3.m4a

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Home-screen widget, three cells or wider: [mic  Speak an expense  +].
+<!-- Home-screen widget, four cells or wider: [mic  Speak an expense  +].
      A widget is drawn by the launcher from RemoteViews, so only FrameLayout,
      LinearLayout, ImageView and TextView appear here. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"

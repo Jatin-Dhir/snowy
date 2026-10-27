@@ -49,7 +49,9 @@ export function Home({
   const [dayOpen, setDayOpen] = useState<string | null>(null)
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
-  const monthTxns = useLiveQuery(() => txnsForMonth(monthKey), [monthKey]) ?? []
+  // undefined until the first read: "nothing logged" waits for it rather than flashing on every visit
+  const monthLoaded = useLiveQuery(() => txnsForMonth(monthKey), [monthKey])
+  const monthTxns = monthLoaded ?? []
   const week = weekDaysOf(today)
   const weekTxns = useLiveQuery(() => txnsBetween(week[0], week[6]), [week[0], week[6]]) ?? []
   const recent = useLiveQuery(() => recentTxns(600), []) ?? []
@@ -494,7 +496,7 @@ export function Home({
             </span>
           </div>
         )}
-        {todayTxns.length === 0 ? (
+        {monthLoaded === undefined ? null : todayTxns.length === 0 ? (
           <div className="empty">
             Nothing logged yet today.
             <br />

@@ -106,7 +106,10 @@ const TENS: Record<string, number> = {
 // "dedh" is one and a half, "dhai" two and a half
 const HALVES: Record<string, number> = { dedh: 1.5, derh: 1.5, dhai: 2.5, dhaai: 2.5, adhai: 2.5, arhai: 2.5 }
 // "saade teen" is three and a half, "sava do" two and a quarter, "paune paanch" four and three quarters
-const MODIFIERS: Record<string, number> = { saade: 0.5, sade: 0.5, sava: 0.25, sawa: 0.25, paune: -0.25 }
+// (speech recognizers spell "saade" with or without the h)
+const MODIFIERS: Record<string, number> = {
+  saade: 0.5, sade: 0.5, saadhe: 0.5, sadhe: 0.5, sava: 0.25, sawa: 0.25, paune: -0.25
+}
 const SCALES: Record<string, number> = {
   hundred: 100, hundreds: 100, sau: 100,
   thousand: 1e3, thousands: 1e3, k: 1e3, hazaar: 1e3, hazar: 1e3, hajar: 1e3, hazzar: 1e3,
