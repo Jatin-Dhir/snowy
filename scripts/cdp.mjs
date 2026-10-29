@@ -2,7 +2,7 @@
 // headless Edge/Chrome with its own profile, opens one tab and exposes
 // send / evaluate / waitFor. Used by the store-asset scripts. Needs Node 22+ (global WebSocket).
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -19,10 +19,23 @@ const CANDIDATES = [
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-/** `args`: extra browser flags, after the defaults. */
-export async function launch({ port = 9333, args = [] } = {}) {
+const answers = async (port) => {
+  try {
+    return (await fetch(`http://127.0.0.1:${port}/json/version`)).ok
+  } catch {
+    return false
+  }
+}
+
+/**
+ * `args`: extra browser flags, after the defaults. `port` 0 (the default) lets the browser pick a free one,
+ * so two scripts running at once (a film render and the store graphics, say) never attach to each other's
+ * browser; a fixed port must be free, or this throws rather than driving whatever already answers there.
+ */
+export async function launch({ port = 0, args = [] } = {}) {
   const exe = CANDIDATES.find((p) => existsSync(p))
   if (!exe) throw new Error('No Edge or Chrome found. Set BROWSER to its full path.')
+  if (port && (await answers(port))) throw new Error(`Port ${port} already has a browser on it; pick another or leave it to 0.`)
   const profile = mkdtempSync(join(tmpdir(), 'taily-cdp-'))
   const proc = spawn(
     exe,
@@ -40,14 +53,19 @@ export async function launch({ port = 9333, args = [] } = {}) {
     { stdio: 'ignore' }
   )
 
-  // a busy machine can take a while to bring the browser up
+  // a busy machine can take a while to bring the browser up; with port 0 it writes the port it chose
+  // into DevToolsActivePort in its profile
   let up = false
   for (let i = 0; i < 240 && !up; i++) {
-    try {
-      up = (await fetch(`http://127.0.0.1:${port}/json/version`)).ok
-    } catch {
-      await sleep(150)
+    if (!port) {
+      try {
+        port = Number(readFileSync(join(profile, 'DevToolsActivePort'), 'utf8').split('\n')[0]) || 0
+      } catch {
+        /* not written yet */
+      }
     }
+    up = !!port && (await answers(port))
+    if (!up) await sleep(150)
   }
   if (!up) throw new Error('The browser did not expose its DevTools endpoint.')
 
@@ -103,10 +121,14 @@ export async function launch({ port = 9333, args = [] } = {}) {
     }
     if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore' })
     else proc.kill()
-    try {
-      rmSync(profile, { recursive: true, force: true })
-    } catch {
-      /* the OS may still hold a lock; it is a temp folder */
+    // Edge lets go of its profile a moment after it is killed: keep trying for a few seconds, or every run
+    // leaves its profile and disk cache behind in the temp folder
+    for (let i = 0; i < 24 && existsSync(profile); i++) {
+      try {
+        rmSync(profile, { recursive: true, force: true })
+      } catch {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250)
+      }
     }
   }
 

@@ -582,9 +582,11 @@ export function SettingsSheet({
               tint="#C9952B"
               title={pro.owned ? 'Taily Pro' : 'Get Taily Pro'}
               sub={
-                pro.owned
-                  ? 'Unlocked. Thank you for backing Taily'
-                  : `Statement import, encrypted backups, recurring payments and more${pro.price ? ` · ${pro.price} once` : ''}`
+                pro.byCode
+                  ? 'Unlocked on this phone with a code'
+                  : pro.owned
+                    ? 'Unlocked. Thank you for backing Taily'
+                    : `Statement import, encrypted backups, recurring payments and more${pro.price ? ` · ${pro.price} once` : ''}`
               }
               onClick={openProSheet}
             />

@@ -8,7 +8,7 @@ Taily: Expense Tracker
 
 ## Short description (80 max)
 
-Log an expense in three seconds. Private, offline, no account and no ads.
+Log an expense in three seconds, or just say it. Private, offline, no ads.
 
 ## Full description (4000 max)
 
@@ -17,7 +17,7 @@ Taily is an expense tracker built to stay out of your way. Open it, type the amo
 Everything stays on your phone. There is no account to make, no cloud to sync, and no ads.
 
 Log in a moment
-• Amount-first number pad with one-tap tag suggestions that learn from your own habits, and keys that click like an iPhone keyboard
+• Amount-first number pad with one-tap tag suggestions that learn from your own habits, and crisp key clicks as you type
 • Hold the + and just say it: "250 shopping", "dhai sau ka khana kal" or "got 2000 from Rahul". You see what Taily understood before it saves, with Undo right there
 • Voice from anywhere: a home-screen widget, a Quick Settings tile and a launcher shortcut start listening the moment you tap them
 • Spent and received, with tags you can rename, recolour and add to
@@ -57,8 +57,9 @@ Taily keeps your entries on your device and never uploads them. Read the full po
 
 ## Contact details (Console asks for these)
 
-- Email: yours (shown publicly on the listing)
-- Website: https://jatin-dhir.github.io/snowy/
+- Email: the same public contact as your other Play app (shown on the listing)
+- Website: left empty on purpose. The web version includes Pro free (it has no store to pay through), so the Play
+  listing doesn't send buyers there.
 - Privacy policy URL: https://jatin-dhir.github.io/snowy/privacy.html
 
 ## Graphics (in store/play/graphics/)

@@ -10,11 +10,18 @@ export const PRO_FOR_SALE = DISTRIBUTION === 'play'
 const PRODUCT_ID = 'taily_pro'
 // Google Play's last answer, so Pro opens instantly and works offline
 const CACHE_KEY = 'taily.pro'
+// A review code unlocks Pro on one phone without a purchase, so Google's app reviewers can
+// reach every paid feature (Play Console asks for this under Sign-in details). Only this salted
+// hash ships; the code itself is kept with the upload key, outside the repo.
+const CODE_KEY = 'taily.pro.code'
+const REVIEW_CODE_SHA256 = '69c028a8d50fd313d249dd65d91ffbaa1bca5fd02c2077c7f6e910e18fcc2b76'
 
 export type ProFeature = 'import' | 'backup' | 'recurring' | 'profiles' | 'color'
 
 export interface ProState {
   owned: boolean
+  /** unlocked on this phone by a review code rather than a purchase */
+  byCode: boolean
   /** Play's formatted local price, once it has answered */
   price: string | null
   purchase: 'ready' | 'busy' | 'pending' | 'unavailable'
@@ -34,15 +41,22 @@ interface BillingPlugin {
   ): Promise<{ remove(): Promise<void> }>
 }
 
-function cached(): boolean {
+function flag(key: string): boolean {
   try {
-    return localStorage.getItem(CACHE_KEY) === '1'
+    return localStorage.getItem(key) === '1'
   } catch {
     return false
   }
 }
 
-let state: ProState = { owned: !PRO_FOR_SALE || cached(), price: null, purchase: 'unavailable', sheet: null }
+const byCode = PRO_FOR_SALE && flag(CODE_KEY)
+let state: ProState = {
+  owned: !PRO_FOR_SALE || flag(CACHE_KEY) || byCode,
+  byCode,
+  price: null,
+  purchase: 'unavailable',
+  sheet: null
+}
 const listeners = new Set<() => void>()
 
 function update(patch: Partial<ProState>) {
@@ -57,7 +71,8 @@ function setOwned(owned: boolean) {
   } catch {
     /* the cache is a convenience; Play stays the source of truth */
   }
-  update({ owned, purchase: owned ? 'ready' : state.purchase })
+  // Play saying "not owned" doesn't lock a phone that a review code unlocked
+  update({ owned: owned || state.byCode, purchase: owned ? 'ready' : state.purchase })
 }
 
 export function useProState(): ProState {
@@ -129,6 +144,22 @@ export async function restorePro(): Promise<boolean | null> {
   } catch {
     return null
   }
+}
+
+/** True when the code is the review code, and Pro is now unlocked on this phone. Spacing, dashes and case don't matter. */
+export async function redeemCode(input: string): Promise<boolean> {
+  const code = input.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (!PRO_FOR_SALE || !code) return false
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`taily-review:${code}`))
+  const hex = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('')
+  if (hex !== REVIEW_CODE_SHA256) return false
+  try {
+    localStorage.setItem(CODE_KEY, '1')
+  } catch {
+    /* unlocked until the app closes */
+  }
+  update({ owned: true, byCode: true })
+  return true
 }
 
 export async function buyPro(): Promise<PurchaseResult | 'unavailable'> {

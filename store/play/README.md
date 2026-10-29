@@ -7,7 +7,21 @@
 - The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.12.0.apk`
 - A privacy policy at https://jatin-dhir.github.io/snowy/privacy.html (also linked from Settings in the app)
 - Listing copy (`listing.md`), data-safety answers (`data-safety.md`), release notes (`whats-new.txt`)
-- Graphics in `graphics/` (icon, feature graphic, screenshots)
+- Graphics in `graphics/` (icon, feature graphic, eight captioned 1080 x 1920 screenshots)
+
+## Where Play Console stands (29 October 2026)
+
+App "Taily: Expense Tracker", `com.jatindhir.taily`, in the JatinDhir developer account.
+
+- Done: store listing (text, icon, feature graphic, 8 screenshots), category Finance with tags Finance and
+  Personal finance, contact email, privacy policy, and every App content declaration (no ads; sign-in details
+  with the review code below; content rating PEGI 3 / ESRB Everyone with in-app purchases; target age 18+ only;
+  data safety "no data collected or shared"; no advertising ID; not a government app; no financial features;
+  no health features).
+- Live: internal testing, release 22 (2.12.0), to the "Internal testers" email list. Opt-in link:
+  https://play.google.com/apps/internaltest/4700958214368746059
+- Waiting on you: the payments (merchant) profile; then the `taily_pro` product can be created (below).
+- Next: a closed test (Play shows Taily needs its own before production access), then Send for review.
 
 Upload-key certificate, SHA-256 (public):
 `B2:6B:DC:00:10:3E:3C:A7:11:80:AF:06:51:D5:18:FE:6E:3A:F9:9E:CA:11:DA:97:7B:17:0C:A9:E6:8D:2A:EA`
@@ -54,6 +68,16 @@ include Pro for free (they have no store to pay through). The app looks for the 
 Until the product exists and is active, the Pro sheet says Google Play isn't offering Pro and the Unlock button
 stays disabled; nothing crashes.
 
+### The review code
+
+Play's Sign-in details declaration counts a one-time purchase as restricted access, and its reviewers can't pay.
+So the Pro sheet has "Redeem a code": the review code unlocks Pro on that one phone without a purchase. Only its
+salted SHA-256 ships (`REVIEW_CODE_SHA256` in `src/lib/pro.ts`); the code itself is in
+`C:\Users\HEART\.taily-signing\review-code.txt`, next to the upload key, and in Play Console under App content,
+Sign-in details (reviewers only). Keep it out of anything public. To replace it: make a new code, put its
+`sha256("taily-review:" + CODE)` (letters and digits only, upper case) in `pro.ts`, ship a build, and update the
+Sign-in details text.
+
 ## Regenerating the graphics
 
 Everything in `graphics/` is generated from the real app, so it never drifts from the UI. The screenshots show an
@@ -64,8 +88,12 @@ npx vite --mode play --port 5180     # leave this running
 node scripts/play-graphics.mjs       # in a second terminal
 ```
 
-It captures seven 1080 x 2100 screenshots (Google's limit is 2:1) and renders the feature graphic from
-`graphics/src/feature-graphic.html`. It needs Edge or Chrome installed (set `BROWSER` to point at another one).
+It captures eight real screens at 1080 x 2100 into `graphics/src/screens/` (voice through a scripted speech
+recognizer, the Pro sheet as it reads on a phone with Google Play), then renders each into a phone under its
+headline from `graphics/src/screenshots.html` as `graphics/phone-0N-*.jpg`, 1080 x 1920 (Play Console now takes
+16:9 or 9:16 only), and renders the feature graphic from `graphics/src/feature-graphic.html`. It needs Edge or
+Chrome installed (set `BROWSER` to point at another one). Upload the screenshots in file order: Play keeps the
+order they're added in, and a batch upload adds them in whatever order they finish.
 
 ## Building a release
 

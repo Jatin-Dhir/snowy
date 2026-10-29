@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { Sheet } from './Sheet'
-import { buyPro, closeProSheet, restorePro, useProState, type ProFeature } from '../lib/pro'
+import { buyPro, closeProSheet, redeemCode, restorePro, useProState, type ProFeature } from '../lib/pro'
 import { haptic, useUi } from '../state/ui'
 
 const FEATURES: { id: ProFeature; icon: string; tint: string; title: string; sub: string }[] = [
@@ -50,6 +51,28 @@ export function ProSheet() {
   const reason = pro.sheet && pro.sheet !== 'about' ? pro.sheet : null
   // the feature you just tapped leads the list
   const features = reason ? [...FEATURES].sort((a, b) => Number(b.id === reason) - Number(a.id === reason)) : FEATURES
+  const [codeOpen, setCodeOpen] = useState(false)
+  const [code, setCode] = useState('')
+  const [codeWrong, setCodeWrong] = useState(false)
+
+  useEffect(() => {
+    if (pro.sheet !== null) return
+    setCodeOpen(false)
+    setCode('')
+    setCodeWrong(false)
+  }, [pro.sheet])
+
+  async function redeem() {
+    if (await redeemCode(code)) {
+      haptic('success')
+      showToast('Taily Pro is unlocked on this phone')
+      setCode('')
+      setCodeOpen(false)
+      closeProSheet()
+    } else {
+      setCodeWrong(true)
+    }
+  }
 
   async function buy() {
     const result = await buyPro()
@@ -94,9 +117,11 @@ export function ProSheet() {
           {pro.owned ? 'You have Taily Pro' : 'Pay once. Keep it for good.'}
         </span>
         <span className="caption" style={{ fontSize: 12.5 }}>
-          {pro.owned
-            ? 'Everything below is unlocked on this Google account. Thank you for backing Taily.'
-            : 'No subscription and no ads. One payment through Google Play unlocks all of this.'}
+          {pro.byCode
+            ? 'Everything below is unlocked on this phone.'
+            : pro.owned
+              ? 'Everything below is unlocked on this Google account. Thank you for backing Taily.'
+              : 'No subscription and no ads. One payment through Google Play unlocks all of this.'}
         </span>
       </div>
 
@@ -138,6 +163,43 @@ export function ProSheet() {
           <button className="btn ghost" onClick={() => void restore()}>
             Restore a purchase
           </button>
+          {codeOpen ? (
+            <>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  className="field"
+                  autoFocus
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-label="Code"
+                  aria-describedby="pro-code-error"
+                  aria-invalid={codeWrong || undefined}
+                  placeholder="Code"
+                  value={code}
+                  maxLength={24}
+                  onChange={(e) => {
+                    setCode(e.target.value)
+                    setCodeWrong(false)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && code.trim()) void redeem()
+                  }}
+                />
+                <button className="btn" style={{ width: 96 }} disabled={!code.trim()} onClick={() => void redeem()}>
+                  Redeem
+                </button>
+              </div>
+              {/* always rendered, so the error is announced when it appears */}
+              <span id="pro-code-error" className="caption" aria-live="polite" style={{ fontSize: 11.5, color: 'var(--red)', textAlign: 'center' }}>
+                {codeWrong ? "That code didn't work. Check it and try again" : ''}
+              </span>
+            </>
+          ) : (
+            <button className="btn ghost" onClick={() => setCodeOpen(true)}>
+              Redeem a code
+            </button>
+          )}
         </div>
       )}
 
