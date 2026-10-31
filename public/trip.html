@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A trip on Taily</title>
+    <meta name="description" content="Who pays whom, where the money went, and every spend." />
+    <meta name="color-scheme" content="light dark" />
+    <!--
+      Everything on this page comes from the address itself, after the #, which a browser
+      never sends to the server. Nothing from there is ever treated as markup or a URL, and
+      this site shares its origin with Taily's web app, so scripts are locked to this folder.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex" />
+    <meta property="og:title" content="A trip on Taily" />
+    <meta property="og:description" content="Who pays whom, where the money went, and every spend. No account needed." />
+    <meta property="og:image" content="https://jatin-dhir.github.io/snowy/icons/icon-512.png" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" />
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="stylesheet" href="trip-view.css" />
+    <script src="trip-view.js" defer></script>
+  </head>
+  <body>
+    <main id="trip" hidden></main>
+    <main id="broken" hidden>
+      <p class="brand"><img src="icons/icon-192.png" alt="" width="28" height="28" /> Taily</p>
+      <h1>This link is incomplete</h1>
+      <p class="sub">The trip is carried inside the link itself, and part of it got lost on the way. Ask whoever sent it to share it again.</p>
+    </main>
+    <noscript>
+      <main>
+        <h1>This page needs JavaScript</h1>
+        <p class="sub">The trip is carried inside the link, and a small script reads it out.</p>
+      </main>
+    </noscript>
+  </body>
+</html>

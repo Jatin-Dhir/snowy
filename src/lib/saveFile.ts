@@ -49,3 +49,39 @@ export async function saveFile(content: string, filename: string, mime: string):
   setTimeout(() => URL.revokeObjectURL(url), 4000)
   return 'saved'
 }
+
+/** Hands a message to the share sheet (WhatsApp and the rest), or copies it where there's no sheet to hand it to. */
+export async function shareMessage(text: string, title: string): Promise<'shared' | 'copied' | 'canceled' | 'failed'> {
+  let native = false
+  try {
+    const { Capacitor } = await import('@capacitor/core')
+    native = Capacitor.isNativePlatform()
+  } catch {
+    /* web */
+  }
+  const canceled = (e: unknown) =>
+    (e instanceof DOMException && e.name === 'AbortError') || (e instanceof Error && e.message.toLowerCase().includes('cancel'))
+  if (native) {
+    try {
+      const { Share } = await import('@capacitor/share')
+      await Share.share({ title, text, dialogTitle: title })
+      return 'shared'
+    } catch (e) {
+      return canceled(e) ? 'canceled' : 'failed'
+    }
+  }
+  if (typeof navigator.share === 'function') {
+    try {
+      await navigator.share({ title, text })
+      return 'shared'
+    } catch (e) {
+      if (canceled(e)) return 'canceled'
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text)
+    return 'copied'
+  } catch {
+    return 'failed'
+  }
+}

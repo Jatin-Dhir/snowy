@@ -31,6 +31,7 @@ export function TransactionRow({
   // subtitle — the common case is exactly a tag-only entry with no note
   const subParts = [...(catLabel === title ? [] : [catLabel]), fmtTime(txn.ts)]
   if (txn.source === 'recurring') subParts.push('auto')
+  if (txn.tripName) subParts.push(`your share, ${txn.tripName}`)
   const isFresh = Date.now() - txn.createdAt < 1600
 
   const pressTimer = useRef<number | null>(null)

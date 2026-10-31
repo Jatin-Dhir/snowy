@@ -8,7 +8,7 @@ import { db, getSettings, saveSettings, type Settings } from '../db/db'
 import { currentProfile, profileSlug } from './profiles'
 import { todayISO } from './dates'
 
-const TABLES = ['txns', 'categories', 'budgets', 'rules', 'loans', 'goals', 'accounts'] as const
+const TABLES = ['txns', 'categories', 'budgets', 'rules', 'loans', 'goals', 'accounts', 'trips', 'tripEntries', 'tripPayments'] as const
 type TableName = (typeof TABLES)[number]
 const ITERATIONS = 600_000
 
@@ -116,7 +116,8 @@ export function describeBackup(c: BackupContents): string {
     c.tables.budgets?.length ? `${c.tables.budgets.length} ${c.tables.budgets.length === 1 ? 'budget' : 'budgets'}` : '',
     c.tables.goals?.length ? `${c.tables.goals.length} ${c.tables.goals.length === 1 ? 'goal' : 'goals'}` : '',
     c.tables.loans?.length ? `${c.tables.loans.length} lent & borrowed` : '',
-    c.tables.rules?.length ? `${c.tables.rules.length} monthly ${c.tables.rules.length === 1 ? 'payment' : 'payments'}` : ''
+    c.tables.rules?.length ? `${c.tables.rules.length} monthly ${c.tables.rules.length === 1 ? 'payment' : 'payments'}` : '',
+    c.tables.trips?.length ? `${c.tables.trips.length} ${c.tables.trips.length === 1 ? 'trip' : 'trips'}` : ''
   ]
   return parts.filter(Boolean).join(' · ')
 }

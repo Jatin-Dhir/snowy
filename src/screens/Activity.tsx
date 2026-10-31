@@ -24,7 +24,8 @@ function matchesQuery(t: Txn, catName: string, accountName: string, q: string): 
   return (
     t.note.toLowerCase().includes(query) ||
     catName.toLowerCase().includes(query) ||
-    accountName.toLowerCase().includes(query)
+    accountName.toLowerCase().includes(query) ||
+    (t.tripName ?? '').toLowerCase().includes(query)
   )
 }
 

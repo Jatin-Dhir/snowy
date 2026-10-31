@@ -139,3 +139,30 @@ export async function seed() {
   localStorage.setItem('taily.save.hidden', iso(now))
   return { txns: await db.txns.count() }
 }
+
+/** Runs inside the page: a fictional trip in full swing, for the store graphics. Same rules as seed(). */
+export async function seedTrip() {
+  const trips = await import('/src/db/trips.ts')
+  const trip = await trips.startTrip({ name: 'Goa trip', myName: 'Aarav', others: ['Rahul', 'Meera', 'Karan'], budgetMinor: 6000000 })
+  const everyone = trip.people.map((p) => p.id)
+  const [me, rahul, meera, karan] = everyone
+  const now = new Date()
+  const when = (daysAgo, hh, mm) => {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo, hh, mm)
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    return { dateISO: iso, ts: d.getTime() }
+  }
+  const add = (daysAgo, hh, mm, rupees, categoryId, note, paidBy, among = everyone) =>
+    trips.addTripEntry(trip, { amountMinor: rupees * 100, currency: 'INR', paidBy, among, categoryId, note, accountId: 'upi', ...when(daysAgo, hh, mm) })
+  // two days in, and tidy on purpose: two pairs that settle up exactly, so the screen shows two payments
+  const { db } = await import('/src/db/db.ts')
+  await db.trips.update(trip.id, { startISO: when(2, 9, 0).dateISO })
+  await add(2, 9, 20, 9600, 'transport', 'Flights', me)
+  await add(2, 13, 5, 1800, 'food', 'Fish thali', rahul)
+  await add(2, 20, 30, 2600, 'food', 'Dinner at Thalassa', meera)
+  await add(1, 10, 15, 2800, 'transport', 'Scooters', rahul)
+  await add(1, 16, 40, 2000, 'entertainment', 'Parasailing', karan)
+  await add(1, 21, 10, 2400, 'food', 'Beach shack', me)
+  await add(0, 9, 45, 12000, 'bills', 'Villa', meera)
+  return trip.id
+}

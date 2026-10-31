@@ -20,6 +20,9 @@ export interface Txn {
   /** original amount before any currency conversion — restored exactly when converting back */
   baseMinor?: number | null
   baseCurrency?: string | null
+  /** set on your share of a trip spend: the trip entry it belongs to, and the trip's name to show on the row */
+  tripEntryId?: string | null
+  tripName?: string | null
 }
 
 /** A money source — bank, wallet, cash jar, someone's card. Not a login. */
@@ -92,6 +95,65 @@ export interface Goal {
   baseCurrency?: string | null
 }
 
+/** Someone on a trip. Just a name, not a login; the phone's owner always has the id 'me'. */
+export interface TripPerson {
+  id: string
+  name: string
+}
+
+export interface Trip {
+  id: string
+  name: string
+  /** the owner first */
+  people: TripPerson[]
+  /** the total the group means to spend, if it set one */
+  budgetMinor: number | null
+  startISO: string
+  /** null while the trip is on: trip mode, every new spend goes into it */
+  endedISO: string | null
+  createdAt: number
+  updatedAt: number
+  baseBudgetMinor?: number | null
+  baseCurrency?: string | null
+}
+
+/** One spend on a trip, in full. Only the owner's share of it reaches the ledger, as the Txn in txnId. */
+export interface TripEntry {
+  id: string
+  tripId: string
+  amountMinor: number
+  currency: string
+  /** who put the money down */
+  paidBy: string
+  /** who it's split between, evenly */
+  among: string[]
+  categoryId: string | null
+  note: string
+  accountId: string
+  dateISO: string
+  ts: number
+  txnId: string | null
+  createdAt: number
+  updatedAt: number
+  deleted: 0 | 1
+  baseMinor?: number | null
+  baseCurrency?: string | null
+}
+
+/** Money that moved between two people on a trip: settling up, or chipping in up front. Never touches the ledger. */
+export interface TripPayment {
+  id: string
+  tripId: string
+  from: string
+  to: string
+  amountMinor: number
+  currency: string
+  dateISO: string
+  createdAt: number
+  baseMinor?: number | null
+  baseCurrency?: string | null
+}
+
 export interface KV {
   key: string
   value: unknown
@@ -107,6 +169,8 @@ export interface Settings {
   sounds: boolean
   soundPack: 'tap' | 'click' | 'pop' | 'wood'
   pinHash: string | null
+  /** what friends call you, for what a trip shares with them */
+  myName: string
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -118,7 +182,8 @@ export const DEFAULT_SETTINGS: Settings = {
   haptics: true,
   sounds: true,
   soundPack: 'tap',
-  pinHash: null
+  pinHash: null,
+  myName: ''
 }
 
 class TallyDB extends Dexie {
@@ -129,6 +194,9 @@ class TallyDB extends Dexie {
   loans!: Table<Loan, string>
   goals!: Table<Goal, string>
   accounts!: Table<Account, string>
+  trips!: Table<Trip, string>
+  tripEntries!: Table<TripEntry, string>
+  tripPayments!: Table<TripPayment, string>
   kv!: Table<KV, string>
 
   constructor(name: string) {
@@ -148,6 +216,11 @@ class TallyDB extends Dexie {
     })
     this.version(4).stores({
       accounts: 'id, sort'
+    })
+    this.version(5).stores({
+      trips: 'id',
+      tripEntries: 'id, tripId',
+      tripPayments: 'id, tripId'
     })
   }
 }

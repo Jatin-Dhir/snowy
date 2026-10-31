@@ -1,7 +1,7 @@
 // Taily Pro: one payment through Google Play, sold only in the Play build.
 // The sideloaded APK and the web app have no store to pay through, so Pro
 // comes included there. Free forever everywhere: logging, voice, budgets,
-// insights, goals, lent & borrowed, accounts, app lock and CSV export.
+// insights, goals, trips, lent & borrowed, accounts, app lock and CSV export.
 import { useSyncExternalStore } from 'react'
 import { DISTRIBUTION } from './distribution'
 

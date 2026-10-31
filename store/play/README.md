@@ -78,6 +78,16 @@ Sign-in details (reviewers only). Keep it out of anything public. To replace it:
 `sha256("taily-review:" + CODE)` (letters and digits only, upper case) in `pro.ts`, ship a build, and update the
 Sign-in details text.
 
+## Trips and the shared link
+
+Trip mode is free in every build. A shared trip is a message plus a link to `public/trip.html`, hosted with the web app
+at `https://jatin-dhir.github.io/snowy/trip.html`, so **that page has to be deployed (a push to main) before links work
+for anyone**. The trip itself travels inside the link, after the #: there are no accounts and no server, and a link shows
+the trip as of when it was shared. `src/lib/tripLink.ts` writes it and `public/trip-view.js` reads it; change them together.
+
+The page's button opens the web app for now, because the Play listing is a dead page for anyone who isn't a tester. **On
+launch day, point `GET_TAILY` in `public/trip-view.js` at the listing** and change the button's words to say Google Play.
+
 ## Regenerating the graphics
 
 Everything in `graphics/` is generated from the real app, so it never drifts from the UI. The screenshots show an

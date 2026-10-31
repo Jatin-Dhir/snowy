@@ -55,6 +55,14 @@ under its own terms, and that data processed only on the device and never sent o
 Taily asks Play only whether `taily_pro` is owned and keeps that yes/no on the phone. Source:
 https://support.google.com/googleplay/android-developer/answer/10787469
 
+## Trips (2.13.0)
+
+Still "No data collected". A trip stays on the device. Sharing one is the person's own action through the phone's
+share sheet, to whoever they choose, and Google's Data safety help doesn't count a transfer the user starts and
+expects as sharing. The link carries the trip after the # in the address, which browsers don't send to a server, so
+the page's host (GitHub Pages) receives only the request for the page itself. The developer has no server and receives
+nothing. Source: https://support.google.com/googleplay/android-developer/answer/10787469
+
 ## Other App content forms
 
 - Privacy policy URL: https://jatin-dhir.github.io/snowy/privacy.html

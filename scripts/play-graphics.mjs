@@ -12,7 +12,7 @@ import { mkdirSync, writeFileSync, copyFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { launch, sleep } from './cdp.mjs'
-import { seed } from './demo-month.mjs'
+import { seed, seedTrip } from './demo-month.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const outDir = join(root, 'store', 'play', 'graphics')
@@ -21,7 +21,7 @@ const appUrl = process.argv[2] ?? 'http://localhost:5180'
 mkdirSync(screensDir, { recursive: true })
 
 // what each uploaded screenshot is called, in the order Play shows them (src/screenshots.html has the words)
-const SHOTS = ['add', 'voice', 'home', 'insights', 'budgets', 'loans', 'dark', 'pro']
+const SHOTS = ['add', 'voice', 'home', 'insights', 'budgets', 'trip', 'dark', 'pro']
 
 // Voice in a browser goes through SpeechRecognition: this one "hears" window.__voiceWords a word at a
 // time, the way a real recognizer sends partial results (the same script the highlight film uses).
@@ -117,6 +117,7 @@ try {
   console.log(`  ${seeded.txns} entries`)
   await browser.send('Page.navigate', { url: appUrl })
   await browser.waitFor(`!!document.querySelector('nav.tabbar')`, 90000)
+  await sleep(1500) // the + is drawn before the app has its settings; a tap that early does nothing
 
   const tab = (name) => click(browser, 'nav button.tab', name)
 
@@ -162,16 +163,6 @@ try {
   await tab('Budgets')
   await shot(browser, '05-budgets.jpg')
 
-  await tab('Home')
-  await sleep(500)
-  await click(browser, 'button.card', 'Lent & borrowed')
-  await browser.waitFor(`document.body.innerText.includes('Rahul')`)
-  await hideBehindSheet(browser)
-  await shot(browser, '06-loans.jpg')
-  await showBehindSheet(browser)
-  await browser.evaluate(`document.querySelector('button[aria-label="Close"]').click()`)
-  await sleep(700)
-
   // Taily Pro. A browser has no Google Play to ask, so the sheet says Pro isn't on offer and greys out
   // Unlock: show it the way it reads on a phone with Play (button live, no price in the picture), and
   // leave the review-code button out of the advert
@@ -195,6 +186,8 @@ try {
   await sleep(700)
 
   // the other theme and an accent, on the one screen no other frame shows: every entry, by day
+  await tab('Home')
+  await sleep(500)
   await browser.evaluate(`(async () => { const { saveSettings } = await import('/src/db/db.ts'); await saveSettings({ theme: 'dark', accent: 'lavender' }) })()`)
   await sleep(600)
   // a headless browser only paints on demand, so a CSS colour transition (the hero number has one) can be
@@ -206,6 +199,16 @@ try {
   console.log(`  hero colour after settling:  ${await heroColor()}`)
   await tab('Activity')
   await shot(browser, '07-dark.jpg')
+
+  // a trip in full swing, last: while a trip is on it shows up on every other screen. Who pays whom is the point
+  await browser.evaluate(`(async () => { const { saveSettings } = await import('/src/db/db.ts'); await saveSettings({ theme: 'light', accent: 'blue' }) })()`)
+  await browser.evaluate(`(${seedTrip.toString()})()`)
+  await tab('Home')
+  await sleep(600)
+  await click(browser, 'button.card', 'Goa trip')
+  await browser.waitFor(`document.body.innerText.includes('Who pays whom'.toUpperCase())`)
+  await hideBehindSheet(browser)
+  await shot(browser, '06-trip.jpg')
 
   // ---- the screenshots to upload: each screen in the phone, under its headline
   console.log('composing the screenshots ...')

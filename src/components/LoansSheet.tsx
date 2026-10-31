@@ -5,17 +5,11 @@ import { addLoan, settleLoan, unsettleLoan, updateLoan, updateLoanReminder, dele
 import { formatEntry, formatMinor, currencySymbol } from '../lib/money'
 import { useAmountEntry } from '../lib/useAmountEntry'
 import { addDaysISO, fmtDayHeading, fromISO, todayISO } from '../lib/dates'
-import { TAG_COLORS } from '../db/seed'
+import { personColor } from './PersonBadge'
 import { Icon } from './Icon'
 import { NumPad } from './NumPad'
 import { Sheet } from './Sheet'
 import { haptic, useUi } from '../state/ui'
-
-function personColor(name: string): string {
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0
-  return TAG_COLORS[Math.abs(h) % TAG_COLORS.length]
-}
 
 function shortDate(iso: string): string {
   return fromISO(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short' })

@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type Txn } from '../db/db'
+import { db, type Account, type Category, type Trip, type Txn } from '../db/db'
 import { addTxn, recentTxns, removeTxnPermanently } from '../db/repo'
 import { formatMinor } from '../lib/money'
-import { parseScore, parseSpeech, type ParsedSpeech } from '../lib/parseSpeech'
+import { parseScore, parseSpeech, tripPayer, type ParsedSpeech } from '../lib/parseSpeech'
+import { activeTrip, addTripEntry } from '../db/trips'
+import { ME } from '../lib/split'
+import { personLabel } from './TripSplitSheet'
 import { guessAccount } from '../lib/smart'
 import { addDaysISO, fmtShortDate, todayISO } from '../lib/dates'
 import { DISTRIBUTION } from '../lib/distribution'
@@ -58,6 +61,13 @@ interface FailCopy {
   secondary: [string, () => void]
 }
 
+/** What was said, as an entry. On a trip, who paid comes out first, so the rest reads like any spend. */
+function readSpeech(text: string, trip: Trip | null, categories: Category[], recent: Txn[], accounts: Account[]): ParsedSpeech {
+  const { text: rest, paidBy } = trip ? tripPayer(text, trip.people) : { text, paidBy: null }
+  const parsed = parseSpeech(rest, categories, recent, accounts)
+  return paidBy ? { ...parsed, paidBy } : parsed
+}
+
 export function VoiceOverlay({
   request,
   holding,
@@ -91,10 +101,11 @@ export function VoiceOverlay({
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const accounts = useLiveQuery(() => db.accounts.orderBy('sort').toArray(), []) ?? []
   const recent = useLiveQuery(() => recentTxns(600), []) ?? []
+  const trip = useLiveQuery(() => activeTrip(), []) ?? null
 
   // callbacks from a session outlive the render that started it: they read these
-  const data = useRef({ categories, accounts, recent, currency })
-  data.current = { categories, accounts, recent, currency }
+  const data = useRef({ categories, accounts, recent, currency, trip })
+  data.current = { categories, accounts, recent, currency, trip }
   const session = useRef<VoiceSession | null>(null)
   const run = useRef(0)
   const heard = useRef(false)
@@ -245,17 +256,17 @@ export function VoiceOverlay({
   }
 
   async function finish(alternatives: Alternative[], mine: number) {
-    const { categories: cats, accounts: accs, recent: past, currency: cur } = data.current
+    const { categories: cats, accounts: accs, recent: past, currency: cur, trip: on } = data.current
     // the recognizer's first guess isn't always the one that makes sense as a transaction:
     // what parses best wins, then the recognizer's confidence, then its own order
-    const ranked = alternatives.map((a) => ({ a, p: parseSpeech(a.text, cats, past, accs) }))
+    const ranked = alternatives.map((a) => ({ a, p: readSpeech(a.text, on, cats, past, accs) }))
     const score = (r: (typeof ranked)[number]) => parseScore(r.p) * 10 + Math.max(0, r.a.confidence)
     const best = ranked.reduce((b, r) => (score(r) > score(b) ? r : b))
     setCaption(best.a.text)
     const p = best.p
     if (!p.amountMinor) {
       if (p.note || p.categoryId) {
-        onNeedAmount({ kind: p.kind, note: p.note, categoryId: p.categoryId, dateISO: p.dateISO, accountId: p.accountId })
+        onNeedAmount({ kind: p.kind, note: p.note, categoryId: p.categoryId, dateISO: p.dateISO, accountId: p.accountId, paidBy: p.paidBy })
         close()
       } else {
         setView({ kind: 'failed', reason: 'noAmount', heard: best.a.text })
@@ -264,16 +275,21 @@ export function VoiceOverlay({
     }
     const today = todayISO()
     const dateISO = p.dateISO ?? today
-    const txn = await addTxn({
+    const fields = {
       amountMinor: p.amountMinor,
       currency: cur,
       categoryId: p.categoryId,
       accountId: p.accountId ?? guessAccount(accs, past) ?? 'upi',
-      kind: p.kind,
       note: p.note,
       dateISO,
       ts: dateISO === today ? Date.now() : new Date(`${dateISO}T12:00:00`).getTime()
-    })
+    }
+    // on a trip, a spend said out loud splits between everyone like a typed one. You're always
+    // in that split, so there's always your share to undo or edit
+    const txn =
+      on && p.kind === 'out'
+        ? (await addTripEntry(on, { ...fields, paidBy: p.paidBy ?? ME, among: on.people.map((x) => x.id) })).txn!
+        : await addTxn({ ...fields, kind: p.kind })
     if (mine !== run.current) return
     haptic('success')
     setView({ kind: 'saved', txn, parsed: p })
@@ -373,8 +389,8 @@ export function VoiceOverlay({
   }, [listening, levelsLive])
 
   const preview = useMemo(
-    () => (caption && view?.kind === 'listen' ? parseSpeech(caption, categories, recent, accounts) : null),
-    [caption, view?.kind, categories, recent, accounts]
+    () => (caption && view?.kind === 'listen' ? readSpeech(caption, trip, categories, recent, accounts) : null),
+    [caption, view?.kind, trip, categories, recent, accounts]
   )
 
   if (!request || !view) return null
@@ -390,6 +406,12 @@ export function VoiceOverlay({
         <span className={`voice-amount mono${p.kind === 'in' ? ' in' : ''}${p.amountMinor ? '' : ' missing'}`}>
           {p.amountMinor ? `${p.kind === 'in' ? '+' : ''}${formatMinor(p.amountMinor, currency)}` : live ? 'No amount yet' : ''}
         </span>
+        {trip && p.kind === 'out' && (
+          <span className="voice-chip">
+            <Icon name="trip" size={12} />
+            {p.paidBy ? `${personLabel(trip, p.paidBy)} paid · ` : ''}split {trip.people.length}
+          </span>
+        )}
         {cat && (
           <span className="voice-chip">
             <span className="dot" style={{ background: cat.color }} />
@@ -458,7 +480,7 @@ export function VoiceOverlay({
   } else if (view.kind === 'saved') {
     const { txn, parsed } = view
     const cat = parsed.categoryId ? categories.find((c) => c.id === parsed.categoryId) : null
-    announcement = [`Saved ${parsed.kind === 'in' ? 'received ' : ''}${formatMinor(txn.amountMinor, currency)}`, cat?.name, parsed.note]
+    announcement = [`Saved ${parsed.kind === 'in' ? 'received ' : ''}${formatMinor(parsed.amountMinor ?? txn.amountMinor, currency)}`, cat?.name, parsed.note]
       .filter(Boolean)
       .join(', ')
     body = (

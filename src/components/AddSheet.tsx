@@ -1,23 +1,36 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type Category, type Txn } from '../db/db'
+import { db, type Category, type TripEntry, type Txn } from '../db/db'
 import { addAccount } from '../db/accounts'
 import { recentTxns, addTxn, updateTxn, softDeleteTxn, restoreTxn, removeTxnPermanently } from '../db/repo'
+import {
+  activeTrip,
+  addTripEntry,
+  removeTripEntry,
+  restoreTripEntry,
+  softDeleteTripEntry,
+  tripEntryToOwn,
+  updateTripEntry,
+  type EntryInput
+} from '../db/trips'
 import { formatEntry, currencySymbol, formatMinor } from '../lib/money'
 import { guessAccount, guessCategory } from '../lib/smart'
 import type { ParsedSpeech } from '../lib/parseSpeech'
 import { useAmountEntry } from '../lib/useAmountEntry'
 import { todayISO, addDaysISO } from '../lib/dates'
+import { ME } from '../lib/split'
 import { Icon } from './Icon'
 import { NumPad } from './NumPad'
 import { Sheet } from './Sheet'
 import { TagManager } from './TagManager'
+import { personLabel, splitLabel, TripSplitSheet } from './TripSplitSheet'
 import { haptic, useUi } from '../state/ui'
 
 export function AddSheet({
   open,
   editTxn,
+  editEntry = null,
   draft = null,
   currency,
   onVoice,
@@ -25,6 +38,8 @@ export function AddSheet({
 }: {
   open: boolean
   editTxn: Txn | null
+  /** a spend on a trip, edited whole rather than as your share of it */
+  editEntry?: TripEntry | null
   /** a voice entry that was missing only its amount */
   draft?: Omit<ParsedSpeech, 'amountMinor'> | null
   currency: string
@@ -45,6 +60,11 @@ export function AddSheet({
   const [showNote, setShowNote] = useState(false)
   const [showDate, setShowDate] = useState(false)
   const [newAccountName, setNewAccountName] = useState('')
+  // where this spend goes while a trip is on. `among` null means everyone, whoever that is by then
+  const [inTrip, setInTrip] = useState(true)
+  const [paidBy, setPaidBy] = useState(ME)
+  const [among, setAmong] = useState<string[] | null>(null)
+  const [pickSplit, setPickSplit] = useState(false)
   const noteRef = useRef<HTMLInputElement>(null)
   const dateRef = useRef<HTMLInputElement>(null)
 
@@ -54,6 +74,9 @@ export function AddSheet({
   const activeAccounts = useMemo(() => accounts.filter((a) => !a.archived), [accounts])
   const accountName = accounts.find((a) => a.id === account)?.name ?? account.toUpperCase()
   const recent = useLiveQuery(() => recentTxns(600), []) ?? []
+  const runningTrip = useLiveQuery(() => activeTrip(), []) ?? null
+  const entryTrip = useLiveQuery(() => (editEntry ? db.trips.get(editEntry.tripId) : undefined), [editEntry?.tripId]) ?? null
+  const trip = editEntry ? entryTrip : runningTrip
 
   // Three one-tap suggestions: your real habits once they exist (3+ uses in
   // 60 days), otherwise the everyday defaults. "More" always sits after them.
@@ -75,22 +98,40 @@ export function AddSheet({
     const guessed = note.trim() ? guessCategory(note, recent) : null
     const guessedCat = guessed ? categories.find((c) => c.id === guessed) : null
     // an entry being edited, or a voice entry being finished, always shows its own tag first
-    const ownId = (editTxn ?? draft)?.categoryId
+    const ownId = (editTxn ?? editEntry ?? draft)?.categoryId
     const ownCat = ownId ? categories.find((c) => c.id === ownId) : null
     const merged: Category[] = []
     for (const c of [...(ownCat ? [ownCat] : []), ...(guessedCat ? [guessedCat] : []), ...learned, ...fallback, ...categories]) {
       if (c && !merged.includes(c)) merged.push(c)
     }
     return merged.slice(0, 3)
-  }, [recent, categories, kind, note, editTxn, draft])
+  }, [recent, categories, kind, note, editTxn, editEntry, draft])
 
-  const isEdit = editTxn !== null
+  const isEdit = editTxn !== null || editEntry !== null
   const amountMinor = amt.minor
   const canSave = amountMinor > 0
+  const everyone = trip?.people.map((p) => p.id) ?? []
+  const splitAmong = among ?? everyone
+  // a trip takes spends only: money received is always just yours
+  const goesInTrip = trip !== null && inTrip && kind === 'out'
+  const each = amountMinor > 0 && splitAmong.length > 1 ? `${formatMinor(Math.round(amountMinor / splitAmong.length), currency)} each` : null
 
   useEffect(() => {
     if (!open) return
-    if (editTxn) {
+    setInTrip(editEntry !== null || editTxn === null)
+    setPaidBy(editEntry?.paidBy ?? draft?.paidBy ?? ME)
+    setAmong(editEntry?.among ?? null)
+    setPickSplit(false)
+    if (editEntry) {
+      amt.setFromMinor(editEntry.amountMinor)
+      setKind('out')
+      setNote(editEntry.note)
+      setDateISO(editEntry.dateISO)
+      setAccount(editEntry.accountId)
+      setSelectedCat(editEntry.categoryId)
+      setShowNote(!!editEntry.note)
+      setShowDate(editEntry.dateISO !== todayISO())
+    } else if (editTxn) {
       amt.setFromMinor(editTxn.amountMinor)
       setKind(editTxn.kind ?? 'out')
       setNote(editTxn.note)
@@ -114,7 +155,11 @@ export function AddSheet({
     setManageTags(false)
     setNewAccountName('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, editTxn, draft])
+  }, [open, editTxn, editEntry, draft])
+
+  function tripInput(categoryId: string | null, ts: number): EntryInput {
+    return { amountMinor, currency, paidBy, among: splitAmong, categoryId, note: note.trim(), accountId: account, dateISO, ts }
+  }
 
   async function saveNew(categoryId: string | null) {
     if (!canSave) return
@@ -128,6 +173,15 @@ export function AddSheet({
       }
     }
     const catName = categoryId ? categories.find((c) => c.id === categoryId)?.name : null
+    if (goesInTrip && trip) {
+      const { entry } = await addTripEntry(trip, tripInput(categoryId, dateISO === todayISO() ? Date.now() : new Date(dateISO + 'T12:00:00').getTime()))
+      haptic('success')
+      showToast(`${trip.name}: ${formatMinor(amountMinor, currency)}${each ? ` · ${each}` : ''}`, () => {
+        void removeTripEntry(entry)
+      })
+      onClose()
+      return
+    }
     const txn = await addTxn({
       amountMinor,
       currency,
@@ -148,7 +202,27 @@ export function AddSheet({
   }
 
   async function saveEdit() {
-    if (!editTxn || !canSave) return
+    if (!canSave) return
+    if (editEntry) {
+      const ts = dateISO === editEntry.dateISO ? editEntry.ts : new Date(dateISO + 'T12:00:00').getTime()
+      if (!inTrip) await tripEntryToOwn(editEntry, tripInput(selectedCat, ts))
+      else if (trip) await updateTripEntry(editEntry, tripInput(selectedCat, ts), trip.name)
+      else return
+      haptic('success')
+      showToast('Updated')
+      onClose()
+      return
+    }
+    if (!editTxn) return
+    if (goesInTrip && trip) {
+      // an expense that turned out to be for the group: it moves into the trip whole
+      await addTripEntry(trip, tripInput(selectedCat, dateISO === editTxn.dateISO ? editTxn.ts : new Date(dateISO + 'T12:00:00').getTime()))
+      await removeTxnPermanently(editTxn.id)
+      haptic('success')
+      showToast(`Moved into ${trip.name}`)
+      onClose()
+      return
+    }
     await updateTxn(editTxn.id, {
       amountMinor,
       categoryId: selectedCat,
@@ -164,6 +238,15 @@ export function AddSheet({
   }
 
   async function deleteEdit() {
+    if (editEntry) {
+      await softDeleteTripEntry(editEntry)
+      haptic('medium')
+      showToast(`Deleted ${formatMinor(editEntry.amountMinor, editEntry.currency)} from the trip`, () => {
+        void restoreTripEntry(editEntry)
+      })
+      onClose()
+      return
+    }
     if (!editTxn) return
     await softDeleteTxn(editTxn.id)
     haptic('medium')
@@ -201,10 +284,11 @@ export function AddSheet({
       if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return
       // the tag sheet is on top — don't let hardware keys mutate the amount
       // underneath it (a zeroed amount would make tag taps silently no-op)
-      if (showAll || manageTags || pickAccount) {
+      if (showAll || manageTags || pickAccount || pickSplit) {
         if (e.key === 'Escape') {
           setShowAll(false)
           setPickAccount(false)
+          setPickSplit(false)
         }
         return
       }
@@ -243,14 +327,18 @@ export function AddSheet({
   return (
     <Sheet open={open} onClose={onClose} label={isEdit ? 'Edit expense' : 'New expense'}>
         <div className="row-between">
-          <span className="seg" role="group" aria-label="Money direction">
-            <button className={kind === 'out' ? 'on' : ''} aria-pressed={kind === 'out'} onClick={() => setKind('out')}>
-              <Icon name="minus" size={12} strokeWidth={2.8} /> Spent
-            </button>
-            <button className={kind === 'in' ? 'on' : ''} aria-pressed={kind === 'in'} onClick={() => setKind('in')}>
-              <Icon name="plus" size={12} strokeWidth={2.8} /> Received
-            </button>
-          </span>
+          {editEntry ? (
+            <span className="label" style={{ letterSpacing: '0.14em' }}>Trip spend</span>
+          ) : (
+            <span className="seg" role="group" aria-label="Money direction">
+              <button className={kind === 'out' ? 'on' : ''} aria-pressed={kind === 'out'} onClick={() => setKind('out')}>
+                <Icon name="minus" size={12} strokeWidth={2.8} /> Spent
+              </button>
+              <button className={kind === 'in' ? 'on' : ''} aria-pressed={kind === 'in'} onClick={() => setKind('in')}>
+                <Icon name="plus" size={12} strokeWidth={2.8} /> Received
+              </button>
+            </span>
+          )}
           <div style={{ display: 'flex', gap: 8 }}>
             {isEdit && (
               <button className="icon-btn" onClick={() => void deleteEdit()} aria-label="Delete">
@@ -280,6 +368,36 @@ export function AddSheet({
           </span>
           <span className="caret" />
         </div>
+
+        {trip && kind === 'out' && (
+          <button
+            className="pill trip-line"
+            style={goesInTrip ? { background: 'var(--pos-soft)', color: 'var(--ink)', boxShadow: 'none' } : undefined}
+            onClick={() => setPickSplit(true)}
+          >
+            <span style={{ color: goesInTrip ? 'var(--accent)' : undefined, display: 'inline-flex', flexShrink: 0 }}>
+              <Icon name="trip" size={14} />
+            </span>
+            {goesInTrip ? (
+              <span className="trip-line-text">
+                <span className="trip-line-name">{trip.name}</span>
+                <span className="trip-line-rest">
+                  {[
+                    '',
+                    paidBy !== ME ? `${personLabel(trip, paidBy)} paid` : null,
+                    // with someone else paying there's room for one of these, and the amount is what you came to see
+                    paidBy !== ME && each ? null : splitLabel(trip, splitAmong),
+                    each
+                  ]
+                    .filter((part) => part !== null)
+                    .join(' · ')}
+                </span>
+              </span>
+            ) : (
+              <span className="trip-line-name">Just mine, not in {trip.name}</span>
+            )}
+          </button>
+        )}
 
         <>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '6px 0 12px', flexWrap: 'wrap' }}>
@@ -466,6 +584,22 @@ export function AddSheet({
               ))}
             </div>
           </Sheet>
+        )}
+
+        {trip && (
+          <TripSplitSheet
+            open={pickSplit}
+            trip={trip}
+            amountMinor={amountMinor}
+            currency={currency}
+            inTrip={inTrip}
+            paidBy={paidBy}
+            among={splitAmong}
+            onInTrip={setInTrip}
+            onPaidBy={setPaidBy}
+            onAmong={(ids) => setAmong(ids.length === everyone.length ? null : ids)}
+            onClose={() => setPickSplit(false)}
+          />
         )}
 
         <TagManager open={manageTags} onClose={() => setManageTags(false)} />

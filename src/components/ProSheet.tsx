@@ -31,7 +31,7 @@ const FEATURES: { id: ProFeature; icon: string; tint: string; title: string; sub
     icon: 'person',
     tint: '#C75D8D',
     title: 'Profiles',
-    sub: 'Separate books for family, a shop or a trip'
+    sub: 'Separate books for family or a shop'
   },
   { id: 'color', icon: 'drop', tint: '#7B61D6', title: 'Any color', sub: 'Your own accent, beyond the five presets' }
 ]
@@ -204,7 +204,7 @@ export function ProSheet() {
       )}
 
       <span className="caption faint" style={{ fontSize: 11, textAlign: 'center' }}>
-        Logging, voice, budgets, insights, goals, lent &amp; borrowed, app lock and CSV export stay free.
+        Logging, voice, budgets, insights, goals, trips, lent &amp; borrowed, app lock and CSV export stay free.
       </span>
     </Sheet>
   )

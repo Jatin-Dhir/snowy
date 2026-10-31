@@ -23,7 +23,7 @@ export async function convertEverything(rate: number, oldCurrency: string, newCu
   }
 
   let count = 0
-  await db.transaction('rw', [db.txns, db.budgets, db.rules, db.loans, db.goals], async () => {
+  await db.transaction('rw', [db.txns, db.budgets, db.rules, db.loans, db.goals, db.trips, db.tripEntries, db.tripPayments], async () => {
     const txns = await db.txns.toArray()
     await db.txns.bulkPut(
       txns.map((t) => {
@@ -59,6 +59,28 @@ export async function convertEverything(rate: number, oldCurrency: string, newCu
         const [targetMinor, baseTargetMinor, baseCurrency] = step(g.targetMinor, g.baseTargetMinor, g.baseCurrency, oldCurrency)
         const [savedMinor, baseSavedMinor] = step(g.savedMinor, g.baseSavedMinor, g.baseCurrency, oldCurrency)
         return { ...g, targetMinor, savedMinor, baseTargetMinor, baseSavedMinor, baseCurrency }
+      })
+    )
+    const trips = await db.trips.toArray()
+    await db.trips.bulkPut(
+      trips.map((t) => {
+        if (t.budgetMinor === null) return t
+        const [budgetMinor, baseBudgetMinor, baseCurrency] = step(t.budgetMinor, t.baseBudgetMinor, t.baseCurrency, oldCurrency)
+        return { ...t, budgetMinor, baseBudgetMinor, baseCurrency }
+      })
+    )
+    const entries = await db.tripEntries.toArray()
+    await db.tripEntries.bulkPut(
+      entries.map((e) => {
+        const [amountMinor, baseMinor, baseCurrency] = step(e.amountMinor, e.baseMinor, e.baseCurrency, e.currency)
+        return { ...e, amountMinor, baseMinor, baseCurrency, currency: newCurrency }
+      })
+    )
+    const payments = await db.tripPayments.toArray()
+    await db.tripPayments.bulkPut(
+      payments.map((p) => {
+        const [amountMinor, baseMinor, baseCurrency] = step(p.amountMinor, p.baseMinor, p.baseCurrency, p.currency)
+        return { ...p, amountMinor, baseMinor, baseCurrency, currency: newCurrency }
       })
     )
   })

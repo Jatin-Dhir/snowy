@@ -14,6 +14,8 @@ export interface ParsedSpeech {
   dateISO?: string
   /** the account it was paid from, when one was named: "cash", "by card", "HDFC" */
   accountId?: string
+  /** on a trip, who put the money down, when it was someone else: "Rahul paid 800 cab" */
+  paidBy?: string
 }
 
 // everyday words → seed tag ids (only applied if that tag still exists)
@@ -457,6 +459,26 @@ export function parseSpeech(
   if (dateISO) parsed.dateISO = dateISO
   if (accountId) parsed.accountId = accountId
   return parsed
+}
+
+/**
+ * On a trip, someone else may have paid: "Rahul paid 800 cab", "800 cab paid by Rahul",
+ * "Rahul ne 800 diye". Gives who, and the sentence without them for parseSpeech to read.
+ */
+export function tripPayer(raw: string, people: { id: string; name: string }[]): { text: string; paidBy: string | null } {
+  for (const p of people) {
+    if (p.id === 'me') continue
+    const names = [p.name.trim(), p.name.trim().split(/\s+/)[0]].filter(Boolean).map(escapeRe)
+    for (const name of new Set(names)) {
+      const said = new RegExp(`(?:^|\\s)(?:(?:paid|payment) by ${name}|${name} (?:has )?(?:paid|pays)|${name} ne (?:paid|pay kiya|pay kiye))(?=\\s|$)`, 'iu')
+      const ne = new RegExp(`(?:^|\\s)${name} ne(?=\\s)(.*?)\\s(?:diya|diye|di|bhara|bhare)(?=\\s|$)`, 'iu')
+      const m = raw.match(said)
+      if (m) return { text: raw.replace(m[0], ' ').replace(/\s+/g, ' ').trim(), paidBy: p.id }
+      const n = raw.match(ne)
+      if (n) return { text: raw.replace(n[0], ` ${n[1]} `).replace(/\s+/g, ' ').trim(), paidBy: p.id }
+    }
+  }
+  return { text: raw, paidBy: null }
 }
 
 /** How much of a transaction a parse found — to choose between the recognizer's alternates. */

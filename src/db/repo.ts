@@ -41,16 +41,29 @@ export async function updateTxn(id: string, patch: Partial<Txn>): Promise<void> 
   await db.txns.update(id, { ...patch, ...clearBase, updatedAt: Date.now() })
 }
 
+// your share of a trip spend and the spend itself are one fact: when one goes, so does the other
 export async function softDeleteTxn(id: string): Promise<void> {
-  await db.txns.update(id, { deleted: 1, updatedAt: Date.now() })
+  await db.transaction('rw', db.txns, db.tripEntries, async () => {
+    const entryId = (await db.txns.get(id))?.tripEntryId
+    await db.txns.update(id, { deleted: 1, updatedAt: Date.now() })
+    if (entryId) await db.tripEntries.update(entryId, { deleted: 1, updatedAt: Date.now() })
+  })
 }
 
 export async function restoreTxn(id: string): Promise<void> {
-  await db.txns.update(id, { deleted: 0, updatedAt: Date.now() })
+  await db.transaction('rw', db.txns, db.tripEntries, async () => {
+    const entryId = (await db.txns.get(id))?.tripEntryId
+    await db.txns.update(id, { deleted: 0, updatedAt: Date.now() })
+    if (entryId) await db.tripEntries.update(entryId, { deleted: 0, updatedAt: Date.now() })
+  })
 }
 
 export async function removeTxnPermanently(id: string): Promise<void> {
-  await db.txns.delete(id)
+  await db.transaction('rw', db.txns, db.tripEntries, async () => {
+    const entryId = (await db.txns.get(id))?.tripEntryId
+    await db.txns.delete(id)
+    if (entryId) await db.tripEntries.delete(entryId)
+  })
 }
 
 /** All live transactions in a month, newest first. */

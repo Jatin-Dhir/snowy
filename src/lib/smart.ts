@@ -80,7 +80,8 @@ export function weeklyAnomalies(txns: Txn[], categories: Category[], today = tod
 
   for (const cat of categories) {
     if (cat.archived || cat.id === 'savings') continue
-    const catTx = txns.filter((t) => isOut(t) && t.categoryId === cat.id)
+    // a trip is the opposite of your usual pace: its spends count everywhere but here
+    const catTx = txns.filter((t) => isOut(t) && t.categoryId === cat.id && !t.tripEntryId)
     const thisWeek = sum(catTx.filter((t) => t.dateISO >= weekStart && t.dateISO <= today))
     if (thisWeek < 50000) continue // ignore small numbers (< ₹500)
     let prior = 0

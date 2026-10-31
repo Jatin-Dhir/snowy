@@ -23,6 +23,12 @@ Log in a moment
 • Spent and received, with tags you can rename, recolour and add to
 • Notes are remembered: tag "Zepto" as Groceries once and Taily files it there next time
 
+Trips with friends
+• Start a trip and add friends by name. Every spend you add splits between you by itself
+• Someone else paid, or someone skipped dinner? One tap. Or just say "Rahul paid 800 for the cab"
+• At the end, who pays whom in the fewest payments. Only your share counts as your spending
+• Send the group a link to see every spend. Nobody needs an account, or even the app
+
 Know where it went
 • Safe to spend today: your monthly budget turned into one number you can trust
 • Budgets for the month and for each tag, with a pace line that shows whether you are ahead or behind
@@ -43,7 +49,7 @@ Taily Pro: pay once, keep it for good
 • Import bank statements from CSV, Excel or PDF, or share one straight in from your files, email or bank app
 • Encrypted backups: your whole ledger in one password-locked file, ready for a new phone
 • Recurring payments that log themselves on their day
-• Profiles: separate books for family, a shop or a trip
+• Profiles: separate books for family or a shop
 • Any accent colour you like
 No subscription. Everything else in Taily is free.
 

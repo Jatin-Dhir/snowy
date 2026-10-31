@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, DEFAULT_SETTINGS, type Settings, type Txn } from './db/db'
+import { db, DEFAULT_SETTINGS, type Settings, type TripEntry, type Txn } from './db/db'
 import { ensureSeeded } from './db/seed'
 import { runDueRules } from './db/recurring'
 import { formatMinor } from './lib/money'
@@ -17,6 +17,7 @@ import { LockScreen } from './components/LockScreen'
 import { TabBar, type Tab } from './components/TabBar'
 import { Toast } from './components/Toast'
 import { AddSheet } from './components/AddSheet'
+import { TripSheet } from './components/TripSheet'
 import { VoiceOverlay, type VoiceDraft, type VoiceRequest } from './components/VoiceOverlay'
 import { UpdateGate } from './components/UpdateGate'
 import { Home } from './screens/Home'
@@ -52,6 +53,8 @@ export default function App() {
   // the widget, the tile or the shortcut asked to listen; opened once the app is ready and unlocked
   const [voiceLaunch, setVoiceLaunch] = useState<VoiceLaunch | null>(null)
   const [editTxn, setEditTxn] = useState<Txn | null>(null)
+  const [editEntry, setEditEntry] = useState<TripEntry | null>(null)
+  const [tripsOpen, setTripsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ready, setReady] = useState(false)
   // set at cold start and after a minute in the background — setting or
@@ -207,6 +210,7 @@ export default function App() {
     setVoiceLaunch(null)
     setAddOpen(false)
     setSettingsOpen(false)
+    setTripsOpen(false)
     openVoice('free', voiceLaunch)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceLaunch, ready, locked, settings.initialized])
@@ -290,10 +294,25 @@ export default function App() {
     )
   }
 
-  function openEdit(t: Txn) {
+  // your share of a trip spend edits as the whole spend, split and all
+  async function openEdit(t: Txn) {
+    const entry = t.tripEntryId ? await db.tripEntries.get(t.tripEntryId) : null
+    if (entry) {
+      openEditEntry(entry)
+      return
+    }
     dismissToast()
     setAddDraft(null)
+    setEditEntry(null)
     setEditTxn(t)
+    setAddOpen(true)
+  }
+
+  function openEditEntry(entry: TripEntry) {
+    dismissToast()
+    setAddDraft(null)
+    setEditTxn(null)
+    setEditEntry(entry)
     setAddOpen(true)
   }
 
@@ -301,6 +320,7 @@ export default function App() {
     dismissToast()
     setAddDraft(null)
     setEditTxn(null)
+    setEditEntry(null)
     setAddOpen(true)
   }
 
@@ -320,6 +340,7 @@ export default function App() {
             onOpenSettings={() => setSettingsOpen(true)}
             onAdd={openAdd}
             onOpenBudgets={() => goTab('budgets')}
+            onOpenTrips={() => setTripsOpen(true)}
           />
         )}
         {tab === 'activity' && (
@@ -365,6 +386,7 @@ export default function App() {
         onNeedAmount={(draft) => {
           dismissToast()
           setEditTxn(null)
+          setEditEntry(null)
           setAddDraft(draft)
           setAddOpen(true)
         }}
@@ -375,19 +397,30 @@ export default function App() {
       <AddSheet
         open={addOpen}
         editTxn={editTxn}
+        editEntry={editEntry}
         draft={addDraft}
         currency={settings.currency}
         onVoice={() => {
           setAddOpen(false)
           setEditTxn(null)
+          setEditEntry(null)
           setAddDraft(null)
           openVoice('free')
         }}
         onClose={() => {
           setAddOpen(false)
           setEditTxn(null)
+          setEditEntry(null)
           setAddDraft(null)
         }}
+      />
+
+      <TripSheet
+        open={tripsOpen}
+        currency={settings.currency}
+        onClose={() => setTripsOpen(false)}
+        onAddSpend={openAdd}
+        onEditEntry={openEditEntry}
       />
 
       <SettingsSheet

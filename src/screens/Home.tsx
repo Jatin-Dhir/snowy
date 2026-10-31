@@ -19,6 +19,7 @@ import { formatMinor } from '../lib/money'
 import { guessAccount, weeklyAnomalies } from '../lib/smart'
 import { notifyAlerts, syncLoanReminders } from '../lib/notify'
 import { LoansSheet } from '../components/LoansSheet'
+import { TripCard, TripsRow } from '../components/TripCard'
 import { useAnimatedNumber } from '../lib/useAnimatedNumber'
 import { currentMonthKey, monthLabel, todayISO, weekDaysOf, weekdayName, fromISO } from '../lib/dates'
 import { TransactionRow } from '../components/TransactionRow'
@@ -33,13 +34,15 @@ export function Home({
   onEdit,
   onOpenSettings,
   onAdd,
-  onOpenBudgets
+  onOpenBudgets,
+  onOpenTrips
 }: {
   currency: string
   onEdit: (t: Txn) => void
   onOpenSettings: () => void
   onAdd: () => void
   onOpenBudgets: () => void
+  onOpenTrips: () => void
 }) {
   const { showToast } = useUi()
   const today = todayISO()
@@ -321,6 +324,8 @@ export function Home({
         </div>
       </div>
 
+      <TripCard currency={currency} onOpen={onOpenTrips} />
+
       <button
         className="card"
         style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 14, textAlign: 'left' }}
@@ -432,6 +437,8 @@ export function Home({
           </button>
         )
       })()}
+
+      <TripsRow currency={currency} onOpen={onOpenTrips} />
 
       <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div className="row-between">
