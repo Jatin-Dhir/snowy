@@ -2,9 +2,9 @@
 
 ## What is ready
 
-- A signed release bundle: `releases/taily-play-v2.12.0.aab` (package `com.jatindhir.taily`, version 22 / 2.12.0,
+- A signed release bundle: `releases/taily-play-v2.13.0.aab` (package `com.jatindhir.taily`, version 23 / 2.13.0,
   targets Android 16 / API 36)
-- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.12.0.apk`
+- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.13.0.apk`
 - A privacy policy at https://jatin-dhir.github.io/snowy/privacy.html (also linked from Settings in the app)
 - Listing copy (`listing.md`), data-safety answers (`data-safety.md`), release notes (`whats-new.txt`)
 - Graphics in `graphics/` (icon, feature graphic, eight captioned 1080 x 1920 screenshots)
@@ -20,6 +20,8 @@ App "Taily: Expense Tracker", `com.jatindhir.taily`, in the JatinDhir developer 
   no health features).
 - Live: internal testing, release 22 (2.12.0), to the "Internal testers" email list. Opt-in link:
   https://play.google.com/apps/internaltest/4700958214368746059
+- Not uploaded yet: version 23 (2.13.0, trip mode) and the new screenshot 6, `graphics/phone-06-trip.jpg`, which replaces
+  the Lent & borrowed frame. The listing text needs its new "Trips with friends" section pasted in too.
 - Waiting on you: the payments (merchant) profile; then the `taily_pro` product can be created (below).
 - Next: a closed test (Play shows Taily needs its own before production access), then Send for review.
 
