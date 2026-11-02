@@ -1080,6 +1080,11 @@ button.chip:active {
   animation: toast-gone 240ms ease forwards;
 }
 
+/* nothing on it to tap, so it doesn't take a tap: over a short sheet, the button under it still works */
+.toast:not(:has(.toast-undo)) {
+  pointer-events: none;
+}
+
 @keyframes toast-in {
   from {
     transform: translate(-50%, 16px) scale(0.97);
