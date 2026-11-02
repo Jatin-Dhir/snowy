@@ -242,7 +242,7 @@ export function Insights({
               {vsPrev !== null && (
                 <span
                   className="mono"
-                  style={{ fontWeight: 600, fontSize: 13, color: vsPrev <= 0 ? 'var(--pos)' : 'var(--amber)' }}
+                  style={{ fontWeight: 600, fontSize: 13, color: vsPrev <= 0 ? 'var(--pos-text)' : 'var(--amber-text)' }}
                 >
                   {vsPrev > 0 ? '+' : '−'}
                   {Math.abs(vsPrev)}% vs {monthLabel(prevKey).slice(0, 3)}
@@ -258,7 +258,7 @@ export function Insights({
               <span className="caption">Projected {formatMinor(projected, currency)} by month end.</span>
             )}
             {received > 0 && (
-              <span className="caption" style={{ color: 'var(--pos)', fontWeight: 600 }}>
+              <span className="caption" style={{ color: 'var(--pos-text)', fontWeight: 600 }}>
                 Received +{formatMinor(received, currency)} this month
               </span>
             )}
@@ -425,7 +425,7 @@ export function Insights({
                         textAnchor="middle"
                         fontFamily="Plus Jakarta Sans, Segoe UI, sans-serif"
                         fontSize="9"
-                        fill={isLast ? 'var(--accent)' : 'var(--faint)'}
+                        fill={isLast ? 'var(--accent-text)' : 'var(--faint)'}
                       >
                         {monthShort(m.key)}
                       </text>
@@ -460,7 +460,7 @@ export function Insights({
             </div>
             <div className="well">
               <span className="label" style={{ fontSize: 9.5 }}>Received</span>
-              <span className="well-num" style={{ color: received > 0 ? 'var(--pos)' : undefined }}>
+              <span className="well-num" style={{ color: received > 0 ? 'var(--pos-text)' : undefined }}>
                 {received > 0 ? `+${formatMinor(received, currency)}` : '—'}
               </span>
             </div>
@@ -470,7 +470,7 @@ export function Insights({
             </div>
             <div className="well">
               <span className="label" style={{ fontSize: 9.5 }}>No-spend days</span>
-              <span className="well-num" style={{ color: report.noSpendDays > 0 ? 'var(--pos)' : undefined }}>
+              <span className="well-num" style={{ color: report.noSpendDays > 0 ? 'var(--pos-text)' : undefined }}>
                 {report.noSpendDays}
               </span>
             </div>
@@ -507,7 +507,7 @@ export function Insights({
                       fontWeight: 700,
                       width: 52,
                       textAlign: 'right',
-                      color: r.delta === null ? 'var(--faint)' : r.delta > 0 ? 'var(--amber)' : 'var(--pos)'
+                      color: r.delta === null ? 'var(--faint)' : r.delta > 0 ? 'var(--amber-text)' : 'var(--pos-text)'
                     }}
                   >
                     {r.delta === null ? 'new' : `${r.delta > 0 ? '▲' : '▼'}${Math.abs(r.delta)}%`}
@@ -525,7 +525,7 @@ export function Insights({
                 <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                   <span
                     className="mono"
-                    style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 13, width: 18, flexShrink: 0 }}
+                    style={{ color: 'var(--accent-text)', fontWeight: 700, fontSize: 13, width: 18, flexShrink: 0 }}
                   >
                     {i + 1}.
                   </span>

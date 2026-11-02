@@ -301,7 +301,7 @@ function TripDetail({
               <span className="label" style={{ fontSize: 9.5 }}>
                 {summary.mine >= 50 ? 'You get back' : summary.mine <= -50 ? 'You owe' : 'You'}
               </span>
-              <span className="well-num whole" style={summary.mine <= -50 ? { color: 'var(--amber)' } : undefined}>
+              <span className="well-num whole" style={summary.mine <= -50 ? { color: 'var(--amber-text)' } : undefined}>
                 {Math.abs(summary.mine) >= 50 ? formatMinor(Math.abs(summary.mine), currency) : 'All square'}
               </span>
             </div>
@@ -317,7 +317,7 @@ function TripDetail({
                 <PersonBadge name={trip.people.find((p) => p.id === t.from)?.name ?? '?'} me={t.from === ME} size={36} />
                 <span className="txn-main">
                   <span className="txn-title whole">{payLine(t.from, t.to)}</span>
-                  <span className="txn-sub mono" style={{ fontSize: 14, fontWeight: 700, color: t.from === ME ? 'var(--amber)' : 'var(--muted)' }}>
+                  <span className="txn-sub mono" style={{ fontSize: 14, fontWeight: 700, color: t.from === ME ? 'var(--amber-text)' : 'var(--muted)' }}>
                     {formatMinor(t.amountMinor, currency)}
                   </span>
                 </span>
@@ -368,7 +368,7 @@ function TripDetail({
                   </span>
                   <span
                     className="txn-amount"
-                    style={{ color: b.net >= 50 ? 'var(--pos)' : b.net <= -50 ? 'var(--amber)' : 'var(--muted)' }}
+                    style={{ color: b.net >= 50 ? 'var(--pos-text)' : b.net <= -50 ? 'var(--amber-text)' : 'var(--muted)' }}
                   >
                     {Math.abs(b.net) < 50 ? 'Square' : `${b.net > 0 ? '+' : '−'}${formatMinor(Math.abs(b.net), currency)}`}
                   </span>

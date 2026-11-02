@@ -243,6 +243,10 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
     return state === 'over' ? 'var(--red)' : state === 'warn' ? 'var(--amber)' : fallback
   }
 
+  function stateText(state: 'ok' | 'warn' | 'over', fallback: string): string {
+    return state === 'over' ? 'var(--red)' : state === 'warn' ? 'var(--amber-text)' : fallback
+  }
+
   const overallPace = overall ? pace(spent, overall.amountMinor, today) : null
 
   return (
@@ -282,7 +286,7 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
               style={{
                 fontWeight: 600,
                 fontSize: 12,
-                color: stateColor(overallPace.state, 'var(--pos)')
+                color: stateText(overallPace.state, 'var(--pos-text)')
               }}
             >
               {overallPace.state === 'over' ? 'OVER' : overallPace.state === 'warn' ? 'AHEAD OF PACE' : 'ON PACE'}
@@ -327,7 +331,7 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
                 {cat.name}
               </span>
               <span style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                <span className="mono" style={{ fontWeight: 600, fontSize: 15, color: stateColor(catPace.state, 'var(--ink)') }}>
+                <span className="mono" style={{ fontWeight: 600, fontSize: 15, color: stateText(catPace.state, 'var(--ink)') }}>
                   {formatMinor(catPace.spent, currency)}
                 </span>
                 <span className="mono faint" style={{ fontSize: 12, fontWeight: 500 }}>
@@ -380,7 +384,7 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
                     {g.name}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexShrink: 0 }}>
-                    <span className="mono" style={{ fontWeight: 600, fontSize: 15, color: done ? 'var(--pos)' : 'var(--ink)' }}>
+                    <span className="mono" style={{ fontWeight: 600, fontSize: 15, color: done ? 'var(--pos-text)' : 'var(--ink)' }}>
                       {formatMinor(g.savedMinor, currency)}
                     </span>
                     <span className="mono faint" style={{ fontSize: 12, fontWeight: 500 }}>
@@ -411,7 +415,7 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
           </span>
           {bills.map((r) => (
             <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0' }}>
-              <span className="mono" style={{ fontWeight: 600, fontSize: 11.5, width: 56, color: 'var(--amber)' }}>
+              <span className="mono" style={{ fontWeight: 600, fontSize: 11.5, width: 56, color: 'var(--amber-text)' }}>
                 {r.nextRunISO.slice(8, 10)} {monthLabel(r.nextRunISO.slice(0, 7)).slice(0, 3).toUpperCase()}
               </span>
               <span style={{ flex: 1, fontWeight: 500, fontSize: 14 }}>{r.name}</span>

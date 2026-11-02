@@ -81,23 +81,23 @@ export function RecurringManager({ currency }: { currency: string }) {
           <button
             key={r.id}
             className="txn-row"
-            style={{ opacity: r.paused ? 0.55 : 1, padding: '6px 0' }}
+            style={{ padding: '6px 0' }}
             onClick={() => setActive(r)}
           >
             <span
               className="txn-icon"
-              style={{ background: `${c?.color ?? '#7A8794'}26`, color: c?.color ?? '#7A8794', width: 38, height: 38 }}
+              style={{ background: `${c?.color ?? '#7A8794'}26`, color: c?.color ?? '#7A8794', width: 38, height: 38, opacity: r.paused ? 0.55 : 1 }}
             >
               <Icon name={c?.icon ?? 'receipt'} size={18} />
             </span>
             <span className="txn-main">
-              <span className="txn-title">{r.name}</span>
+              <span className="txn-title" style={r.paused ? { color: 'var(--muted)' } : undefined}>{r.name}</span>
               <span className="txn-sub">
                 {r.paused ? 'paused' : `day ${r.dayOfMonth} of every month`}
                 {c ? ` · ${c.name}` : ''}
               </span>
             </span>
-            <span className="mono" style={{ fontWeight: 700, fontSize: 13.5 }}>
+            <span className="mono" style={{ fontWeight: 700, fontSize: 13.5, color: r.paused ? 'var(--muted)' : undefined }}>
               {formatMinor(r.amountMinor, currency)}
             </span>
             <span className="faint">
@@ -261,7 +261,7 @@ export function RecurringManager({ currency }: { currency: string }) {
                       </span>
                       <span style={{ flex: 1 }}>{c.name}</span>
                       {form.cat === c.id && (
-                        <span style={{ color: 'var(--pos)' }}>
+                        <span style={{ color: 'var(--pos-text)' }}>
                           <Icon name="check" size={16} strokeWidth={2.4} />
                         </span>
                       )}

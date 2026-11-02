@@ -11,7 +11,8 @@
   --surface-2: #e5e9f0;
   --ink: #1a212b;
   --muted: #56616d;
-  --faint: #87919e;
+  /* the quietest text there is: 4.5:1 on --sunken, the darkest ground it sits on */
+  --faint: #616c79;
   --line: #d9dee6;
   --line-soft: #e0e5ec;
   --line-strong: #c2cad5;
@@ -19,7 +20,15 @@
   --on-accent: #f4f7fd;
   --pos: #3b71ee;
   --pos-soft: #dde7fb;
+  /* words in the accent's hue, and a glyph that stands alone (a tick, an icon-only button). The fills above can be
+     as pale as they like; these hold 4.5:1 on every ground and on --pos-soft. A pastel accent gets its own from lib/theme.ts */
+  --accent-text: #275ce3;
+  --pos-text: #275ce3;
+  /* the same on --ink, which a toast is made of */
+  --pos-on-ink: #5383f0;
+  --focus: var(--pos-text);
   --amber: #b0651f;
+  --amber-text: #9a5518;
   --red: #b3453d;
   --bar-idle: #d9dfe8;
   --bar-empty: #e4e8ef;
@@ -65,17 +74,22 @@
   --surface-2: #1a1f26;
   --ink: #e8ebf0;
   --muted: #9aa3ae;
-  --faint: #6f7883;
+  /* 4.5:1 on the top of --raised-bg, the lightest ground text sits on */
+  --faint: #8a929b;
   --line: #262c34;
   --line-soft: #20252c;
   --line-strong: #39414b;
-  --accent: #4e80ff;
+  --accent: #2865ff;
   --on-accent: #f6f8ff;
   --pos: #6d9aff;
   --pos-soft: #16233f;
+  --accent-text: #5e8bff;
+  --pos-text: var(--pos);
+  --pos-on-ink: #2b5fe3;
   --amber: #e09858;
-  /* 4.7:1 on the sheet background; #d06258 was 4.3:1, too faint for small error text */
-  --red: #d66a60;
+  --amber-text: var(--amber);
+  /* small error text sits on cards too: 4.5:1 on the top of --raised-bg */
+  --red: #d9736a;
   --bar-idle: #272e36;
   --bar-empty: #1b2026;
   --faint-future: #414954;
@@ -100,6 +114,10 @@
   --on-accent: #f4f6f9;
   --pos: #465363;
   --pos-soft: #e3e7ed;
+  /* dark enough already, and light enough in dark */
+  --accent-text: var(--accent);
+  --pos-text: var(--pos);
+  --pos-on-ink: #77899f;
   --fab-glow: 0 10px 24px rgba(34, 42, 53, 0.3);
 }
 [data-theme='dark'][data-accent='mono'] {
@@ -107,14 +125,19 @@
   --on-accent: #14171b;
   --pos: #c6cdd6;
   --pos-soft: #272c33;
+  --pos-on-ink: #5c6b80;
   --fab-glow: 0 10px 26px rgba(232, 235, 240, 0.18);
 }
 /* creamy: a whole warm color space, not just an accent */
 [data-accent='cream'] {
-  --accent: #b4712e;
+  --accent: #a16529;
   --on-accent: #fdf9f1;
   --pos: #c58539;
   --pos-soft: #f3e6d2;
+  --accent-text: #925c25;
+  --pos-text: #8c5f29;
+  --pos-on-ink: var(--pos);
+  --red: #b1443c;
   --fab-glow: 0 10px 24px rgba(180, 113, 46, 0.32);
   --bg: #f7f1e6;
   --card: #f7f1e6;
@@ -125,7 +148,7 @@
   --surface-2: #f1eadc;
   --ink: #2b2317;
   --muted: #6e6150;
-  --faint: #9a8c77;
+  --faint: #726655;
   --line: #e5dbc7;
   --line-soft: #ebe2d1;
   --line-strong: #d3c6ac;
@@ -144,6 +167,10 @@
   --on-accent: #1a140b;
   --pos: #efb56a;
   --pos-soft: #33270f;
+  --accent-text: var(--accent);
+  --pos-text: var(--pos);
+  --pos-on-ink: #975c10;
+  --red: #d9736a;
   --fab-glow: 0 10px 26px rgba(224, 164, 88, 0.28);
   --bg: #1a1510;
   --card: #1a1510;
@@ -154,7 +181,7 @@
   --surface-2: #201a12;
   --ink: #f0e9dd;
   --muted: #a99c88;
-  --faint: #7a6f5d;
+  --faint: #91846e;
   --line: #2b2418;
   --line-soft: #241e13;
   --line-strong: #40372a;
@@ -212,7 +239,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--pos);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -475,7 +502,7 @@ button.pill:active {
 }
 
 .tab.active {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
 }
 
@@ -597,6 +624,12 @@ button.txn-row:active {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+/* a person's initial on a tile of their colour: that colour alone only reaches 2.2:1 on its own tint */
+.tile-initial {
+  color: var(--ink);
+  color: color-mix(in srgb, currentColor 50%, var(--ink));
 }
 
 .txn-main {
@@ -947,7 +980,7 @@ button.txn-row:active {
 
 .seg button.on {
   background: var(--raised-bg);
-  color: var(--accent);
+  color: var(--accent-text);
   box-shadow: var(--raise-sm);
 }
 
@@ -1080,7 +1113,7 @@ button.chip:active {
 }
 
 .toast-undo {
-  color: var(--pos);
+  color: var(--pos-on-ink);
   font-weight: 800;
   padding: 4px 10px;
   border-radius: 999px;
@@ -1107,7 +1140,7 @@ button.chip:active {
 
 .field:focus {
   outline: none;
-  box-shadow: var(--inset-sm), 0 0 0 2px var(--pos);
+  box-shadow: var(--inset-sm), 0 0 0 2px var(--focus);
 }
 
 select.field {
@@ -1187,6 +1220,10 @@ select.field {
   background: none;
   font-size: 14.5px;
   min-width: 0;
+}
+
+.searchbar input::placeholder {
+  color: var(--faint);
 }
 
 .searchbar input:focus {
@@ -1497,10 +1534,10 @@ button.weekbar-col:disabled {
 }
 
 .voice-amount.in {
-  color: var(--pos);
+  color: var(--pos-text);
 }
 
-/* no amount heard yet: muted text (amber text is 3.9:1 on the light sheet), amber only on the dot */
+/* no amount heard yet: muted text, amber only on the dot */
 .voice-amount.missing {
   display: inline-flex;
   align-items: center;

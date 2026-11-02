@@ -6,7 +6,7 @@
   --sunken: #e8ecf2;
   --raised: #edf0f5;
   --edge: rgba(255, 255, 255, 0);
-  /* a shade under the app's: on this page they're small text a stranger has to read */
+  /* no accent to follow here, and small text a stranger has to read: all 4.5:1 */
   --pos: #2b5fe3;
   --accent: #2b5fe3;
   --amber: #9a5518;
@@ -28,7 +28,7 @@
     --pos: #6d9aff;
     --accent: #4e80ff;
     --amber: #e09858;
-    --red: #d66a60;
+    --red: #d9736a;
     --raise: 6px 8px 18px rgba(0, 0, 0, 0.72);
     --raise-sm: 3px 4px 9px rgba(0, 0, 0, 0.72);
     --inset-sm: inset -2px -2px 6px rgba(255, 255, 255, 0.05), inset 2px 2px 6px rgba(0, 0, 0, 0.8);

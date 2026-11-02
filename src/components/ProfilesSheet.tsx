@@ -98,7 +98,7 @@ export function ProfilesSheet({ open, onClose }: { open: boolean; onClose: () =>
               className="txn-icon"
               style={{
                 background: isCurrent ? 'var(--accent)' : 'var(--pos-soft)',
-                color: isCurrent ? 'var(--on-accent)' : 'var(--accent)',
+                color: isCurrent ? 'var(--on-accent)' : 'var(--accent-text)',
                 width: 34,
                 height: 34,
                 fontWeight: 800,
@@ -121,7 +121,7 @@ export function ProfilesSheet({ open, onClose }: { open: boolean; onClose: () =>
                     if (e.key === 'Enter') saveRename(p.id)
                   }}
                 />
-                <button className="icon-btn" style={{ color: 'var(--pos)' }} onClick={() => saveRename(p.id)} aria-label="Save name">
+                <button className="icon-btn" style={{ color: 'var(--pos-text)' }} onClick={() => saveRename(p.id)} aria-label="Save name">
                   <Icon name="check" size={15} strokeWidth={2.4} />
                 </button>
               </>

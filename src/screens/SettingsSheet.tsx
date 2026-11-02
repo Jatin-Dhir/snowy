@@ -802,7 +802,7 @@ export function SettingsSheet({
                   <span className="caption" style={{ fontSize: 11.5 }}>{c.code}</span>
                 </span>
                 {settings.currency === c.code && (
-                  <span style={{ color: 'var(--pos)' }}>
+                  <span style={{ color: 'var(--pos-text)' }}>
                     <Icon name="check" size={17} strokeWidth={2.4} />
                   </span>
                 )}

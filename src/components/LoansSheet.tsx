@@ -160,12 +160,12 @@ export function LoansSheet({
           {l.settledISO ? (
             <Icon name="check" size={18} strokeWidth={2.4} />
           ) : (
-            <span style={{ fontWeight: 800, fontSize: 16 }}>{l.person.trim()[0]?.toUpperCase() ?? '?'}</span>
+            <span className="tile-initial" style={{ fontWeight: 800, fontSize: 16 }}>{l.person.trim()[0]?.toUpperCase() ?? '?'}</span>
           )}
         </span>
         <span className="txn-main">
           <span className="txn-title">{l.person}</span>
-          <span className="txn-sub" style={overdue ? { color: 'var(--amber)', fontWeight: 600 } : undefined}>
+          <span className="txn-sub" style={overdue ? { color: 'var(--amber-text)', fontWeight: 600 } : undefined}>
             {[
               l.settledISO
                 ? `${l.direction === 'lent' ? 'returned' : 'paid back'} · ${shortDate(l.settledISO)}`
@@ -182,7 +182,7 @@ export function LoansSheet({
         <span
           className="txn-amount"
           style={{
-            color: l.settledISO ? 'var(--faint)' : l.direction === 'lent' ? 'var(--pos)' : 'var(--amber)',
+            color: l.settledISO ? 'var(--faint)' : l.direction === 'lent' ? 'var(--pos-text)' : 'var(--amber-text)',
             textDecoration: l.settledISO ? 'line-through' : 'none'
           }}
         >
@@ -243,7 +243,7 @@ export function LoansSheet({
               ))}
               <button
                 className={`chip${typingPerson ? ' selected' : ''}`}
-                style={{ color: 'var(--accent)', fontWeight: 700, flexShrink: 0 }}
+                style={{ color: 'var(--accent-text)', fontWeight: 700, flexShrink: 0 }}
                 onClick={() => {
                   setTypingPerson(true)
                   setPerson('')
@@ -386,8 +386,8 @@ export function LoansSheet({
                   color: active.settledISO
                     ? 'var(--faint)'
                     : active.direction === 'lent'
-                      ? 'var(--pos)'
-                      : 'var(--amber)'
+                      ? 'var(--pos-text)'
+                      : 'var(--amber-text)'
                 }}
               >
                 {active.settledISO ? 'settled · ' : active.direction === 'lent' ? 'owes you ' : 'you owe '}

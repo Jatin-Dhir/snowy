@@ -468,7 +468,7 @@ export function Home({
               />
               <span
                 className="day"
-                style={{ color: b.isToday ? 'var(--accent)' : b.isFuture ? 'var(--faint-future)' : undefined }}
+                style={{ color: b.isToday ? 'var(--accent-text)' : undefined, fontWeight: b.isFuture ? 500 : undefined }}
               >
                 {weekdayName(b.iso)[0]}
               </span>
@@ -507,7 +507,7 @@ export function Home({
           <div className="empty">
             Nothing logged yet today.
             <br />
-            <button style={{ color: 'var(--accent)', fontWeight: 600 }} onClick={onAdd}>
+            <button style={{ color: 'var(--accent-text)', fontWeight: 600 }} onClick={onAdd}>
               The + is right there — three seconds.
             </button>
           </div>
@@ -598,7 +598,7 @@ export function Home({
                       />
                       <button
                         className="icon-btn"
-                        style={{ color: 'var(--pos)' }}
+                        style={{ color: 'var(--pos-text)' }}
                         onClick={() => void saveBalance(a.id, acctBalance)}
                         aria-label={`Save balance for ${a.name}`}
                       >
