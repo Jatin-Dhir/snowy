@@ -72,6 +72,16 @@ export function vibrate(kind: HapticKind = 'light'): void {
   })
 }
 
+/** A toast stays up and tappable while it leaves, so a double tap reaches its Undo twice. */
+function once(run: () => void): () => void {
+  let ran = false
+  return () => {
+    if (ran) return
+    ran = true
+    run()
+  }
+}
+
 export function UiProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastState | null>(null)
   const timers = useRef<number[]>([])
@@ -89,7 +99,7 @@ export function UiProvider({ children }: { children: ReactNode }) {
 
   const showToast = useCallback((message: string, undo?: () => void) => {
     clearTimers()
-    setToast({ message, undo, leaving: false })
+    setToast({ message, undo: undo && once(undo), leaving: false })
     timers.current.push(window.setTimeout(() => setToast((t) => (t ? { ...t, leaving: true } : null)), 2500))
     timers.current.push(window.setTimeout(() => setToast(null), 2760))
   }, [])
