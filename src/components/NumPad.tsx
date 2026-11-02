@@ -1,16 +1,50 @@
-import { useRef } from 'react'
+import { useEffect, useRef, type ButtonHTMLAttributes } from 'react'
 import { Icon } from './Icon'
 
-/** The soft numpad: fires on touch-down, backspace repeats while held. */
+/**
+ * One soft key. A pointer fires it on the way down, and the click that press ends in isn't a
+ * second one. Any other click is Enter, Space or a screen reader, with no way down to fire on.
+ */
+function Key({ fire, ...button }: ButtonHTMLAttributes<HTMLButtonElement> & { fire: () => void }) {
+  const firedOnDown = useRef(false)
+  return (
+    <button
+      className="key"
+      {...button}
+      onPointerDown={(e) => {
+        e.preventDefault()
+        firedOnDown.current = true
+        fire()
+        button.onPointerDown?.(e)
+      }}
+      onKeyDown={(e) => {
+        firedOnDown.current = false
+        // held down it's one press, as under a finger: a PIN can't fill itself in
+        if (e.repeat && e.key === 'Enter') e.preventDefault()
+      }}
+      onClick={() => {
+        if (!firedOnDown.current) fire()
+        firedOnDown.current = false
+      }}
+    />
+  )
+}
+
+/**
+ * The soft numpad: fires on touch-down, backspace repeats while held. The keyboard's own number
+ * keys type on it too, unless a field has them or something on top holds this pad inert.
+ */
 export function NumPad({
   onDigit,
   onDot,
   onBackspace
 }: {
   onDigit: (d: string) => void
-  onDot: () => void
+  /** Without it (a PIN) the key stays in the grid, switched off. */
+  onDot?: () => void
   onBackspace: () => void
 }) {
+  const pad = useRef<HTMLDivElement>(null)
   const holdTimer = useRef<number | null>(null)
   const holdInterval = useRef<number | null>(null)
 
@@ -21,44 +55,36 @@ export function NumPad({
     holdInterval.current = null
   }
 
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return
+      if (e.ctrlKey || e.metaKey || e.altKey || pad.current?.closest('[inert]')) return
+      if (e.key === 'Backspace') onBackspace()
+      // only Backspace repeats, as on the soft keys: a held digit can't fill in a PIN
+      else if (e.repeat) return
+      else if (e.key >= '0' && e.key <= '9') onDigit(e.key)
+      else if (e.key === '.') onDot?.()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
   return (
-    <div className="numpad">
+    <div ref={pad} className="numpad">
       {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => (
-        <button
-          key={d}
-          className="key"
-          onPointerDown={(e) => {
-            e.preventDefault()
-            onDigit(d)
-          }}
-        >
+        <Key key={d} fire={() => onDigit(d)}>
           {d}
-        </button>
+        </Key>
       ))}
-      <button
-        className="key"
-        onPointerDown={(e) => {
-          e.preventDefault()
-          onDot()
-        }}
-      >
+      <Key aria-label="Decimal point" disabled={!onDot} fire={() => onDot?.()}>
         .
-      </button>
-      <button
-        className="key"
-        onPointerDown={(e) => {
-          e.preventDefault()
-          onDigit('0')
-        }}
-      >
-        0
-      </button>
-      <button
-        className="key"
+      </Key>
+      <Key fire={() => onDigit('0')}>0</Key>
+      <Key
         aria-label="Backspace"
-        onPointerDown={(e) => {
-          e.preventDefault()
-          onBackspace()
+        fire={onBackspace}
+        onPointerDown={() => {
           holdTimer.current = window.setTimeout(() => {
             holdInterval.current = window.setInterval(onBackspace, 110)
           }, 420)
@@ -68,7 +94,7 @@ export function NumPad({
         onPointerCancel={stopHold}
       >
         <Icon name="backspace" size={22} />
-      </button>
+      </Key>
     </div>
   )
 }

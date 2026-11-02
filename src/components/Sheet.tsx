@@ -1,13 +1,18 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { onBack } from '../lib/backButton'
+import { findOpener, holdFocus } from '../lib/sheetFocus'
 
 // Sheets stack (Add → Tags); the page behind stays frozen while any are up.
 const bodyLock = { count: 0 }
 
+// a sheet inside a sheet that's closing is closing too, even with its own `open` still true
+const ParentOpen = createContext(true)
+
 /**
  * Bottom sheet: watery slide-up entrance, slide-down exit, and
- * swipe-down-to-dismiss from the grab strip at the top.
+ * swipe-down-to-dismiss from the grab strip at the top. A modal dialog:
+ * while it's the top one, it has the keyboard (lib/sheetFocus).
  */
 export function Sheet({
   open,
@@ -32,26 +37,39 @@ export function Sheet({
       if (timer.current) window.clearTimeout(timer.current)
       setPhase('in')
     } else {
-      setPhase((p) => {
-        if (p !== 'in') return p
-        timer.current = window.setTimeout(() => setPhase('closed'), 250)
-        return 'out'
-      })
+      setPhase((p) => (p === 'in' ? 'out' : p))
+      timer.current = window.setTimeout(() => setPhase((p) => (p === 'out' ? 'closed' : p)), 250)
     }
     return () => {
       if (timer.current) window.clearTimeout(timer.current)
     }
   }, [open])
 
-  // Android's Back closes the sheet opened last, so a sheet inside a sheet goes first
+  const parentOpen = useContext(ParentOpen)
+  const live = open && parentOpen
+
+  // Android's Back and Escape close the sheet opened last, so a sheet inside a sheet goes first
   const closeRef = useRef(onClose)
   useEffect(() => {
     closeRef.current = onClose
   })
+  const [backUsed, setBackUsed] = useState(0)
   useEffect(() => {
-    if (!open) return
-    return onBack(() => closeRef.current())
-  }, [open])
+    if (!live) return
+    return onBack(() => {
+      closeRef.current()
+      // a busy sheet can refuse (a backup being written): still open, it's next in line again
+      setBackUsed((n) => n + 1)
+    })
+  }, [live, backUsed])
+
+  const opener = useMemo(() => (open ? findOpener() : null), [open])
+  const showing = live && phase !== 'closed'
+  useEffect(() => {
+    if (!showing || !sheetEl.current) return
+    return holdFocus(sheetEl.current, opener)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showing])
 
   const visible = phase !== 'closed'
   useEffect(() => {
@@ -114,7 +132,9 @@ export function Sheet({
         ref={sheetEl}
         className={`sheet${out ? ' sheet-out' : ''}`}
         role="dialog"
+        aria-modal="true"
         aria-label={label}
+        tabIndex={-1}
         style={style}
       >
         <div
@@ -126,7 +146,7 @@ export function Sheet({
         >
           <div className="sheet-handle" />
         </div>
-        {children}
+        <ParentOpen.Provider value={live}>{children}</ParentOpen.Provider>
       </div>
     </>,
     document.body

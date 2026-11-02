@@ -5,6 +5,7 @@ import { TailyMark } from '../screens/Welcome'
 import { saveSettings } from '../db/db'
 import { clearPinFailures, hashPin, isLegacyHash, recordPinFailure, verifyPin } from '../lib/pin'
 import { leaveApp, onBack } from '../lib/backButton'
+import { focusFallback } from '../lib/sheetFocus'
 import { haptic } from '../state/ui'
 
 /**
@@ -18,10 +19,14 @@ export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: (
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const behind = [...document.body.children].filter((el) => el !== rootRef.current)
+    // what an open sheet already holds inert stays that way after unlocking
+    const behind = [...document.body.children].filter((el) => el !== rootRef.current && !el.hasAttribute('inert'))
     for (const el of behind) el.setAttribute('inert', '')
+    // whatever had focus just lost it, and this is the one place left for it
+    rootRef.current?.focus({ preventScroll: true })
     return () => {
       for (const el of behind) el.removeAttribute('inert')
+      focusFallback()
     }
   }, [])
 
@@ -48,7 +53,9 @@ export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: (
       role="dialog"
       aria-modal="true"
       aria-label="Taily is locked"
+      tabIndex={-1}
       style={{
+        outline: 'none',
         position: 'fixed',
         inset: 0,
         zIndex: 90,

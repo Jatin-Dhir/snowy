@@ -65,6 +65,7 @@ export function AddSheet({
   const [paidBy, setPaidBy] = useState(ME)
   const [among, setAmong] = useState<string[] | null>(null)
   const [pickSplit, setPickSplit] = useState(false)
+  const head = useRef<HTMLDivElement>(null)
   const noteRef = useRef<HTMLInputElement>(null)
   const dateRef = useRef<HTMLInputElement>(null)
 
@@ -281,25 +282,12 @@ export function AddSheet({
     if (!open) return
     function onKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return
-      // the tag sheet is on top — don't let hardware keys mutate the amount
-      // underneath it (a zeroed amount would make tag taps silently no-op)
-      if (showAll || manageTags || pickAccount || pickSplit) {
-        if (e.key === 'Escape') {
-          setShowAll(false)
-          setPickAccount(false)
-          setPickSplit(false)
-        }
-        return
-      }
-      if (e.key >= '0' && e.key <= '9') amt.digit(e.key)
-      else if (e.key === '.') amt.dot()
-      else if (e.key === 'Backspace') amt.backspace()
-      else if (e.key === 'Escape') onClose()
-      else if (e.key === 'Enter') {
-        if (isEdit) void saveEdit()
-        else void saveNew(selectedCat)
-      }
+      // Enter on a focused button is that button's press; it must not save as well
+      if (e.key !== 'Enter' || ['INPUT', 'SELECT', 'BUTTON'].includes(target.tagName)) return
+      // another sheet or the lock is on top: Enter there mustn't save what's half typed here
+      if (head.current?.closest('[inert]')) return
+      if (isEdit) void saveEdit()
+      else void saveNew(selectedCat)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -326,7 +314,7 @@ export function AddSheet({
 
   return (
     <Sheet open={open} onClose={onClose} label={isEdit ? 'Edit expense' : 'New expense'}>
-        <div className="row-between">
+        <div ref={head} className="row-between">
           {editEntry ? (
             <span className="label" style={{ letterSpacing: '0.14em' }}>Trip spend</span>
           ) : (
