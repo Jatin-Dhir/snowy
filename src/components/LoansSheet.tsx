@@ -31,7 +31,7 @@ export function LoansSheet({
   currency: string
   onClose: () => void
 }) {
-  const { showToast } = useUi()
+  const { showToast, dismissToast } = useUi()
   const amt = useAmountEntry()
   const [adding, setAdding] = useState(false)
   const [direction, setDirection] = useState<'lent' | 'borrowed'>('lent')
@@ -76,6 +76,8 @@ export function LoansSheet({
   const canSave = person.trim().length > 0 && amt.minor > 0
 
   function startAdding() {
+    // a toast floats over the sheet: left up, it would sit on the keypad and take a digit's tap
+    dismissToast()
     setAdding(true)
     setTypingPerson(people.length === 0)
   }
