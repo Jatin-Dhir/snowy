@@ -22,6 +22,9 @@ const REMIND_CHIPS = [
   { label: '2 weeks', days: 14 }
 ]
 
+/** A field that opens at the end of a scrolling list, brought into view as it appears. */
+const reveal = (field: HTMLElement | null) => field?.scrollIntoView({ block: 'nearest' })
+
 export function LoansSheet({
   open,
   currency,
@@ -195,17 +198,10 @@ export function LoansSheet({
   }
 
   return (
-    <Sheet open={open} onClose={onClose} label="Lent & borrowed" style={{ gap: 12 }}>
+    <Sheet open={open} onClose={onClose} label="Lent & borrowed" style={{ gap: adding ? 8 : 12 }}>
       <div className="row-between">
-        <span className="label" style={{ letterSpacing: '0.14em' }}>Lent &amp; borrowed</span>
-        <button className="icon-btn" onClick={adding ? stopAdding : onClose} aria-label={adding ? 'Back' : 'Close'}>
-          <Icon name={adding ? 'chevronLeft' : 'x'} size={14} strokeWidth={2.2} />
-        </button>
-      </div>
-
-      {adding ? (
-        <>
-          <span className="seg" style={{ alignSelf: 'center' }}>
+        {adding ? (
+          <span className="seg">
             <button
               className={direction === 'lent' ? 'on' : ''}
               onClick={() => {
@@ -225,10 +221,19 @@ export function LoansSheet({
               I owe them
             </button>
           </span>
+        ) : (
+          <span className="label" style={{ letterSpacing: '0.14em' }}>Lent &amp; borrowed</span>
+        )}
+        <button className="icon-btn" onClick={adding ? stopAdding : onClose} aria-label={adding ? 'Back' : 'Close'}>
+          <Icon name={adding ? 'chevronLeft' : 'x'} size={14} strokeWidth={2.2} />
+        </button>
+      </div>
 
+      {adding ? (
+        <div className="sheet-fields">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span className="label" style={{ fontSize: 10 }}>Who?</span>
-            <div className="chip-row" style={{ flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
+            {/* nobody to pick yet: a row of one chip would only push the keypad down */}
+            <div className="chip-row" style={{ display: people.length > 0 ? undefined : 'none', flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
               {people.map((p) => (
                 <button
                   key={p}
@@ -254,34 +259,27 @@ export function LoansSheet({
                 + New
               </button>
             </div>
-            {typingPerson && (
+            {/* side by side, so a new name doesn't cost the row Remind me needs on a short phone */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              {typingPerson && (
+                <input
+                  className="field"
+                  style={{ minWidth: 0 }}
+                  placeholder="Their name"
+                  value={person}
+                  maxLength={40}
+                  onChange={(e) => setPerson(e.target.value)}
+                />
+              )}
               <input
                 className="field"
-                placeholder="Their name"
-                value={person}
-                maxLength={40}
-                onChange={(e) => setPerson(e.target.value)}
+                style={{ minWidth: 0 }}
+                placeholder={typingPerson ? 'What for?' : 'What for? — optional, e.g. concert tickets'}
+                value={note}
+                maxLength={60}
+                onChange={(e) => setNote(e.target.value)}
               />
-            )}
-            <input
-              className="field"
-              placeholder="What for? — optional, e.g. concert tickets"
-              value={note}
-              maxLength={60}
-              onChange={(e) => setNote(e.target.value)}
-            />
-          </div>
-
-          <div className="amount-display" style={{ padding: 0 }}>
-            <span className="amount-cur" style={{ fontSize: 20 }}>{currencySymbol(currency)}</span>
-            <span
-              key={`${amt.entry.r}.${amt.entry.p ?? ''}`}
-              className={`amount-num amount-pop${amt.minor > 0 ? '' : ' zero'}`}
-              style={{ fontSize: 36 }}
-            >
-              {formatEntry(amt.entry.r, amt.entry.p, currency)}
-            </span>
-            <span className="caret" style={{ height: 26 }} />
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -313,6 +311,7 @@ export function LoansSheet({
             </div>
             {remindDays === -1 && (
               <input
+                ref={reveal}
                 className="field"
                 type="date"
                 min={todayISO()}
@@ -321,19 +320,7 @@ export function LoansSheet({
               />
             )}
           </div>
-
-          <NumPad onDigit={amt.digit} onDot={amt.dot} onBackspace={amt.backspace} />
-
-          <div className="sheet-cta">
-            <button className="btn" disabled={!canSave} onClick={() => void save()}>
-              {canSave
-                ? direction === 'lent'
-                  ? `${person.trim()} owes ${formatMinor(amt.minor, currency)} — note it`
-                  : `I owe ${person.trim()} ${formatMinor(amt.minor, currency)} — note it`
-                : 'Note it'}
-            </button>
-          </div>
-        </>
+        </div>
       ) : (
         <>
           <button className="btn" onClick={startAdding}>
@@ -361,6 +348,34 @@ export function LoansSheet({
             </div>
           )}
         </>
+      )}
+
+      {adding && (
+        <div>
+          <div className="amount-display" style={{ padding: 0 }}>
+            <span className="amount-cur" style={{ fontSize: 20 }}>{currencySymbol(currency)}</span>
+            <span
+              key={`${amt.entry.r}.${amt.entry.p ?? ''}`}
+              className={`amount-num amount-pop${amt.minor > 0 ? '' : ' zero'}`}
+              style={{ fontSize: 36 }}
+            >
+              {formatEntry(amt.entry.r, amt.entry.p, currency)}
+            </span>
+            <span className="caret" style={{ height: 26 }} />
+          </div>
+
+          <NumPad onDigit={amt.digit} onDot={amt.dot} onBackspace={amt.backspace} />
+
+          <div className="sheet-cta">
+            <button className="btn" disabled={!canSave} onClick={() => void save()}>
+              {canSave
+                ? direction === 'lent'
+                  ? `${person.trim()} owes ${formatMinor(amt.minor, currency)} — note it`
+                  : `I owe ${person.trim()} ${formatMinor(amt.minor, currency)} — note it`
+                : 'Note it'}
+            </button>
+          </div>
+        </div>
       )}
 
       {active && (

@@ -772,6 +772,20 @@ button.txn-row:active {
   background: var(--sheet-bg);
 }
 
+/* the fields above a sheet's keypad: they give up room and scroll, so the keypad never has to */
+.sheet-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* two rows, so the field being typed in stays in sight with the soft keyboard up */
+  min-height: 104px;
+  overflow: hidden auto;
+  /* past the sheet's padding and a focus ring's width, or this scroll box clips the ring */
+  margin: -2px -20px;
+  padding: 2px 20px;
+  scroll-padding-block: 2px;
+}
+
 /* swipe-down grab zone: wide, touch-owned strip at the sheet's top */
 .sheet-grab {
   display: flex;
