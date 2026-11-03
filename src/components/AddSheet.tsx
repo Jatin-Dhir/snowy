@@ -369,104 +369,108 @@ export function AddSheet({
           <span className="caret" />
         </div>
 
-        {trip && kind === 'out' && (
-          <button
-            className="pill trip-line"
-            style={goesInTrip ? { background: 'var(--pos-soft)', color: 'var(--ink)', boxShadow: 'none' } : undefined}
-            onClick={() => setPickSplit(true)}
-          >
-            <span style={{ color: goesInTrip ? 'var(--accent)' : undefined, display: 'inline-flex', flexShrink: 0 }}>
-              <Icon name="trip" size={14} />
-            </span>
-            {goesInTrip ? (
-              <span className="trip-line-text">
-                <span className="trip-line-name">{trip.name}</span>
-                <span className="trip-line-rest">
-                  {[
-                    '',
-                    paidBy !== ME ? `${personLabel(trip, paidBy)} paid` : null,
-                    // with someone else paying there's room for one of these, and the amount is what you came to see
-                    paidBy !== ME && each ? null : splitLabel(trip, splitAmong),
-                    each
-                  ]
-                    .filter((part) => part !== null)
-                    .join(' · ')}
-                </span>
-              </span>
-            ) : (
-              <span className="trip-line-name">Just mine, not in {trip.name}</span>
-            )}
-          </button>
-        )}
-
         <>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '6px 0 12px', flexWrap: 'wrap' }}>
-              <button
-                className="pill"
-                onClick={() => {
-                  if (dateISO === todayISO()) setDateISO(addDaysISO(todayISO(), -1))
-                  else if (dateISO === addDaysISO(todayISO(), -1)) {
-                    // a third tap goes straight to the calendar for any other day. The
-                    // field is rendered inside the tap because browsers only open a
-                    // picker (or a keyboard, on iPhone) during the tap itself.
-                    flushSync(() => setShowDate(true))
-                    try {
-                      dateRef.current?.showPicker()
-                    } catch {
-                      dateRef.current?.focus()
-                    }
-                  } else setDateISO(todayISO())
-                }}
-              >
-                <Icon name="calendar" size={13} />
-                {dateLabel}
-              </button>
-              <button className="pill" onClick={() => setPickAccount(true)}>
-                <Icon name="wallet" size={13} />
-                {accountName}
-              </button>
-              <button
-                className={`pill${showNote ? ' active' : ''}`}
-                onClick={() => {
-                  if (showNote) {
-                    setShowNote(false)
-                    return
-                  }
-                  // opening the note goes straight to typing (rendered within the tap, as above)
-                  flushSync(() => setShowNote(true))
-                  noteRef.current?.focus()
-                }}
-              >
-                <Icon name="pencil" size={13} />
-                Note
-              </button>
-            </div>
+            {/* everything said about a spend besides its amount and tag: on a short phone these give up
+                room and scroll, so the keypad never has to. A row stays in sight, the note while it's typed in. */}
+            <div className="sheet-fields" style={{ gap: 0, minHeight: 49 }}>
+              {trip && kind === 'out' && (
+                <button
+                  className="pill trip-line"
+                  style={goesInTrip ? { background: 'var(--pos-soft)', color: 'var(--ink)', boxShadow: 'none' } : undefined}
+                  onClick={() => setPickSplit(true)}
+                >
+                  <span style={{ color: goesInTrip ? 'var(--accent)' : undefined, display: 'inline-flex', flexShrink: 0 }}>
+                    <Icon name="trip" size={14} />
+                  </span>
+                  {goesInTrip ? (
+                    <span className="trip-line-text">
+                      <span className="trip-line-name">{trip.name}</span>
+                      <span className="trip-line-rest">
+                        {[
+                          '',
+                          paidBy !== ME ? `${personLabel(trip, paidBy)} paid` : null,
+                          // with someone else paying there's room for one of these, and the amount is what you came to see
+                          paidBy !== ME && each ? null : splitLabel(trip, splitAmong),
+                          each
+                        ]
+                          .filter((part) => part !== null)
+                          .join(' · ')}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="trip-line-name">Just mine, not in {trip.name}</span>
+                  )}
+                </button>
+              )}
 
-            {(showNote || showDate) && (
-              <div style={{ display: 'flex', gap: 8, paddingBottom: 12 }}>
-                {showNote && (
-                  <input
-                    ref={noteRef}
-                    className="field"
-                    placeholder="Note — e.g. Zepto, chai with Ananya"
-                    value={note}
-                    maxLength={80}
-                    onChange={(e) => setNote(e.target.value)}
-                  />
-                )}
-                {showDate && (
-                  <input
-                    ref={dateRef}
-                    className="field"
-                    type="date"
-                    value={dateISO}
-                    max={todayISO()}
-                    style={{ width: showNote ? 150 : '100%' }}
-                    onChange={(e) => e.target.value && setDateISO(e.target.value)}
-                  />
-                )}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '6px 0 12px', flexWrap: 'wrap' }}>
+                <button
+                  className="pill"
+                  onClick={() => {
+                    if (dateISO === todayISO()) setDateISO(addDaysISO(todayISO(), -1))
+                    else if (dateISO === addDaysISO(todayISO(), -1)) {
+                      // a third tap goes straight to the calendar for any other day. The
+                      // field is rendered inside the tap because browsers only open a
+                      // picker (or a keyboard, on iPhone) during the tap itself.
+                      flushSync(() => setShowDate(true))
+                      try {
+                        dateRef.current?.showPicker()
+                      } catch {
+                        dateRef.current?.focus()
+                      }
+                    } else setDateISO(todayISO())
+                  }}
+                >
+                  <Icon name="calendar" size={13} />
+                  {dateLabel}
+                </button>
+                <button className="pill" onClick={() => setPickAccount(true)}>
+                  <Icon name="wallet" size={13} />
+                  {accountName}
+                </button>
+                <button
+                  className={`pill${showNote ? ' active' : ''}`}
+                  onClick={() => {
+                    if (showNote) {
+                      setShowNote(false)
+                      return
+                    }
+                    // opening the note goes straight to typing (rendered within the tap, as above)
+                    flushSync(() => setShowNote(true))
+                    noteRef.current?.focus()
+                  }}
+                >
+                  <Icon name="pencil" size={13} />
+                  Note
+                </button>
               </div>
-            )}
+
+              {(showNote || showDate) && (
+                <div style={{ display: 'flex', gap: 8, paddingBottom: 12 }}>
+                  {showNote && (
+                    <input
+                      ref={noteRef}
+                      className="field"
+                      placeholder="Note — e.g. Zepto, chai with Ananya"
+                      value={note}
+                      maxLength={80}
+                      onChange={(e) => setNote(e.target.value)}
+                    />
+                  )}
+                  {showDate && (
+                    <input
+                      ref={dateRef}
+                      className="field"
+                      type="date"
+                      value={dateISO}
+                      max={todayISO()}
+                      style={{ width: showNote ? 150 : '100%' }}
+                      onChange={(e) => e.target.value && setDateISO(e.target.value)}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               <span className="label" style={{ fontSize: 10.5 }}>

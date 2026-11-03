@@ -783,7 +783,9 @@ button.txn-row:active {
   /* past the sheet's padding and a focus ring's width, or this scroll box clips the ring */
   margin: -2px -20px;
   padding: 2px 20px;
-  scroll-padding-block: 2px;
+  /* when the keyboard comes up, Chrome scrolls only the line being typed on into view: this keeps
+     the rest of that field (its padding and focus ring) in view with it */
+  scroll-padding-block: 13px;
 }
 
 /* swipe-down grab zone: wide, touch-owned strip at the sheet's top */
@@ -917,7 +919,7 @@ button.txn-row:active {
   transition-duration: 0ms, 0ms;
 }
 
-/* short phones: the keys give up a little so the last row stays clear of Save, trip line or not */
+/* short phones: the amount and the keys give up a little, so the fields above the keys keep more room */
 @media (max-height: 680px) {
   .amount-display {
     padding-top: 8px;
@@ -928,6 +930,28 @@ button.txn-row:active {
   }
   .key {
     height: 46px;
+  }
+}
+
+/* the shortest (a 360x640 phone with on-screen buttons, an iPhone SE in Safari): a little more,
+   or not even one row of the fields would fit above the keys. Spacing and keys only: with the soft
+   keyboard up every phone is this short, and the amount would jump in size each time it came up */
+@media (max-height: 600px) {
+  .sheet-grab {
+    padding: 8px 0 6px;
+  }
+  .amount-display {
+    padding-top: 2px;
+  }
+  .numpad {
+    gap: 6px;
+    padding-top: 6px;
+  }
+  .key {
+    height: 44px;
+  }
+  .sheet-cta {
+    padding-top: 8px;
   }
 }
 
