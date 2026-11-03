@@ -106,7 +106,7 @@
     </queries>
 
     <!-- The notifications plugin declares this for its optional exact-alarm mode.
-         Taily only sets ordinary reminders (10:00 on the day), never exact ones,
-         and Play restricts the permission — so drop it from the merged manifest. -->
+         Taily's reminders (10:00 on the day) never ask for it, and Play restricts
+         the permission — so drop it from the merged manifest. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
 </manifest>

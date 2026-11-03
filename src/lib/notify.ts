@@ -22,7 +22,10 @@ export async function notifyAlerts(alerts: { key: string; text: string }[]): Pro
       notifications: fresh.map((a, i) => ({
         id: (Date.now() % 100000000) + i,
         title: 'Taily',
-        body: a.text
+        body: a.text,
+        // shown now, so there's no alarm to make exact, and asking for one sends the person to
+        // Android's settings first (see syncLoanReminders)
+        isExactNotification: false
       }))
     })
 
@@ -73,6 +76,10 @@ export async function syncLoanReminders(loans: Loan[]): Promise<void> {
     }
 
     if (wanted.length > 0) {
+      // Exact only where Android allows it without asking, as below Android 12. Asking (the plugin's
+      // default) sends the person to the system "Alarms & reminders" page before anything is set,
+      // and Taily's switch there is greyed out: the manifest drops that permission on purpose.
+      const { exact_alarm } = await LocalNotifications.checkExactNotificationSetting().catch(() => ({ exact_alarm: 'denied' }))
       await LocalNotifications.schedule({
         notifications: wanted.map((l) => ({
           id: numericId(`loan|${l.id}`),
@@ -81,7 +88,8 @@ export async function syncLoanReminders(loans: Loan[]): Promise<void> {
             l.direction === 'lent'
               ? `${l.person} owes you ${formatMinor(l.amountMinor, l.currency)} — time to collect.`
               : `You owe ${l.person} ${formatMinor(l.amountMinor, l.currency)}.`,
-          schedule: { at: new Date(l.remindISO + 'T10:00:00') }
+          schedule: { at: new Date(l.remindISO + 'T10:00:00') },
+          isExactNotification: exact_alarm === 'granted'
         }))
       })
     }
