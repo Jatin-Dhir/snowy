@@ -210,8 +210,24 @@ function TripDetail({
     return `${name(from)} ${verb} ${to === ME ? 'you' : name(to)}`
   }
 
+  // marking or removing a payment moves the rows under the finger, and a double tap's second tap landed on
+  // the row that moved into its place, settling or removing that one too. So from the tap until half a
+  // second after the lists have moved, they take no taps
+  const [settling, setSettling] = useState(false)
+  const settleTimer = useRef(0)
+  useEffect(() => () => window.clearTimeout(settleTimer.current), [])
+  async function settleAfter<T>(change: Promise<T>): Promise<T> {
+    window.clearTimeout(settleTimer.current)
+    setSettling(true)
+    try {
+      return await change
+    } finally {
+      settleTimer.current = window.setTimeout(() => setSettling(false), 500)
+    }
+  }
+
   async function markPaid(t: Transfer) {
-    const payment = await addTripPayment({ tripId: trip.id, from: t.from, to: t.to, amountMinor: t.amountMinor, currency })
+    const payment = await settleAfter(addTripPayment({ tripId: trip.id, from: t.from, to: t.to, amountMinor: t.amountMinor, currency }))
     haptic('success')
     showToast(`${payLine(t.from, t.to, true)} ${formatMinor(t.amountMinor, currency)}`, () => {
       void deleteTripPayment(payment.id)
@@ -219,7 +235,7 @@ function TripDetail({
   }
 
   async function removePayment(p: TripPayment) {
-    await deleteTripPayment(p.id)
+    await settleAfter(deleteTripPayment(p.id))
     haptic('medium')
     showToast('Payment removed', () => {
       void restoreTripPayment(p)
@@ -307,7 +323,7 @@ function TripDetail({
             </div>
           </div>
 
-          <section style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 2, pointerEvents: settling ? 'none' : undefined }}>
             <span className="label" style={{ fontSize: 10, paddingBottom: 4 }}>
               {summary.transfers.length === 0 ? 'Who pays whom' : on ? 'Who pays whom, so far' : 'Who pays whom'}
             </span>
@@ -378,7 +394,7 @@ function TripDetail({
           </section>
 
           {payments.length > 0 && (
-            <section style={{ display: 'flex', flexDirection: 'column' }}>
+            <section style={{ display: 'flex', flexDirection: 'column', pointerEvents: settling ? 'none' : undefined }}>
               <span className="label" style={{ fontSize: 10, paddingBottom: 4 }}>Already paid</span>
               {[...payments]
                 .sort((a, b) => b.createdAt - a.createdAt)
