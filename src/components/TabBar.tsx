@@ -46,6 +46,30 @@ export function TabBar({
   const press = useRef<{ id: number; x: number; y: number; voice: boolean; away: boolean } | null>(null)
   // when a pointer last finished a press, so the click the browser sends after it is ignored
   const pointerDoneAt = useRef(0)
+  // and where the finger lifted, for that click: see the swallow below
+  const liftAt = useRef<{ x: number; y: number } | null>(null)
+
+  // The browser sends its click for a press after the finger lifts, and the press has opened the add sheet
+  // (or the voice screen) by then. So the click landed on what was now under the finger: the sheet's backdrop,
+  // which shut the sheet it had just opened, or the voice mic, which ended listening. That click is the +'s,
+  // and so is a double tap's second tap, which typed a digit on the keypad sliding up under it. For a moment,
+  // presses and clicks where the finger lifted are swallowed before anything sees them. A tap anywhere else,
+  // the + itself once nothing covers it, and a keyboard's press of the + go through as always.
+  useEffect(() => {
+    function swallow(e: MouseEvent) {
+      const at = liftAt.current
+      if (!at || performance.now() - pointerDoneAt.current > 800 || Math.hypot(e.clientX - at.x, e.clientY - at.y) > DRIFT_PX) return
+      if (e.target instanceof Element && e.target.closest('[data-voice-anchor]')) return
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    window.addEventListener('pointerdown', swallow, true)
+    window.addEventListener('click', swallow, true)
+    return () => {
+      window.removeEventListener('pointerdown', swallow, true)
+      window.removeEventListener('click', swallow, true)
+    }
+  }, [])
 
   // teach the hold-to-speak gesture once, ever — it's otherwise undiscoverable
   const [showHint, setShowHint] = useState(() => !localStorage.getItem(HINT_KEY))
@@ -129,6 +153,7 @@ export function TabBar({
     if (!p || e.pointerId !== p.id) return
     press.current = null
     pointerDoneAt.current = performance.now()
+    liftAt.current = { x: e.clientX, y: e.clientY }
     clearHold()
     if (p.voice) {
       onVoiceEnd(p.away)
