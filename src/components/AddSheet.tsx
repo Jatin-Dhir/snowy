@@ -79,7 +79,7 @@ export function AddSheet({
   const trip = editEntry ? entryTrip : runningTrip
 
   // Three one-tap suggestions: your real habits once they exist (3+ uses in
-  // 60 days), otherwise the everyday defaults. "More" always sits after them.
+  // 60 days), otherwise the everyday defaults. "All tags", in their heading, has the rest.
   const suggested = useMemo(() => {
     const cutoff = Date.now() - 60 * 86400000
     const counts = new Map<string, number>()
@@ -371,8 +371,10 @@ export function AddSheet({
 
         <>
             {/* everything said about a spend besides its amount and tag: on a short phone these give up
-                room and scroll, so the keypad never has to. A row stays in sight, the note while it's typed in. */}
-            <div className="sheet-fields" style={{ gap: 0, minHeight: 49 }}>
+                room and scroll, so the keypad never has to. A row stays in sight, the note while it's typed in.
+                Above the tags heading, so a note scrolled to the box's edge, and the 2px it overhangs for focus
+                rings, keep their own taps rather than give them to All tags. */}
+            <div className="sheet-fields" style={{ gap: 0, minHeight: 49, position: 'relative', zIndex: 2 }}>
               {trip && kind === 'out' && (
                 <button
                   className="pill trip-line"
@@ -473,21 +475,35 @@ export function AddSheet({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <span className="label" style={{ fontSize: 10.5 }}>
-                {isEdit ? 'Tag' : canSave ? 'Tap a tag to save instantly' : 'Type an amount first'}
-              </span>
-              <div className="chip-row">
-                {suggested.map((c) => chip(c))}
+              {/* every other tag, from the heading: as the chips' last one it sat scrolled out of sight on
+                  most phones. On the narrowest it drops under the heading rather than squeeze it */}
+              <div className="row-between" style={{ flexWrap: 'wrap', rowGap: 6 }}>
+                <span className="label" style={{ fontSize: 10.5 }}>
+                  {isEdit ? 'Tag' : canSave ? 'Tap a tag to save instantly' : 'Type an amount first'}
+                </span>
                 <button
-                  className="chip"
-                  style={{ color: 'var(--accent)', fontWeight: 800 }}
+                  className="caption"
+                  style={{
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    textDecoration: 'underline',
+                    textUnderlineOffset: 3,
+                    // a target 24px tall or more that doesn't make the heading any taller. It reaches down toward
+                    // the chips but never up, where the fields box sits. Over the chips' light shadow, so a
+                    // keyboard's focus ring shows whole
+                    padding: '0 10px 13px',
+                    margin: '0 -10px -13px auto',
+                    position: 'relative',
+                    zIndex: 1,
+                    opacity: !isEdit && !canSave ? 0.45 : undefined
+                  }}
                   disabled={!isEdit && !canSave}
                   onClick={() => setShowAll(true)}
                 >
-                  <Icon name="grid" size={12} strokeWidth={2.2} />
-                  More
+                  All tags
                 </button>
               </div>
+              <div className="chip-row">{suggested.map((c) => chip(c))}</div>
             </div>
 
             <NumPad onDigit={amt.digit} onDot={amt.dot} onBackspace={amt.backspace} />
