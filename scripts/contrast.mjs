@@ -8,7 +8,8 @@
 //   2. then run:              node scripts/contrast.mjs [http://localhost:5180] [light:blue dark:mono ...]
 //
 // Text under 24 px (18.66 px bold) needs 4.5:1, larger text 3:1. Text inside a disabled control is measured
-// but exempt (WCAG 1.4.3). Icon-only buttons need 3:1 and are listed on their own. Exits 1 on any text failure.
+// but exempt (WCAG 1.4.3). Icon-only buttons need 3:1 and are listed on their own. Exits 1 on any text failure, and on
+// any control the walk can't find, since what that control opens then goes unmeasured.
 // A gradient surface counts as its worst stop, since text can sit anywhere on it.
 // CONTRAST_JSON=<file> also writes every measurement there.
 // Everything happens in a throwaway browser profile; the demo data is invented and goes nowhere.
@@ -276,30 +277,48 @@ const SCRIPTED_VOICE = `(() => {
 // a headless tab counts as a background one: without these its timers run late and the walk gets ahead of the app
 const browser = await launch({ args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'] })
 const evaluate = browser.evaluate
-const click = (selector, text = '') =>
-  evaluate(`(() => {
-    const el = [...document.querySelectorAll(${JSON.stringify(selector)})].filter((e) => e.getClientRects().length).find((e) => e.textContent.trim().startsWith(${JSON.stringify(text)}))
-    if (!el) return false
-    el.click()
-    return true
-  })()`)
-const inTop = (selector, text = '') =>
+/** Presses the first visible `selector` whose words start with `text`, or with any of a list of them: anywhere, or in
+ *  the top sheet only. False when there's none. */
+const press = (selector, text, topSheet) =>
   evaluate(`(() => {
     const sheets = [...document.querySelectorAll('.sheet:not(.sheet-out)')]
-    if (!sheets.length) return false
-    const el = [...sheets[sheets.length - 1].querySelectorAll(${JSON.stringify(selector)})].filter((e) => e.getClientRects().length).find((e) => e.textContent.trim().startsWith(${JSON.stringify(text)}))
+    const scope = ${topSheet} ? sheets[sheets.length - 1] : document
+    if (!scope) return false
+    const texts = [].concat(${JSON.stringify(text)})
+    const el = [...scope.querySelectorAll(${JSON.stringify(selector)})].filter((e) => e.getClientRects().length).find((e) => texts.some((t) => e.textContent.trim().startsWith(t)))
     if (!el) return false
     el.click()
     return true
   })()`)
+// A control the walk can't find means the UI has moved: what it would have opened goes unmeasured, and the states after
+// it may be measured in the wrong place. Each miss is listed and fails the run, so the run can't pass on less than it says.
+const missed = []
+const miss = (what) => {
+  missed.push({ what, after: lastState, combo: current })
+  console.log(`    (could not find: ${what}, after ${lastState})`)
+}
+const pressOrMiss = async (selector, text, topSheet) => {
+  if (await press(selector, text, topSheet)) return true
+  miss(`${selector}${text.length ? ` "${[].concat(text).join('" or "')}"` : ''}${topSheet ? ' in the top sheet' : ''}`)
+  return false
+}
+const click = (selector, text = '') => pressOrMiss(selector, text, false)
+const inTop = (selector, text = '') => pressOrMiss(selector, text, true)
 const closeTop = async () => {
-  await evaluate(`(() => { const all = [...document.querySelectorAll('.scrim:not(.scrim-out)')]; all[all.length - 1]?.click(); return true })()`)
+  const found = await evaluate(`(() => { const all = [...document.querySelectorAll('.scrim:not(.scrim-out)')]; all[all.length - 1]?.click(); return all.length > 0 })()`)
+  if (!found) miss('a sheet to close')
   // a sheet on its way out still covers what's behind it
   await browser.waitFor(`!document.querySelector('.sheet-out')`, 5000)
 }
 const open = async (name, record, action) => {
+  const before = missed.length
   const did = await action()
-  if (did === false) console.log(`    (could not open: ${name})`)
+  if (did === false) {
+    // a press has said what it couldn't find already; an action that looks for itself hasn't
+    if (missed.length === before) miss(`what opens ${name}`)
+    console.log(`    (could not open: ${name})`)
+    return
+  }
   await sleep(220)
   await record(name)
 }
@@ -329,7 +348,9 @@ const failures = []
 const allMeasured = []
 const iconRows = []
 let current = ''
+let lastState = ''
 const record = async (state) => {
+  lastState = state
   const names = await evaluate(`__contrast.tokenNames(${JSON.stringify(NAMED)})`)
   const rows = await evaluate(`__contrast.auditText(${JSON.stringify(names)})`)
   const icons = await evaluate(`__contrast.auditIconButtons(${JSON.stringify(names)})`)
@@ -347,9 +368,9 @@ const record = async (state) => {
 }
 
 async function walkWelcome() {
-  // the first step moves on by itself after a beat
+  // the first step moves on by itself after a beat, so Back is only there once it has
   for (let i = 0; i < 2; i++) {
-    await click('button[aria-label="Back"]')
+    await press('button[aria-label="Back"]', '', false)
     await sleep(120)
   }
   await record('Welcome')
@@ -423,7 +444,8 @@ async function walkApp() {
     })()`)
   )
   await closeTop()
-  await open('Add, all tags', record, () => inTop('button.chip', 'More'))
+  // every tag: the "More" chip after the suggestions, or the "All tags" link in their heading, whichever this build has
+  await open('Add, all tags', record, () => inTop('button', ['All tags', 'More']))
   await open('Add, edit tags', record, () => inTop('button[aria-label="Edit tags"]'))
   await closeTop()
   await closeTop()
@@ -434,9 +456,9 @@ async function walkApp() {
     await sleep(500)
     return did
   })
+  // the Add sheet closed as the voice screen opened, so Cancel leaves nothing open
   await click('.voice-panel button.btn.ghost', 'Cancel')
   await sleep(350)
-  await closeTop()
 
   await open('Settings', record, () => click('button[aria-label="Settings"]'))
   for (const row of ['Profiles', 'Accounts', 'Currency', 'App lock']) {
@@ -677,11 +699,23 @@ try {
   console.log(`\nicon-only buttons under 3:1: ${iconTable.length}`)
   if (iconTable.length) console.log(table(iconTable, ['ratio', 'where', 'text', 'fgToken', 'bgToken', 'combos', 'state']))
 
-  if (process.env.CONTRAST_JSON) {
-    writeFileSync(process.env.CONTRAST_JSON, JSON.stringify({ pairs, measured: allMeasured, icons: iconRows }))
+  if (missed.length) {
+    const lost = new Map()
+    for (const m of missed) {
+      const key = `${m.what}|${m.after}`
+      const g = lost.get(key) ?? { what: m.what, after: m.after, combos: new Set() }
+      g.combos.add(m.combo)
+      lost.set(key, g)
+    }
+    console.log(`\ncontrols the walk could not find: ${lost.size}. What they open went unmeasured; the walk needs updating to the UI`)
+    console.log(table([...lost.values()].map((g) => ({ ...g, combos: g.combos.size })), ['what', 'after', 'combos']))
   }
-  const bad = pairFails.length + failures.length
-  console.log(bad ? `\nFAILED: ${pairFails.length} token pairs, ${failures.length} rendered spots` : '\nPASSED: all text meets its bar')
+
+  if (process.env.CONTRAST_JSON) {
+    writeFileSync(process.env.CONTRAST_JSON, JSON.stringify({ pairs, measured: allMeasured, icons: iconRows, missed }))
+  }
+  const bad = pairFails.length + failures.length + missed.length
+  console.log(bad ? `\nFAILED: ${pairFails.length} token pairs, ${failures.length} rendered spots, ${missed.length} controls not found` : '\nPASSED: all text meets its bar')
   process.exitCode = bad ? 1 : 0
 } finally {
   browser.close()
