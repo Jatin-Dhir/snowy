@@ -1,0 +1,3302 @@
+{
+ "tree": "C:\\dev\\projects\\Expense\\.claude\\worktrees\\vigorous-maxwell-488ee7",
+ "today": "2026-11-07",
+ "results": [
+  {
+   "key": "1:250 lunch",
+   "g": 1,
+   "t": "250 lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "1:lunch 250",
+   "g": 1,
+   "t": "lunch 250",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "1:spent 500 on groceries",
+   "g": 1,
+   "t": "spent 500 on groceries",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "1:I paid 1200 for electricity bill",
+   "g": 1,
+   "t": "I paid 1200 for electricity bill",
+   "pass": true,
+   "diffs": [],
+   "note": "Electricity bill"
+  },
+  {
+   "key": "1:dinner 800",
+   "g": 1,
+   "t": "dinner 800",
+   "pass": true,
+   "diffs": [],
+   "note": "Dinner"
+  },
+  {
+   "key": "1:bought shoes for 2000",
+   "g": 1,
+   "t": "bought shoes for 2000",
+   "pass": true,
+   "diffs": [],
+   "note": "Shoes"
+  },
+  {
+   "key": "1:coffee 150",
+   "g": 1,
+   "t": "coffee 150",
+   "pass": true,
+   "diffs": [],
+   "note": "Coffee"
+  },
+  {
+   "key": "1:movie tickets 600",
+   "g": 1,
+   "t": "movie tickets 600",
+   "pass": true,
+   "diffs": [],
+   "note": "Movie tickets"
+  },
+  {
+   "key": "1:paid 450 for dinner",
+   "g": 1,
+   "t": "paid 450 for dinner",
+   "pass": true,
+   "diffs": [],
+   "note": "Dinner"
+  },
+  {
+   "key": "1:2 coffees 300",
+   "g": 1,
+   "t": "2 coffees 300",
+   "pass": true,
+   "diffs": [],
+   "note": "2 coffees"
+  },
+  {
+   "key": "1:lunch for 3 people 900",
+   "g": 1,
+   "t": "lunch for 3 people 900",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "people",
+     "food"
+    ],
+    [
+     "note",
+     "\"Lunch 3\"",
+     "\"Lunch 3 people\""
+    ]
+   ],
+   "note": "Lunch 3"
+  },
+  {
+   "key": "1:spent 60 on chai and biscuits",
+   "g": 1,
+   "t": "spent 60 on chai and biscuits",
+   "pass": true,
+   "diffs": [],
+   "note": "Chai biscuits"
+  },
+  {
+   "key": "1:coffee 80 and sandwich 120",
+   "g": 1,
+   "t": "coffee 80 and sandwich 120",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹120",
+     "₹200"
+    ]
+   ],
+   "note": "Coffee 80 sandwich"
+  },
+  {
+   "key": "2:Rs 250 lunch",
+   "g": 2,
+   "t": "Rs 250 lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "2:Rs. 250 lunch",
+   "g": 2,
+   "t": "Rs. 250 lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "2:₹250 lunch",
+   "g": 2,
+   "t": "₹250 lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "2:250 rupees lunch",
+   "g": 2,
+   "t": "250 rupees lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "2:rupees 250 lunch",
+   "g": 2,
+   "t": "rupees 250 lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "2:250/- lunch",
+   "g": 2,
+   "t": "250/- lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "2:1,250 groceries",
+   "g": 2,
+   "t": "1,250 groceries",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "2:₹1,250.50 groceries",
+   "g": 2,
+   "t": "₹1,250.50 groceries",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "2:250 bucks lunch",
+   "g": 2,
+   "t": "250 bucks lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "2:INR 500 dinner",
+   "g": 2,
+   "t": "INR 500 dinner",
+   "pass": true,
+   "diffs": [],
+   "note": "Dinner"
+  },
+  {
+   "key": "2:Rs250 lunch",
+   "g": 2,
+   "t": "Rs250 lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "2:1,25,000 rent",
+   "g": 2,
+   "t": "1,25,000 rent",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "2:250 rupaye ka lunch",
+   "g": 2,
+   "t": "250 rupaye ka lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "2:Rs 1.5k shopping",
+   "g": 2,
+   "t": "Rs 1.5k shopping",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "3:two fifty lunch",
+   "g": 3,
+   "t": "two fifty lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "3:fifteen hundred groceries",
+   "g": 3,
+   "t": "fifteen hundred groceries",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "3:one and a half thousand shopping",
+   "g": 3,
+   "t": "one and a half thousand shopping",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹1000",
+     "₹1500"
+    ]
+   ],
+   "note": "One half"
+  },
+  {
+   "key": "3:2.5k shopping",
+   "g": 3,
+   "t": "2.5k shopping",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "3:5k rent",
+   "g": 3,
+   "t": "5k rent",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "3:1 lakh 20 thousand rent",
+   "g": 3,
+   "t": "1 lakh 20 thousand rent",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "3:twelve hundred fifty petrol",
+   "g": 3,
+   "t": "twelve hundred fifty petrol",
+   "pass": true,
+   "diffs": [],
+   "note": "Petrol"
+  },
+  {
+   "key": "3:two thousand five hundred groceries",
+   "g": 3,
+   "t": "two thousand five hundred groceries",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "3:four ninety nine Netflix",
+   "g": 3,
+   "t": "four ninety nine Netflix",
+   "pass": true,
+   "diffs": [],
+   "note": "Netflix"
+  },
+  {
+   "key": "3:one fifty auto",
+   "g": 3,
+   "t": "one fifty auto",
+   "pass": true,
+   "diffs": [],
+   "note": "Auto"
+  },
+  {
+   "key": "3:nine ninety nine shoes",
+   "g": 3,
+   "t": "nine ninety nine shoes",
+   "pass": true,
+   "diffs": [],
+   "note": "Shoes"
+  },
+  {
+   "key": "3:fifty rupees chai",
+   "g": 3,
+   "t": "fifty rupees chai",
+   "pass": true,
+   "diffs": [],
+   "note": "Chai"
+  },
+  {
+   "key": "3:two and a half thousand groceries",
+   "g": 3,
+   "t": "two and a half thousand groceries",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹1000",
+     "₹2500"
+    ]
+   ],
+   "note": "Two half"
+  },
+  {
+   "key": "3:salary 1 lakh 20",
+   "g": 3,
+   "t": "salary 1 lakh 20",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹100020",
+     "₹120000"
+    ]
+   ],
+   "note": ""
+  },
+  {
+   "key": "4:do sau lunch",
+   "g": 4,
+   "t": "do sau lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "4:teen sau pachas petrol",
+   "g": 4,
+   "t": "teen sau pachas petrol",
+   "pass": true,
+   "diffs": [],
+   "note": "Petrol"
+  },
+  {
+   "key": "4:dhai sau ka khana",
+   "g": 4,
+   "t": "dhai sau ka khana",
+   "pass": true,
+   "diffs": [],
+   "note": "Khana"
+  },
+  {
+   "key": "4:dedh hazaar shopping",
+   "g": 4,
+   "t": "dedh hazaar shopping",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "4:saade teen sau ka petrol",
+   "g": 4,
+   "t": "saade teen sau ka petrol",
+   "pass": true,
+   "diffs": [],
+   "note": "Petrol"
+  },
+  {
+   "key": "4:paanch sau ka petrol",
+   "g": 4,
+   "t": "paanch sau ka petrol",
+   "pass": true,
+   "diffs": [],
+   "note": "Petrol"
+  },
+  {
+   "key": "4:ek hazaar do sau ki shopping",
+   "g": 4,
+   "t": "ek hazaar do sau ki shopping",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "4:pachas rupaye ki chai",
+   "g": 4,
+   "t": "pachas rupaye ki chai",
+   "pass": true,
+   "diffs": [],
+   "note": "Chai"
+  },
+  {
+   "key": "4:chaar sau assi groceries",
+   "g": 4,
+   "t": "chaar sau assi groceries",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "4:sava do sau auto",
+   "g": 4,
+   "t": "sava do sau auto",
+   "pass": true,
+   "diffs": [],
+   "note": "Auto"
+  },
+  {
+   "key": "4:dhai hazaar ka recharge",
+   "g": 4,
+   "t": "dhai hazaar ka recharge",
+   "pass": true,
+   "diffs": [],
+   "note": "Recharge"
+  },
+  {
+   "key": "4:teen so pachas petrol",
+   "g": 4,
+   "t": "teen so pachas petrol",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹350"
+    ]
+   ],
+   "note": "Teen petrol"
+  },
+  {
+   "key": "4:pachpan rupaye chai",
+   "g": 4,
+   "t": "pachpan rupaye chai",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "none",
+     "₹55"
+    ]
+   ],
+   "note": "Pachpan chai"
+  },
+  {
+   "key": "4:saath rupaye ka doodh",
+   "g": 4,
+   "t": "saath rupaye ka doodh",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "none",
+     "₹60"
+    ]
+   ],
+   "note": "Saath doodh"
+  },
+  {
+   "key": "5:खाना 250",
+   "g": 5,
+   "t": "खाना 250",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "food"
+    ]
+   ],
+   "note": "खाना"
+  },
+  {
+   "key": "5:दो सौ चाय",
+   "g": 5,
+   "t": "दो सौ चाय",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "none",
+     "₹200"
+    ],
+    [
+     "tag",
+     "none",
+     "food"
+    ]
+   ],
+   "note": "दो सौ चाय"
+  },
+  {
+   "key": "5:250 का पेट्रोल",
+   "g": 5,
+   "t": "250 का पेट्रोल",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "transport"
+    ]
+   ],
+   "note": "का पेट्रोल"
+  },
+  {
+   "key": "5:पेट्रोल 500",
+   "g": 5,
+   "t": "पेट्रोल 500",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "transport"
+    ]
+   ],
+   "note": "पेट्रोल"
+  },
+  {
+   "key": "5:दूध 60",
+   "g": 5,
+   "t": "दूध 60",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "groceries"
+    ]
+   ],
+   "note": "दूध"
+  },
+  {
+   "key": "5:किराया 15000",
+   "g": 5,
+   "t": "किराया 15000",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "rent"
+    ]
+   ],
+   "note": "किराया"
+  },
+  {
+   "key": "5:ढाई सौ का खाना",
+   "g": 5,
+   "t": "ढाई सौ का खाना",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "none",
+     "₹250"
+    ],
+    [
+     "tag",
+     "none",
+     "food"
+    ]
+   ],
+   "note": "ढाई सौ का खाना"
+  },
+  {
+   "key": "5:500 रुपये सब्जी",
+   "g": 5,
+   "t": "500 रुपये सब्जी",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "groceries"
+    ]
+   ],
+   "note": "रुपये सब्जी"
+  },
+  {
+   "key": "5:दवाई 300",
+   "g": 5,
+   "t": "दवाई 300",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "health"
+    ]
+   ],
+   "note": "दवाई"
+  },
+  {
+   "key": "6:Swiggy 340",
+   "g": 6,
+   "t": "Swiggy 340",
+   "pass": true,
+   "diffs": [],
+   "note": "Swiggy"
+  },
+  {
+   "key": "6:Zomato 450",
+   "g": 6,
+   "t": "Zomato 450",
+   "pass": true,
+   "diffs": [],
+   "note": "Zomato"
+  },
+  {
+   "key": "6:Uber 230",
+   "g": 6,
+   "t": "Uber 230",
+   "pass": true,
+   "diffs": [],
+   "note": "Uber"
+  },
+  {
+   "key": "6:Ola 180",
+   "g": 6,
+   "t": "Ola 180",
+   "pass": true,
+   "diffs": [],
+   "note": "Ola"
+  },
+  {
+   "key": "6:Rapido 60",
+   "g": 6,
+   "t": "Rapido 60",
+   "pass": true,
+   "diffs": [],
+   "note": "Rapido"
+  },
+  {
+   "key": "6:auto 80",
+   "g": 6,
+   "t": "auto 80",
+   "pass": true,
+   "diffs": [],
+   "note": "Auto"
+  },
+  {
+   "key": "6:metro 40",
+   "g": 6,
+   "t": "metro 40",
+   "pass": true,
+   "diffs": [],
+   "note": "Metro"
+  },
+  {
+   "key": "6:Blinkit 520",
+   "g": 6,
+   "t": "Blinkit 520",
+   "pass": true,
+   "diffs": [],
+   "note": "Blinkit"
+  },
+  {
+   "key": "6:Zepto 310",
+   "g": 6,
+   "t": "Zepto 310",
+   "pass": true,
+   "diffs": [],
+   "note": "Zepto"
+  },
+  {
+   "key": "6:BigBasket 1500",
+   "g": 6,
+   "t": "BigBasket 1500",
+   "pass": true,
+   "diffs": [],
+   "note": "BigBasket"
+  },
+  {
+   "key": "6:Big Basket 1500",
+   "g": 6,
+   "t": "Big Basket 1500",
+   "pass": true,
+   "diffs": [],
+   "note": "Big Basket"
+  },
+  {
+   "key": "6:DMart 2200",
+   "g": 6,
+   "t": "DMart 2200",
+   "pass": true,
+   "diffs": [],
+   "note": "DMart"
+  },
+  {
+   "key": "6:D Mart 2200",
+   "g": 6,
+   "t": "D Mart 2200",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "groceries"
+    ]
+   ],
+   "note": "D Mart"
+  },
+  {
+   "key": "6:Amazon 999",
+   "g": 6,
+   "t": "Amazon 999",
+   "pass": true,
+   "diffs": [],
+   "note": "Amazon"
+  },
+  {
+   "key": "6:Flipkart 1299",
+   "g": 6,
+   "t": "Flipkart 1299",
+   "pass": true,
+   "diffs": [],
+   "note": "Flipkart"
+  },
+  {
+   "key": "6:Myntra 1800",
+   "g": 6,
+   "t": "Myntra 1800",
+   "pass": true,
+   "diffs": [],
+   "note": "Myntra"
+  },
+  {
+   "key": "6:Netflix 649",
+   "g": 6,
+   "t": "Netflix 649",
+   "pass": true,
+   "diffs": [],
+   "note": "Netflix"
+  },
+  {
+   "key": "6:Spotify 119",
+   "g": 6,
+   "t": "Spotify 119",
+   "pass": true,
+   "diffs": [],
+   "note": "Spotify"
+  },
+  {
+   "key": "6:Jio recharge 299",
+   "g": 6,
+   "t": "Jio recharge 299",
+   "pass": true,
+   "diffs": [],
+   "note": "Jio recharge"
+  },
+  {
+   "key": "6:Airtel 399",
+   "g": 6,
+   "t": "Airtel 399",
+   "pass": true,
+   "diffs": [],
+   "note": "Airtel"
+  },
+  {
+   "key": "6:electricity bill 1200",
+   "g": 6,
+   "t": "electricity bill 1200",
+   "pass": true,
+   "diffs": [],
+   "note": "Electricity bill"
+  },
+  {
+   "key": "6:rent 15000",
+   "g": 6,
+   "t": "rent 15000",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "6:petrol 500",
+   "g": 6,
+   "t": "petrol 500",
+   "pass": true,
+   "diffs": [],
+   "note": "Petrol"
+  },
+  {
+   "key": "6:chai 20",
+   "g": 6,
+   "t": "chai 20",
+   "pass": true,
+   "diffs": [],
+   "note": "Chai"
+  },
+  {
+   "key": "6:doctor 600",
+   "g": 6,
+   "t": "doctor 600",
+   "pass": true,
+   "diffs": [],
+   "note": "Doctor"
+  },
+  {
+   "key": "6:medicine 340",
+   "g": 6,
+   "t": "medicine 340",
+   "pass": true,
+   "diffs": [],
+   "note": "Medicine"
+  },
+  {
+   "key": "6:Domino's 600",
+   "g": 6,
+   "t": "Domino's 600",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "food"
+    ]
+   ],
+   "note": "Domino's"
+  },
+  {
+   "key": "6:McDonald's 350",
+   "g": 6,
+   "t": "McDonald's 350",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "food"
+    ]
+   ],
+   "note": "McDonald's"
+  },
+  {
+   "key": "6:Book My Show 500",
+   "g": 6,
+   "t": "Book My Show 500",
+   "pass": true,
+   "diffs": [],
+   "note": "Book Show"
+  },
+  {
+   "key": "6:Swiggy Instamart 600",
+   "g": 6,
+   "t": "Swiggy Instamart 600",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "food",
+     "groceries"
+    ]
+   ],
+   "note": "Swiggy Instamart"
+  },
+  {
+   "key": "7:250 lunch yesterday",
+   "g": 7,
+   "t": "250 lunch yesterday",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "7:kal 500 petrol",
+   "g": 7,
+   "t": "kal 500 petrol",
+   "pass": true,
+   "diffs": [],
+   "note": "Petrol"
+  },
+  {
+   "key": "7:parso 1200 shopping",
+   "g": 7,
+   "t": "parso 1200 shopping",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "7:last Monday 800 groceries",
+   "g": 7,
+   "t": "last Monday 800 groceries",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "7:300 dinner on the 3rd",
+   "g": 7,
+   "t": "300 dinner on the 3rd",
+   "pass": false,
+   "diffs": [
+    [
+     "date",
+     "today",
+     "2026-11-03"
+    ]
+   ],
+   "note": "Dinner 3 rd"
+  },
+  {
+   "key": "7:day before yesterday 450 movie",
+   "g": 7,
+   "t": "day before yesterday 450 movie",
+   "pass": true,
+   "diffs": [],
+   "note": "Movie"
+  },
+  {
+   "key": "7:kal raat 400 dinner",
+   "g": 7,
+   "t": "kal raat 400 dinner",
+   "pass": true,
+   "diffs": [],
+   "note": "Raat dinner"
+  },
+  {
+   "key": "7:yesterday night 600 dinner",
+   "g": 7,
+   "t": "yesterday night 600 dinner",
+   "pass": true,
+   "diffs": [],
+   "note": "Night dinner"
+  },
+  {
+   "key": "7:on Monday 200 metro",
+   "g": 7,
+   "t": "on Monday 200 metro",
+   "pass": true,
+   "diffs": [],
+   "note": "Metro"
+  },
+  {
+   "key": "7:two days ago 500 lunch",
+   "g": 7,
+   "t": "two days ago 500 lunch",
+   "pass": false,
+   "diffs": [
+    [
+     "date",
+     "today",
+     "2026-11-05"
+    ]
+   ],
+   "note": "Two days ago lunch"
+  },
+  {
+   "key": "7:on 3rd November 1500 shopping",
+   "g": 7,
+   "t": "on 3rd November 1500 shopping",
+   "pass": false,
+   "diffs": [
+    [
+     "date",
+     "today",
+     "2026-11-03"
+    ]
+   ],
+   "note": "3 rd November"
+  },
+  {
+   "key": "7:aaj 300 lunch",
+   "g": 7,
+   "t": "aaj 300 lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "8:500 petrol by card",
+   "g": 8,
+   "t": "500 petrol by card",
+   "pass": true,
+   "diffs": [],
+   "note": "Petrol"
+  },
+  {
+   "key": "8:250 lunch cash",
+   "g": 8,
+   "t": "250 lunch cash",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "8:300 groceries UPI",
+   "g": 8,
+   "t": "300 groceries UPI",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "8:120 auto GPay",
+   "g": 8,
+   "t": "120 auto GPay",
+   "pass": true,
+   "diffs": [],
+   "note": "Auto"
+  },
+  {
+   "key": "8:450 dinner PhonePe",
+   "g": 8,
+   "t": "450 dinner PhonePe",
+   "pass": true,
+   "diffs": [],
+   "note": "Dinner"
+  },
+  {
+   "key": "8:200 recharge Paytm",
+   "g": 8,
+   "t": "200 recharge Paytm",
+   "pass": true,
+   "diffs": [],
+   "note": "Recharge"
+  },
+  {
+   "key": "8:120 auto G Pay",
+   "g": 8,
+   "t": "120 auto G Pay",
+   "pass": false,
+   "diffs": [
+    [
+     "account",
+     "none",
+     "upi"
+    ],
+    [
+     "note",
+     "\"Auto G\"",
+     "\"Auto\""
+    ]
+   ],
+   "note": "Auto G"
+  },
+  {
+   "key": "8:450 dinner phone pe",
+   "g": 8,
+   "t": "450 dinner phone pe",
+   "pass": true,
+   "diffs": [],
+   "note": "Dinner"
+  },
+  {
+   "key": "8:450 dinner Phone Pay",
+   "g": 8,
+   "t": "450 dinner Phone Pay",
+   "pass": false,
+   "diffs": [
+    [
+     "account",
+     "none",
+     "upi"
+    ]
+   ],
+   "note": "Dinner Phone"
+  },
+  {
+   "key": "8:card se 1500 shopping",
+   "g": 8,
+   "t": "card se 1500 shopping",
+   "pass": false,
+   "diffs": [
+    [
+     "account",
+     "none",
+     "card"
+    ]
+   ],
+   "note": "Card"
+  },
+  {
+   "key": "8:1500 shopping debit card",
+   "g": 8,
+   "t": "1500 shopping debit card",
+   "pass": false,
+   "diffs": [
+    [
+     "account",
+     "none",
+     "card"
+    ]
+   ],
+   "note": "Debit card"
+  },
+  {
+   "key": "8:paid 800 with credit card for shoes",
+   "g": 8,
+   "t": "paid 800 with credit card for shoes",
+   "pass": true,
+   "diffs": [],
+   "note": "Shoes"
+  },
+  {
+   "key": "8:500 Uber from my card",
+   "g": 8,
+   "t": "500 Uber from my card",
+   "pass": false,
+   "diffs": [
+    [
+     "account",
+     "none",
+     "card"
+    ]
+   ],
+   "note": "Uber card"
+  },
+  {
+   "key": "8:cash mein 90 chai",
+   "g": 8,
+   "t": "cash mein 90 chai",
+   "pass": true,
+   "diffs": [],
+   "note": "Chai"
+  },
+  {
+   "key": "9:got 2000 from Rahul",
+   "g": 9,
+   "t": "got 2000 from Rahul",
+   "pass": true,
+   "diffs": [],
+   "note": "Rahul"
+  },
+  {
+   "key": "9:salary 50000",
+   "g": 9,
+   "t": "salary 50000",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "9:Rahul ne 500 diye",
+   "g": 9,
+   "t": "Rahul ne 500 diye",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ],
+    [
+     "tag",
+     "none",
+     "payment|people"
+    ]
+   ],
+   "note": "Rahul"
+  },
+  {
+   "key": "9:refund 300",
+   "g": 9,
+   "t": "refund 300",
+   "pass": true,
+   "diffs": [],
+   "note": "Refund"
+  },
+  {
+   "key": "9:received 1500 from Priya",
+   "g": 9,
+   "t": "received 1500 from Priya",
+   "pass": true,
+   "diffs": [],
+   "note": "Priya"
+  },
+  {
+   "key": "9:Amazon refund 799",
+   "g": 9,
+   "t": "Amazon refund 799",
+   "pass": true,
+   "diffs": [],
+   "note": "Amazon refund"
+  },
+  {
+   "key": "9:Mom sent 5000",
+   "g": 9,
+   "t": "Mom sent 5000",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ]
+   ],
+   "note": "Mom"
+  },
+  {
+   "key": "9:papa ne 2000 bheje",
+   "g": 9,
+   "t": "papa ne 2000 bheje",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ]
+   ],
+   "note": "Papa bheje"
+  },
+  {
+   "key": "9:Rahul paid me 400",
+   "g": 9,
+   "t": "Rahul paid me 400",
+   "pass": true,
+   "diffs": [],
+   "note": "Rahul"
+  },
+  {
+   "key": "9:got back 1200 from Meera",
+   "g": 9,
+   "t": "got back 1200 from Meera",
+   "pass": true,
+   "diffs": [],
+   "note": "Meera"
+  },
+  {
+   "key": "9:Rahul gave 500",
+   "g": 9,
+   "t": "Rahul gave 500",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ],
+    [
+     "tag",
+     "none",
+     "payment|people"
+    ]
+   ],
+   "note": "Rahul"
+  },
+  {
+   "key": "9:Diwali bonus 10000",
+   "g": 9,
+   "t": "Diwali bonus 10000",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ],
+    [
+     "tag",
+     "none",
+     "salary|payment|other"
+    ]
+   ],
+   "note": "Diwali bonus"
+  },
+  {
+   "key": "9:sold my old cycle for 3000",
+   "g": 9,
+   "t": "sold my old cycle for 3000",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ]
+   ],
+   "note": "Sold old cycle"
+  },
+  {
+   "key": "9:freelance payment 15000",
+   "g": 9,
+   "t": "freelance payment 15000",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ]
+   ],
+   "note": "Freelance"
+  },
+  {
+   "key": "9:Rahul ko 500 diye",
+   "g": 9,
+   "t": "Rahul ko 500 diye",
+   "pass": true,
+   "diffs": [],
+   "note": "Rahul"
+  },
+  {
+   "key": "10:to 50 lunch",
+   "g": 10,
+   "t": "to 50 lunch",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹250"
+    ]
+   ],
+   "note": "Lunch"
+  },
+  {
+   "key": "10:2 50 lunch",
+   "g": 10,
+   "t": "2 50 lunch",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹250"
+    ]
+   ],
+   "note": "2 lunch"
+  },
+  {
+   "key": "10:250 launch",
+   "g": 10,
+   "t": "250 launch",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "food"
+    ]
+   ],
+   "note": "Launch"
+  },
+  {
+   "key": "10:for 50 tea",
+   "g": 10,
+   "t": "for 50 tea",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹450"
+    ]
+   ],
+   "note": "Tea"
+  },
+  {
+   "key": "10:won 20 rupees",
+   "g": 10,
+   "t": "won 20 rupees",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹20",
+     "₹120"
+    ]
+   ],
+   "note": "Won"
+  },
+  {
+   "key": "10:100 and 50",
+   "g": 10,
+   "t": "100 and 50",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹100",
+     "₹150"
+    ]
+   ],
+   "note": "50"
+  },
+  {
+   "key": "10:two 50 lunch",
+   "g": 10,
+   "t": "two 50 lunch",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹250"
+    ]
+   ],
+   "note": "Two lunch"
+  },
+  {
+   "key": "10:Rs 2 50 lunch",
+   "g": 10,
+   "t": "Rs 2 50 lunch",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹2",
+     "₹250"
+    ]
+   ],
+   "note": "50 lunch"
+  },
+  {
+   "key": "10:to fifty lunch",
+   "g": 10,
+   "t": "to fifty lunch",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹250"
+    ]
+   ],
+   "note": "Lunch"
+  },
+  {
+   "key": "10:1 50 coffee",
+   "g": 10,
+   "t": "1 50 coffee",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹150"
+    ]
+   ],
+   "note": "1 coffee"
+  },
+  {
+   "key": "10:got 50 cash back",
+   "g": 10,
+   "t": "got 50 cash back",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "payment",
+     "return"
+    ],
+    [
+     "account",
+     "cash",
+     "none"
+    ]
+   ],
+   "note": ""
+  },
+  {
+   "key": "10:2:50 lunch",
+   "g": 10,
+   "t": "2:50 lunch",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹250"
+    ]
+   ],
+   "note": "2 lunch"
+  },
+  {
+   "key": "10:2.50 lunch",
+   "g": 10,
+   "t": "2.50 lunch",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹2.5",
+     "₹250"
+    ]
+   ],
+   "note": "Lunch"
+  },
+  {
+   "key": "11:Rahul paid 800 cab",
+   "g": 11,
+   "t": "Rahul paid 800 cab",
+   "pass": true,
+   "diffs": [],
+   "note": "Cab"
+  },
+  {
+   "key": "11:800 cab paid by Rahul",
+   "g": 11,
+   "t": "800 cab paid by Rahul",
+   "pass": true,
+   "diffs": [],
+   "note": "Cab"
+  },
+  {
+   "key": "11:Rahul ne 800 diye cab ke liye",
+   "g": 11,
+   "t": "Rahul ne 800 diye cab ke liye",
+   "pass": true,
+   "diffs": [],
+   "note": "Cab"
+  },
+  {
+   "key": "11:Meera paid 1200 for dinner",
+   "g": 11,
+   "t": "Meera paid 1200 for dinner",
+   "pass": true,
+   "diffs": [],
+   "note": "Dinner"
+  },
+  {
+   "key": "11:Aarav ne petrol ke 2000 bhare",
+   "g": 11,
+   "t": "Aarav ne petrol ke 2000 bhare",
+   "pass": true,
+   "diffs": [],
+   "note": "Petrol"
+  },
+  {
+   "key": "11:Karan has paid 450 for snacks",
+   "g": 11,
+   "t": "Karan has paid 450 for snacks",
+   "pass": true,
+   "diffs": [],
+   "note": "Snacks"
+  },
+  {
+   "key": "11:dinner 2400 Karan paid",
+   "g": 11,
+   "t": "dinner 2400 Karan paid",
+   "pass": true,
+   "diffs": [],
+   "note": "Dinner"
+  },
+  {
+   "key": "11:I paid 600 for tickets",
+   "g": 11,
+   "t": "I paid 600 for tickets",
+   "pass": true,
+   "diffs": [],
+   "note": "Tickets"
+  },
+  {
+   "key": "11:Meera ne dinner ke 1500 diye",
+   "g": 11,
+   "t": "Meera ne dinner ke 1500 diye",
+   "pass": true,
+   "diffs": [],
+   "note": "Dinner"
+  },
+  {
+   "key": "11:Karan ne pay kiya 900 lunch",
+   "g": 11,
+   "t": "Karan ne pay kiya 900 lunch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "11:Mira paid 1500 for dinner",
+   "g": 11,
+   "t": "Mira paid 1500 for dinner",
+   "pass": false,
+   "diffs": [
+    [
+     "payer",
+     "you",
+     "meera"
+    ]
+   ],
+   "note": "Mira dinner"
+  },
+  {
+   "key": "11:rahul paid 300 for chai",
+   "g": 11,
+   "t": "rahul paid 300 for chai",
+   "pass": true,
+   "diffs": [],
+   "note": "Chai"
+  },
+  {
+   "key": "11:cab 800 Rahul ne diya",
+   "g": 11,
+   "t": "cab 800 Rahul ne diya",
+   "pass": true,
+   "diffs": [],
+   "note": "Cab"
+  },
+  {
+   "key": "11:Aarav paid for the cab 650",
+   "g": 11,
+   "t": "Aarav paid for the cab 650",
+   "pass": true,
+   "diffs": [],
+   "note": "Cab"
+  },
+  {
+   "key": "11:Rahul ne cab ka 800 pay kiya",
+   "g": 11,
+   "t": "Rahul ne cab ka 800 pay kiya",
+   "pass": false,
+   "diffs": [
+    [
+     "payer",
+     "you",
+     "rahul"
+    ]
+   ],
+   "note": "Rahul cab"
+  },
+  {
+   "key": "12:to 50 lunch | 250 lunch | two 50 lunch | 2 50 lunch",
+   "g": 12,
+   "t": "to 50 lunch",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹250"
+    ]
+   ],
+   "note": "Lunch"
+  },
+  {
+   "key": "12:250 launch | 250 lunch | 250 launched",
+   "g": 12,
+   "t": "250 launch",
+   "pass": true,
+   "diffs": [],
+   "note": "Lunch"
+  },
+  {
+   "key": "12:for 50 tea | 450 tea | for fifty tea | 4 50 tea",
+   "g": 12,
+   "t": "for 50 tea",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹450"
+    ]
+   ],
+   "note": "Tea"
+  },
+  {
+   "key": "12:die so ka petrol | dhai sau ka petrol | dhaai sau ka petrol",
+   "g": 12,
+   "t": "die so ka petrol",
+   "pass": true,
+   "diffs": [],
+   "note": "Petrol"
+  },
+  {
+   "key": "12:Swiggy 340 | swiggy 340 | Swiggy three forty",
+   "g": 12,
+   "t": "Swiggy 340",
+   "pass": true,
+   "diffs": [],
+   "note": "Swiggy"
+  },
+  {
+   "key": "12:got 2000 from Rahul | got 2000 from Raul | got 2,000 from Rahul",
+   "g": 12,
+   "t": "got 2000 from Rahul",
+   "pass": true,
+   "diffs": [],
+   "note": "Rahul"
+  },
+  {
+   "key": "12:1200 electricity bill by card | 1200 electricity bill by cart | 1200 electricity bill buy card",
+   "g": 12,
+   "t": "1200 electricity bill by card",
+   "pass": true,
+   "diffs": [],
+   "note": "Electricity bill"
+  },
+  {
+   "key": "12:200 shoe polish | 200 show polish | 200 shoes polish",
+   "g": 12,
+   "t": "200 shoe polish",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "entertainment",
+     "shopping|other|groceries|none"
+    ]
+   ],
+   "note": "Show polish"
+  },
+  {
+   "key": "12:1 lakh 20 thousand rent | 1 lakh 20000 rent | one lakh twenty thousand rent | 1.2 lakh rent",
+   "g": 12,
+   "t": "1 lakh 20 thousand rent",
+   "pass": true,
+   "diffs": [],
+   "note": ""
+  },
+  {
+   "key": "12:teen so pachas ka petrol | teen sau pachas ka petrol | 3 so 50 ka petrol",
+   "g": 12,
+   "t": "teen so pachas ka petrol",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹350"
+    ]
+   ],
+   "note": "Teen petrol"
+  },
+  {
+   "key": "13:groceries 800 from DMart",
+   "g": 13,
+   "t": "groceries 800 from DMart",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ]
+   ],
+   "note": "DMart"
+  },
+  {
+   "key": "13:medicine 340 from Apollo",
+   "g": 13,
+   "t": "medicine 340 from Apollo",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ]
+   ],
+   "note": "Medicine Apollo"
+  },
+  {
+   "key": "13:300 lunch from the canteen",
+   "g": 13,
+   "t": "300 lunch from the canteen",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ]
+   ],
+   "note": "Lunch canteen"
+  },
+  {
+   "key": "13:maid salary 3000",
+   "g": 13,
+   "t": "maid salary 3000",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ],
+    [
+     "tag",
+     "salary",
+     "people|other|bills|none"
+    ]
+   ],
+   "note": "Maid"
+  },
+  {
+   "key": "13:bus 40 to sector 62",
+   "g": 13,
+   "t": "bus 40 to sector 62",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹62",
+     "₹40"
+    ]
+   ],
+   "note": "Bus 40 sector"
+  },
+  {
+   "key": "13:paid 50 for 100 photocopies",
+   "g": 13,
+   "t": "paid 50 for 100 photocopies",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹100",
+     "₹50"
+    ]
+   ],
+   "note": "50 photocopies"
+  },
+  {
+   "key": "13:bijli ka bill aaya 1200",
+   "g": 13,
+   "t": "bijli ka bill aaya 1200",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ]
+   ],
+   "note": "Bijli bill aaya"
+  },
+  {
+   "key": "13:Swiggy se khana aaya 450",
+   "g": 13,
+   "t": "Swiggy se khana aaya 450",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ]
+   ],
+   "note": "Swiggy khana aaya"
+  },
+  {
+   "key": "13:returned 500 to Rahul",
+   "g": 13,
+   "t": "returned 500 to Rahul",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ],
+    [
+     "tag",
+     "return",
+     "people|other|none"
+    ]
+   ],
+   "note": "Returned Rahul"
+  },
+  {
+   "key": "13:Rahul ko 500 wapas diye",
+   "g": 13,
+   "t": "Rahul ko 500 wapas diye",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ],
+    [
+     "tag",
+     "payment",
+     "people|other|none"
+    ]
+   ],
+   "note": "Rahul wapas"
+  },
+  {
+   "key": "13:credit card bill 5000",
+   "g": 13,
+   "t": "credit card bill 5000",
+   "pass": true,
+   "diffs": [],
+   "note": "Credit card bill"
+  },
+  {
+   "key": "13:birthday card 150",
+   "g": 13,
+   "t": "birthday card 150",
+   "pass": true,
+   "diffs": [],
+   "note": "Birthday card"
+  },
+  {
+   "key": "13:got 2 coffees for 300",
+   "g": 13,
+   "t": "got 2 coffees for 300",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ]
+   ],
+   "note": "2 coffees"
+  },
+  {
+   "key": "13:450 at R K Stores",
+   "g": 13,
+   "t": "450 at R K Stores",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹1000",
+     "₹450"
+    ]
+   ],
+   "note": "450 R Stores"
+  },
+  {
+   "key": "13:auto 80 to CR Park",
+   "g": 13,
+   "t": "auto 80 to CR Park",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹10000000",
+     "₹80"
+    ]
+   ],
+   "note": "Auto 80 Park"
+  },
+  {
+   "key": "13:chai 20 on the 25th",
+   "g": 13,
+   "t": "chai 20 on the 25th",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹25",
+     "₹20"
+    ],
+    [
+     "date",
+     "today",
+     "2026-10-25"
+    ]
+   ],
+   "note": "Chai 20 th"
+  },
+  {
+   "key": "13:return cab 300",
+   "g": 13,
+   "t": "return cab 300",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "return",
+     "transport"
+    ]
+   ],
+   "note": "Cab"
+  },
+  {
+   "key": "13:Uber 230 from office",
+   "g": 13,
+   "t": "Uber 230 from office",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ]
+   ],
+   "note": "Uber office"
+  },
+  {
+   "key": "10:3 50 auto",
+   "g": 10,
+   "fresh": 1,
+   "t": "3 50 auto",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹350"
+    ]
+   ],
+   "note": "3 auto"
+  },
+  {
+   "key": "10:six 40 groceries",
+   "g": 10,
+   "fresh": 1,
+   "t": "six 40 groceries",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹40",
+     "₹640"
+    ]
+   ],
+   "note": "Six"
+  },
+  {
+   "key": "10:200 and 50 parking",
+   "g": 10,
+   "fresh": 1,
+   "t": "200 and 50 parking",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹200",
+     "₹250"
+    ]
+   ],
+   "note": "50 parking"
+  },
+  {
+   "key": "12:for 99 chips | 499 chips | for ninety nine chips",
+   "g": 12,
+   "fresh": 1,
+   "t": "for 99 chips",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹99",
+     "₹499"
+    ]
+   ],
+   "note": "Chips"
+  },
+  {
+   "key": "12:won 80 parking | one 80 parking | 180 parking",
+   "g": 12,
+   "fresh": 1,
+   "t": "won 80 parking",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹80",
+     "₹180"
+    ]
+   ],
+   "note": "Won parking"
+  },
+  {
+   "key": "1:3 samosas 45",
+   "g": 1,
+   "fresh": 1,
+   "t": "3 samosas 45",
+   "pass": true,
+   "diffs": [],
+   "note": "3 samosas"
+  },
+  {
+   "key": "1:dinner at 9:30 650",
+   "g": 1,
+   "fresh": 1,
+   "t": "dinner at 9:30 650",
+   "pass": true,
+   "diffs": [],
+   "note": "Dinner 9 30"
+  },
+  {
+   "key": "13:vegetables 120 from the market",
+   "g": 13,
+   "fresh": 2,
+   "t": "vegetables 120 from the market",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ]
+   ],
+   "note": "Vegetables market"
+  },
+  {
+   "key": "13:sweets 400 from Haldiram",
+   "g": 13,
+   "fresh": 2,
+   "t": "sweets 400 from Haldiram",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ]
+   ],
+   "note": "Sweets Haldiram"
+  },
+  {
+   "key": "13:Uber 180 from the airport",
+   "g": 13,
+   "fresh": 2,
+   "t": "Uber 180 from the airport",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ]
+   ],
+   "note": "Uber airport"
+  },
+  {
+   "key": "9:Bhaiya ne 1000 bheje",
+   "g": 9,
+   "fresh": 2,
+   "t": "Bhaiya ne 1000 bheje",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ],
+    [
+     "tag",
+     "none",
+     "people|payment"
+    ]
+   ],
+   "note": "Bhaiya bheje"
+  },
+  {
+   "key": "9:Neha sent 1500",
+   "g": 9,
+   "fresh": 2,
+   "t": "Neha sent 1500",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ],
+    [
+     "tag",
+     "none",
+     "payment|people"
+    ]
+   ],
+   "note": "Neha"
+  },
+  {
+   "key": "9:nani ne 2000 diye",
+   "g": 9,
+   "fresh": 2,
+   "t": "nani ne 2000 diye",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ],
+    [
+     "tag",
+     "none",
+     "payment|people"
+    ]
+   ],
+   "note": "Nani"
+  },
+  {
+   "key": "9:sold old phone for 8000",
+   "g": 9,
+   "fresh": 2,
+   "t": "sold old phone for 8000",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ]
+   ],
+   "note": "Sold old phone"
+  },
+  {
+   "key": "9:performance bonus 25000",
+   "g": 9,
+   "fresh": 2,
+   "t": "performance bonus 25000",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ],
+    [
+     "tag",
+     "none",
+     "salary|payment|other"
+    ]
+   ],
+   "note": "Performance bonus"
+  },
+  {
+   "key": "13:returned 300 to Amit",
+   "g": 13,
+   "fresh": 2,
+   "t": "returned 300 to Amit",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ],
+    [
+     "tag",
+     "return",
+     "people|other|none"
+    ]
+   ],
+   "note": "Returned Amit"
+  },
+  {
+   "key": "13:Amit ko 300 wapas kar diye",
+   "g": 13,
+   "fresh": 2,
+   "t": "Amit ko 300 wapas kar diye",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ],
+    [
+     "tag",
+     "payment",
+     "people|other|none"
+    ]
+   ],
+   "note": "Amit wapas kar"
+  },
+  {
+   "key": "13:driver salary 12000",
+   "g": 13,
+   "fresh": 2,
+   "t": "driver salary 12000",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "in",
+     "out"
+    ],
+    [
+     "tag",
+     "salary",
+     "people|other|bills|transport|none"
+    ]
+   ],
+   "note": "Driver"
+  },
+  {
+   "key": "6:Domino’s 450",
+   "g": 6,
+   "fresh": 3,
+   "t": "Domino’s 450",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "food"
+    ]
+   ],
+   "note": "Domino’s"
+  },
+  {
+   "key": "6:Mcdonald’s 199",
+   "g": 6,
+   "fresh": 3,
+   "t": "Mcdonald’s 199",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "food"
+    ]
+   ],
+   "note": "Mcdonald’s"
+  },
+  {
+   "key": "6:Pharm Easy 450",
+   "g": 6,
+   "fresh": 3,
+   "t": "Pharm Easy 450",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "health"
+    ]
+   ],
+   "note": "Pharm Easy"
+  },
+  {
+   "key": "6:Jio Mart 900",
+   "g": 6,
+   "fresh": 3,
+   "t": "Jio Mart 900",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "bills",
+     "groceries"
+    ]
+   ],
+   "note": "Jio Mart"
+  },
+  {
+   "key": "6:Amazon Prime 1499",
+   "g": 6,
+   "fresh": 3,
+   "t": "Amazon Prime 1499",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "online",
+     "entertainment"
+    ]
+   ],
+   "note": "Amazon Prime"
+  },
+  {
+   "key": "10:cash back 75 on Amazon",
+   "g": 10,
+   "fresh": 3,
+   "t": "cash back 75 on Amazon",
+   "pass": false,
+   "diffs": [
+    [
+     "kind",
+     "out",
+     "in"
+    ],
+    [
+     "tag",
+     "online",
+     "return"
+    ],
+    [
+     "account",
+     "cash",
+     "none"
+    ]
+   ],
+   "note": "Amazon"
+  },
+  {
+   "key": "10:office launch 180",
+   "g": 10,
+   "fresh": 3,
+   "t": "office launch 180",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "food"
+    ]
+   ],
+   "note": "Office launch"
+  },
+  {
+   "key": "10:launch 120 canteen",
+   "g": 10,
+   "fresh": 3,
+   "t": "launch 120 canteen",
+   "pass": true,
+   "diffs": [],
+   "note": "Launch canteen"
+  },
+  {
+   "key": "4:chalees rupaye ki chai",
+   "g": 4,
+   "fresh": 4,
+   "t": "chalees rupaye ki chai",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "none",
+     "₹40"
+    ]
+   ],
+   "note": "Chalees chai"
+  },
+  {
+   "key": "4:pachattar rupaye ka auto",
+   "g": 4,
+   "fresh": 4,
+   "t": "pachattar rupaye ka auto",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "none",
+     "₹75"
+    ]
+   ],
+   "note": "Pachattar auto"
+  },
+  {
+   "key": "4:Rahul ke saath dinner 900",
+   "g": 4,
+   "fresh": 4,
+   "t": "Rahul ke saath dinner 900",
+   "pass": true,
+   "diffs": [],
+   "note": "Rahul saath dinner"
+  },
+  {
+   "key": "4:sabzi saath rupaye",
+   "g": 4,
+   "fresh": 4,
+   "t": "sabzi saath rupaye",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "none",
+     "₹60"
+    ]
+   ],
+   "note": "Sabzi saath"
+  },
+  {
+   "key": "4:paanch so ka recharge",
+   "g": 4,
+   "fresh": 4,
+   "t": "paanch so ka recharge",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "none",
+     "₹500"
+    ]
+   ],
+   "note": "Paanch recharge"
+  },
+  {
+   "key": "3:three and a half thousand electricity bill",
+   "g": 3,
+   "fresh": 4,
+   "t": "three and a half thousand electricity bill",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹1000",
+     "₹3500"
+    ]
+   ],
+   "note": "Three half electricity bill"
+  },
+  {
+   "key": "3:school fees 1 lakh 50",
+   "g": 3,
+   "fresh": 4,
+   "t": "school fees 1 lakh 50",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹100050",
+     "₹150000"
+    ]
+   ],
+   "note": "School fees"
+  },
+  {
+   "key": "8:200 parking by G pay",
+   "g": 8,
+   "fresh": 5,
+   "t": "200 parking by G pay",
+   "pass": false,
+   "diffs": [
+    [
+     "account",
+     "none",
+     "upi"
+    ]
+   ],
+   "note": "Parking by G"
+  },
+  {
+   "key": "8:350 medicine Phone pay se",
+   "g": 8,
+   "fresh": 5,
+   "t": "350 medicine Phone pay se",
+   "pass": false,
+   "diffs": [
+    [
+     "account",
+     "none",
+     "upi"
+    ]
+   ],
+   "note": "Medicine Phone"
+  },
+  {
+   "key": "8:petrol 1000 debit card se",
+   "g": 8,
+   "fresh": 5,
+   "t": "petrol 1000 debit card se",
+   "pass": false,
+   "diffs": [
+    [
+     "account",
+     "none",
+     "card"
+    ]
+   ],
+   "note": "Petrol debit card"
+  },
+  {
+   "key": "8:900 groceries from my debit card",
+   "g": 8,
+   "fresh": 5,
+   "t": "900 groceries from my debit card",
+   "pass": false,
+   "diffs": [
+    [
+     "account",
+     "none",
+     "card"
+    ]
+   ],
+   "note": "Debit card"
+  },
+  {
+   "key": "8:lunch 300 credit card se",
+   "g": 8,
+   "fresh": 5,
+   "t": "lunch 300 credit card se",
+   "pass": false,
+   "diffs": [
+    [
+     "account",
+     "none",
+     "card"
+    ]
+   ],
+   "note": "Lunch credit card"
+  },
+  {
+   "key": "7:petrol 800 on the 1st",
+   "g": 7,
+   "fresh": 6,
+   "t": "petrol 800 on the 1st",
+   "pass": false,
+   "diffs": [
+    [
+     "date",
+     "today",
+     "2026-11-01"
+    ]
+   ],
+   "note": "Petrol 1 st"
+  },
+  {
+   "key": "7:November 5th 2400 groceries",
+   "g": 7,
+   "fresh": 6,
+   "t": "November 5th 2400 groceries",
+   "pass": false,
+   "diffs": [
+    [
+     "date",
+     "today",
+     "2026-11-05"
+    ]
+   ],
+   "note": "November 5 th"
+  },
+  {
+   "key": "7:4 days ago 350 movie",
+   "g": 7,
+   "fresh": 6,
+   "t": "4 days ago 350 movie",
+   "pass": false,
+   "diffs": [
+    [
+     "date",
+     "today",
+     "2026-11-03"
+    ]
+   ],
+   "note": "4 days ago movie"
+  },
+  {
+   "key": "7:on the 30th 650 dinner",
+   "g": 7,
+   "fresh": 6,
+   "t": "on the 30th 650 dinner",
+   "pass": false,
+   "diffs": [
+    [
+     "date",
+     "today",
+     "2026-10-30"
+    ]
+   ],
+   "note": "30 th dinner"
+  },
+  {
+   "key": "7:teen din pehle 200 auto",
+   "g": 7,
+   "fresh": 6,
+   "t": "teen din pehle 200 auto",
+   "pass": false,
+   "diffs": [
+    [
+     "date",
+     "today",
+     "2026-11-04"
+    ]
+   ],
+   "note": "Teen din pehle auto"
+  },
+  {
+   "key": "13:maintenance 1500 for flat 2304",
+   "g": 13,
+   "fresh": 7,
+   "t": "maintenance 1500 for flat 2304",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹2304",
+     "₹1500"
+    ]
+   ],
+   "note": "Maintenance 1500 flat"
+  },
+  {
+   "key": "13:bus 25 route 522",
+   "g": 13,
+   "fresh": 7,
+   "t": "bus 25 route 522",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹522",
+     "₹25"
+    ]
+   ],
+   "note": "Bus 25 route"
+  },
+  {
+   "key": "13:auto 70 from block 128",
+   "g": 13,
+   "fresh": 7,
+   "t": "auto 70 from block 128",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹128",
+     "₹70"
+    ],
+    [
+     "kind",
+     "in",
+     "out"
+    ]
+   ],
+   "note": "Auto 70 block"
+  },
+  {
+   "key": "13:paid 40 for 80 pages printout",
+   "g": 13,
+   "fresh": 7,
+   "t": "paid 40 for 80 pages printout",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹80",
+     "₹40"
+    ]
+   ],
+   "note": "40 pages printout"
+  },
+  {
+   "key": "7:lunch 120 on the 28th",
+   "g": 7,
+   "fresh": 7,
+   "t": "lunch 120 on the 28th",
+   "pass": false,
+   "diffs": [
+    [
+     "date",
+     "today",
+     "2026-10-28"
+    ]
+   ],
+   "note": "Lunch 28 th"
+  },
+  {
+   "key": "1:tickets for 2 people 500",
+   "g": 1,
+   "fresh": 8,
+   "t": "tickets for 2 people 500",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "people",
+     "entertainment"
+    ]
+   ],
+   "note": "Tickets 2"
+  },
+  {
+   "key": "6:return flight 4500",
+   "g": 6,
+   "fresh": 8,
+   "t": "return flight 4500",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "return",
+     "transport"
+    ]
+   ],
+   "note": "Flight"
+  },
+  {
+   "key": "6:paid online 600 for wifi",
+   "g": 6,
+   "fresh": 8,
+   "t": "paid online 600 for wifi",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "online",
+     "bills"
+    ]
+   ],
+   "note": "Wifi"
+  },
+  {
+   "key": "12:60 photocopy | 60 photo copy | 60 photo coffee",
+   "g": 12,
+   "fresh": 9,
+   "t": "60 photocopy",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "food",
+     "none|other|shopping"
+    ]
+   ],
+   "note": "Photo coffee"
+  },
+  {
+   "key": "12:40 key chain | 40 key chai | 40 keychain",
+   "g": 12,
+   "fresh": 9,
+   "t": "40 key chain",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "food",
+     "none|shopping|other"
+    ]
+   ],
+   "note": "Key chai"
+  },
+  {
+   "key": "12:500 tailor | 50 tailor lunch",
+   "g": 12,
+   "fresh": 9,
+   "t": "500 tailor",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹500"
+    ],
+    [
+     "tag",
+     "food",
+     "none|shopping|other"
+    ]
+   ],
+   "note": "Tailor lunch"
+  },
+  {
+   "key": "11:Arav paid 700 for petrol",
+   "g": 11,
+   "fresh": 10,
+   "t": "Arav paid 700 for petrol",
+   "pass": false,
+   "diffs": [
+    [
+     "payer",
+     "you",
+     "aarav"
+    ]
+   ],
+   "note": "Arav petrol"
+  },
+  {
+   "key": "11:Meera ne lunch ka 900 pay kiya",
+   "g": 11,
+   "fresh": 10,
+   "t": "Meera ne lunch ka 900 pay kiya",
+   "pass": false,
+   "diffs": [
+    [
+     "payer",
+     "you",
+     "meera"
+    ]
+   ],
+   "note": "Meera lunch"
+  },
+  {
+   "key": "11:Karan ne snacks ke 450 pay kar diye",
+   "g": 11,
+   "fresh": 10,
+   "t": "Karan ne snacks ke 450 pay kar diye",
+   "pass": true,
+   "diffs": [],
+   "note": "Snacks kar"
+  },
+  {
+   "key": "11:Kiran paid 300 for chai",
+   "g": 11,
+   "fresh": 10,
+   "t": "Kiran paid 300 for chai",
+   "pass": true,
+   "diffs": [],
+   "note": "Kiran chai"
+  },
+  {
+   "key": "13:350 at A K Stores",
+   "g": 13,
+   "fresh": 11,
+   "t": "350 at A K Stores",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹1000",
+     "₹350"
+    ]
+   ],
+   "note": "350 Stores"
+  },
+  {
+   "key": "13:dinner at CR Park 1200",
+   "g": 13,
+   "fresh": 11,
+   "t": "dinner at CR Park 1200",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹10000000",
+     "₹1200"
+    ]
+   ],
+   "note": "Dinner Park 1200"
+  },
+  {
+   "key": "13:cab 300 to K R Puram",
+   "g": 13,
+   "fresh": 11,
+   "t": "cab 300 to K R Puram",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹1000",
+     "₹300"
+    ]
+   ],
+   "note": "Cab 300 R Puram"
+  },
+  {
+   "key": "5:चाय 30",
+   "g": 5,
+   "fresh": 12,
+   "t": "चाय 30",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "food"
+    ]
+   ],
+   "note": "चाय"
+  },
+  {
+   "key": "5:कल 400 का खाना",
+   "g": 5,
+   "fresh": 12,
+   "t": "कल 400 का खाना",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "food"
+    ],
+    [
+     "date",
+     "today",
+     "2026-11-06"
+    ]
+   ],
+   "note": "कल का खाना"
+  },
+  {
+   "key": "5:बिजली का बिल 1500",
+   "g": 5,
+   "fresh": 12,
+   "t": "बिजली का बिल 1500",
+   "pass": false,
+   "diffs": [
+    [
+     "tag",
+     "none",
+     "bills"
+    ]
+   ],
+   "note": "बिजली का बिल"
+  },
+  {
+   "key": "5:पचास रुपये का पेट्रोल",
+   "g": 5,
+   "fresh": 12,
+   "t": "पचास रुपये का पेट्रोल",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "none",
+     "₹50"
+    ],
+    [
+     "tag",
+     "none",
+     "transport"
+    ]
+   ],
+   "note": "पचास रुपये का पेट्रोल"
+  },
+  {
+   "key": "8:80 chai G pay",
+   "g": 8,
+   "fresh": 13,
+   "t": "80 chai G pay",
+   "pass": false,
+   "diffs": [
+    [
+     "account",
+     "none",
+     "upi"
+    ],
+    [
+     "note",
+     "\"Chai G\"",
+     "\"Chai\""
+    ]
+   ],
+   "note": "Chai G"
+  },
+  {
+   "key": "7:300 dinner on the 3rd",
+   "g": 7,
+   "fresh": 13,
+   "t": "300 dinner on the 3rd",
+   "pass": false,
+   "diffs": [
+    [
+     "date",
+     "today",
+     "2026-11-03"
+    ],
+    [
+     "note",
+     "\"Dinner 3 rd\"",
+     "\"Dinner\""
+    ]
+   ],
+   "note": "Dinner 3 rd"
+  },
+  {
+   "key": "10:2 50 lunch",
+   "g": 10,
+   "fresh": 13,
+   "t": "2 50 lunch",
+   "pass": false,
+   "diffs": [
+    [
+     "amount",
+     "₹50",
+     "₹250"
+    ],
+    [
+     "note",
+     "\"2 lunch\"",
+     "\"Lunch\""
+    ]
+   ],
+   "note": "2 lunch"
+  }
+ ],
+ "trips": [
+  {
+   "text": "Rahul paid 800 cab",
+   "ok": true,
+   "got": {
+    "paidBy": "r",
+    "rest": "800 cab",
+    "amount": 80000,
+    "cat": "transport",
+    "kind": "out",
+    "note": "Cab"
+   }
+  },
+  {
+   "text": "rahul paid 800 for the cab",
+   "ok": true,
+   "got": {
+    "paidBy": "r",
+    "rest": "800 for the cab",
+    "amount": 80000,
+    "cat": "transport",
+    "kind": "out",
+    "note": "Cab"
+   }
+  },
+  {
+   "text": "800 cab paid by Rahul",
+   "ok": true,
+   "got": {
+    "paidBy": "r",
+    "rest": "800 cab",
+    "amount": 80000,
+    "cat": "transport",
+    "kind": "out",
+    "note": "Cab"
+   }
+  },
+  {
+   "text": "cab 800 Rahul paid",
+   "ok": true,
+   "got": {
+    "paidBy": "r",
+    "rest": "cab 800",
+    "amount": 80000,
+    "cat": "transport",
+    "kind": "out",
+    "note": "Cab"
+   }
+  },
+  {
+   "text": "Rahul ne 800 diye cab ke liye",
+   "ok": true,
+   "got": {
+    "paidBy": "r",
+    "rest": "800 cab ke liye",
+    "amount": 80000,
+    "cat": "transport",
+    "kind": "out",
+    "note": "Cab"
+   }
+  },
+  {
+   "text": "Rahul ne cab ke 800 diye",
+   "ok": true,
+   "got": {
+    "paidBy": "r",
+    "rest": "cab ke 800",
+    "amount": 80000,
+    "cat": "transport",
+    "kind": "out",
+    "note": "Cab"
+   }
+  },
+  {
+   "text": "Meera paid 1200 dinner",
+   "ok": true,
+   "got": {
+    "paidBy": "m",
+    "rest": "1200 dinner",
+    "amount": 120000,
+    "cat": "food",
+    "kind": "out",
+    "note": "Dinner"
+   }
+  },
+  {
+   "text": "Meera Shah paid 1200 dinner",
+   "ok": true,
+   "got": {
+    "paidBy": "m",
+    "rest": "1200 dinner",
+    "amount": 120000,
+    "cat": "food",
+    "kind": "out",
+    "note": "Dinner"
+   }
+  },
+  {
+   "text": "Karan has paid 300 chai",
+   "ok": true,
+   "got": {
+    "paidBy": "k",
+    "rest": "300 chai",
+    "amount": 30000,
+    "cat": "food",
+    "kind": "out",
+    "note": "Chai"
+   }
+  },
+  {
+   "text": "Karan ne pay kiya 450 lunch",
+   "ok": true,
+   "got": {
+    "paidBy": "k",
+    "rest": "450 lunch",
+    "amount": 45000,
+    "cat": "food",
+    "kind": "out",
+    "note": "Lunch"
+   }
+  },
+  {
+   "text": "250 shopping",
+   "ok": true,
+   "got": {
+    "paidBy": null,
+    "rest": "250 shopping",
+    "amount": 25000,
+    "cat": "shopping",
+    "kind": "out",
+    "note": ""
+   }
+  },
+  {
+   "text": "dhai sau ka khana kal",
+   "ok": true,
+   "got": {
+    "paidBy": null,
+    "rest": "dhai sau ka khana kal",
+    "amount": 25000,
+    "cat": "food",
+    "kind": "out",
+    "note": "Khana"
+   }
+  },
+  {
+   "text": "800 dinner with Rahul",
+   "ok": true,
+   "got": {
+    "paidBy": null,
+    "rest": "800 dinner with Rahul",
+    "amount": 80000,
+    "cat": "food",
+    "kind": "out",
+    "note": "Dinner with Rahul"
+   }
+  },
+  {
+   "text": "uber 340 kal",
+   "ok": true,
+   "got": {
+    "paidBy": null,
+    "rest": "uber 340 kal",
+    "amount": 34000,
+    "cat": "transport",
+    "kind": "out",
+    "note": "Uber"
+   }
+  },
+  {
+   "text": "paid 1200 electricity bill by card",
+   "ok": true,
+   "got": {
+    "paidBy": null,
+    "rest": "paid 1200 electricity bill by card",
+    "amount": 120000,
+    "cat": "bills",
+    "kind": "out",
+    "note": "Electricity bill"
+   }
+  },
+  {
+   "text": "got 2000 from Rahul",
+   "ok": true,
+   "got": {
+    "paidBy": null,
+    "rest": "got 2000 from Rahul",
+    "amount": 200000,
+    "cat": "payment",
+    "kind": "in",
+    "note": "Rahul"
+   }
+  },
+  {
+   "text": "Rahul gave me 500",
+   "ok": true,
+   "got": {
+    "paidBy": null,
+    "rest": "Rahul gave me 500",
+    "amount": 50000,
+    "cat": "payment",
+    "kind": "in",
+    "note": "Rahul"
+   }
+  },
+  {
+   "text": "karanataka hotel 2000",
+   "ok": true,
+   "got": {
+    "paidBy": null,
+    "rest": "karanataka hotel 2000",
+    "amount": 200000,
+    "cat": null,
+    "kind": "out",
+    "note": "Karanataka hotel"
+   }
+  }
+ ]
+}
