@@ -9,22 +9,25 @@
 - Listing copy (`listing.md`), data-safety answers (`data-safety.md`), release notes (`whats-new.txt`)
 - Graphics in `graphics/` (icon, feature graphic, eight captioned 1080 x 1920 screenshots)
 
-## Where Play Console stands (29 October 2026)
+## Where Play Console stands (7 November 2026)
 
-App "Taily: Expense Tracker", `com.jatindhir.taily`, in the JatinDhir developer account.
+App "Taily: Expense Tracker", `com.jatindhir.taily`, in the JatinDhir developer account (the third Google account
+signed in to Chrome, `/u/2/` in Play Console addresses).
 
 - Done: store listing (text, icon, feature graphic, 8 screenshots), category Finance with tags Finance and
   Personal finance, contact email, privacy policy, and every App content declaration (no ads; sign-in details
   with the review code below; content rating PEGI 3 / ESRB Everyone with in-app purchases; target age 18+ only;
   data safety "no data collected or shared"; no advertising ID; not a government app; no financial features;
   no health features).
-- Live: internal testing, release 22 (2.12.0), to the "Internal testers" email list. Opt-in link:
+- Live: internal testing, release 23 (2.13.0), to the "Internal testers" email list since 7 November. Opt-in link:
   https://play.google.com/apps/internaltest/4700958214368746059
-- Not uploaded yet: version 23 (2.13.0, trip mode), rebuilt first: the bundle above predates the text contrast pass.
-  All eight screenshots and the feature graphic were regenerated for that pass, so they all replace what's on Play; the new
-  screenshot 6, `graphics/phone-06-trip.jpg`, takes the place of the Lent & borrowed frame. The listing text needs its new
-  "Trips with friends" section pasted in too.
+- Store listing: the new description (with "Trips with friends"), all eight screenshots and the feature graphic are
+  uploaded and saved as a draft. Play now asks an AI asset declaration before the listing can be saved for review:
+  none of the images are AI-made (screenshots and graphics come from `scripts/play-graphics.mjs`, the icon from
+  `scripts/gen-icons.mjs`), so the answer is "Don't label assets", then Save. That's yours to answer.
 - Waiting on you: the payments (merchant) profile; then the `taily_pro` product can be created (below).
+- Waiting on you: Play wants the account's trader status declared by 1 February 2027 (Play Console home), or the account's
+  apps come down.
 - Next: a closed test (Play shows Taily needs its own before production access), then Send for review.
 
 Upload-key certificate, SHA-256 (public):
