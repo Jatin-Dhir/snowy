@@ -8,6 +8,8 @@
 //   --compare <file>     an earlier results.json or baseline: every phrase that passed there and fails now is
 //                        listed (default: baseline-2.13.0.json beside this file)
 //   --save-baseline <f>  also write this run as a compact baseline file
+//   --cases <file>       another set of phrases instead of cases.mjs: a module exporting `cases` (or `blind`) in
+//                        the same shape, whose groups may be names; it's scored by group, without the trip set
 //
 // Groups 1-12 make the headline pass rate (171 phrases in 2.13.0); 13 are probes, right transcripts phrased the
 // way people talk. `fresh` phrases were written for 2.13.1 before its fixes and are scored apart, by cause.
@@ -18,10 +20,10 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createServer, transformWithEsbuild } from 'vite'
 import { launch } from '../cdp.mjs'
-import { cases, GROUPS, TRIP_E2E, TRIP_E2E_PEOPLE } from './cases.mjs'
+import * as battery from './cases.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const arg = (name) => {
@@ -30,9 +32,17 @@ const arg = (name) => {
 }
 const ROOT = resolve(arg('--root') ?? join(HERE, '..', '..'))
 const OUT = resolve(arg('--out') ?? mkdtempSync(join(tmpdir(), 'taily-voice-phrases-')))
-const COMPARE = arg('--compare') ?? join(HERE, 'baseline-2.13.0.json')
+const CASES = arg('--cases')
+const COMPARE = arg('--compare') ?? (CASES ? '' : join(HERE, 'baseline-2.13.0.json'))
 const SAVE_BASELINE = arg('--save-baseline')
 mkdirSync(OUT, { recursive: true })
+
+const other = CASES ? await import(pathToFileURL(resolve(CASES)).href) : null
+const cases = (other ? other.cases ?? other.blind : battery.cases).map((c) => (c.alts && !c.t ? { ...c, t: c.alts[0][0] } : c))
+const GROUPS = other ? other.GROUPS ?? Object.fromEntries([...new Set(cases.map((c) => c.g))].map((g) => [g, String(g)])) : battery.GROUPS
+const TRIP_E2E = other ? [] : battery.TRIP_E2E
+const TRIP_E2E_PEOPLE = battery.TRIP_E2E_PEOPLE
+const onTrip = (c) => c.g === 11 || c.g === 'trip'
 
 // ---- 1. what the page needs from the tree: the default tags and accounts, and (old trees) the ranking
 const read = (p) => readFileSync(join(ROOT, p), 'utf8').replace(/\r\n/g, '\n')
@@ -145,8 +155,8 @@ try {
       readSpeech = L.readSpeech
       rank = (alts, on) => L.rank(alts, on, cats, [], accs)
     }
-    const res = ${JSON.stringify(cases)}.map((c) => {
-      const on = c.g === 11 ? trip : null
+    const res = ${JSON.stringify(cases.map((c) => ({ ...c, onTrip: onTrip(c) })))}.map((c) => {
+      const on = c.onTrip ? trip : null
       if (c.alts) {
         const r = rank(c.alts.map(([text, confidence]) => ({ text, confidence })), on)
         return { got: r.best.p, picked: r.best.text, all: r.all.map((x) => ({ text: x.text, score: x.score, amt: x.p.amountMinor, tag: x.p.categoryId })) }
@@ -245,17 +255,20 @@ lines.push('')
 lines.push(`${'group'.padEnd(32)} ${before ? 'before          ' : ''}now`)
 const scored = (rs) => rs.filter((r) => !r.amb)
 let [pAll, nAll, bAll] = [0, 0, 0]
-for (const g of Object.keys(GROUPS).map(Number)) {
-  const rs = scored(results.filter((r) => r.g === g && !r.fresh))
+for (const g of Object.keys(GROUPS)) {
+  const rs = scored(results.filter((r) => String(r.g) === g && !r.fresh))
+  if (!rs.length) continue
   const p = rs.filter((r) => r.pass).length
-  if (g !== 13) {
+  // the probes (group 13) stay out of the headline rate, as in the 2.13.0 measurement
+  if (other || g !== '13') {
     pAll += p
     nAll += rs.length
     bAll += was(rs) ?? 0
   }
-  lines.push(`G${String(g).padEnd(2)} ${GROUPS[g].padEnd(28)} ${before ? cell(was(rs), rs.length) + '    ' : ''}${cell(p, rs.length)}`)
+  const name = other ? g.padEnd(31) : `G${g.padEnd(2)} ${GROUPS[g].padEnd(28)}`
+  lines.push(`${name} ${before ? cell(was(rs), rs.length) + '    ' : ''}${cell(p, rs.length)}`)
 }
-lines.push(`${'Overall G1-12'.padEnd(32)} ${before ? cell(bAll, nAll) + '    ' : ''}${cell(pAll, nAll)}`)
+lines.push(`${(other ? 'Overall' : 'Overall G1-12').padEnd(32)} ${before ? cell(bAll, nAll) + '    ' : ''}${cell(pAll, nAll)}`)
 lines.push('')
 const CAUSES = {
   1: 'amounts said in pieces',
@@ -287,11 +300,13 @@ if (fresh.length) {
   lines.push(`${'Fresh overall'.padEnd(32)} ${before ? cell(fb, scored(fresh).length) + '    ' : ''}${cell(fp, scored(fresh).length)}`)
   lines.push('')
 }
-const tripsOk = trips.filter((t) => t.ok).length
-const tripsBefore = before ? trips.filter((t) => before.get(`trip-e2e:${t.text}`)?.ok).length : null
-lines.push(`${'trip-e2e.mjs parser phrases'.padEnd(32)} ${before ? cell(tripsBefore, trips.length) + '    ' : ''}${cell(tripsOk, trips.length)}`)
-for (const t of trips.filter((t) => !t.ok)) lines.push(`FAIL  trip-e2e "${t.text}" :: ${JSON.stringify(t.got)}`)
-lines.push('')
+if (trips.length) {
+  const tripsOk = trips.filter((t) => t.ok).length
+  const tripsBefore = before ? trips.filter((t) => before.get(`trip-e2e:${t.text}`)?.ok).length : null
+  lines.push(`${'trip-e2e.mjs parser phrases'.padEnd(32)} ${before ? cell(tripsBefore, trips.length) + '    ' : ''}${cell(tripsOk, trips.length)}`)
+  for (const t of trips.filter((t) => !t.ok)) lines.push(`FAIL  trip-e2e "${t.text}" :: ${JSON.stringify(t.got)}`)
+  lines.push('')
+}
 
 if (before) {
   const worse = results.filter((r) => !r.pass && before.get(r.key)?.pass)
@@ -307,8 +322,18 @@ for (const r of results.filter((r) => !r.pass || r.amb).sort((a, b) => Number(!!
   lines.push(`${label(r)} G${r.g}${r.fresh ? ` F${r.fresh}` : ''} "${r.t}"${r.picked ? ` [picked "${r.picked}"]` : ''} :: ${r.diffs.map(([f, g, e]) => `${f} ${g} (want ${e})`).join('; ') || 'ok'}  | note="${r.got.note}"${r.held ? `  (${r.held})` : ''}`)
   if (r.all) lines.push(`        alts: ${r.all.map((x) => `"${x.text}"=${x.score ?? rupees(x.amt)}${x.tag ? ' ' + x.tag : ''}`).join('  ')}`)
 }
-// a lone letter or a number with nothing it counts, left in a saved note, is a fragment of something misread
-const fragments = results.filter((r) => r.got.amountMinor && /(^|\s)([A-Za-z]|\d+)$|(^|\s)[A-Za-z](\s|$)(?![A-Z]\b)/.test(r.got.note ?? ''))
+// a lone letter, or a number at the end with nothing it counts or labels, left in a saved note is likely a
+// fragment of something misread ("Auto G", "Lunch 3")
+const LABELLED = /\b(sector|block|flat|gate|route|platform|plot|room|seat|tower|number)\s+\d+$/i
+const fragment = (note) => {
+  const w = note.split(/\s+/).filter(Boolean)
+  const letter = (x) => x !== undefined && /^\p{L}$/u.test(x)
+  // "D Mart", "R K Stores" are a name's initials; "Auto G" is what's left of "G Pay"
+  const initial = (x, next) => /^\p{Lu}$/u.test(x) && next !== undefined && /^\p{Lu}/u.test(next)
+  const loneLetter = w.some((x, i) => letter(x) && !letter(w[i - 1]) && !letter(w[i + 1]) && !/^[IA]$/.test(x) && !initial(x, w[i + 1]))
+  return loneLetter || (/(^|\s)\d+$/.test(note) && !LABELLED.test(note))
+}
+const fragments = results.filter((r) => r.got.amountMinor && fragment(r.got.note ?? ''))
 if (fragments.length) {
   lines.push('')
   lines.push('notes that may hold a fragment:')

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type Account, type Category, type Trip, type Txn } from '../db/db'
+import { db, type Txn } from '../db/db'
 import { addTxn, recentTxns, removeTxnPermanently } from '../db/repo'
 import { formatMinor } from '../lib/money'
-import { parseScore, parseSpeech, tripPayer, type ParsedSpeech } from '../lib/parseSpeech'
+import { pickAlternative, readSpeech, type ParsedSpeech } from '../lib/parseSpeech'
 import { activeTrip, addTripEntry } from '../db/trips'
 import { ME } from '../lib/split'
 import { personLabel } from './TripSplitSheet'
@@ -60,13 +60,6 @@ interface FailCopy {
   text: string
   primary: [string, () => void]
   secondary: [string, () => void]
-}
-
-/** What was said, as an entry. On a trip, who paid comes out first, so the rest reads like any spend. */
-function readSpeech(text: string, trip: Trip | null, categories: Category[], recent: Txn[], accounts: Account[]): ParsedSpeech {
-  const { text: rest, paidBy } = trip ? tripPayer(text, trip.people) : { text, paidBy: null }
-  const parsed = parseSpeech(rest, categories, recent, accounts)
-  return paidBy ? { ...parsed, paidBy } : parsed
 }
 
 export function VoiceOverlay({
@@ -256,19 +249,17 @@ export function VoiceOverlay({
 
   async function finish(alternatives: Alternative[], mine: number) {
     const { categories: cats, accounts: accs, recent: past, currency: cur, trip: on } = data.current
-    // the recognizer's first guess isn't always the one that makes sense as a transaction:
-    // what parses best wins, then the recognizer's confidence, then its own order
-    const ranked = alternatives.map((a) => ({ a, p: readSpeech(a.text, on, cats, past, accs) }))
-    const score = (r: (typeof ranked)[number]) => parseScore(r.p) * 10 + Math.max(0, r.a.confidence)
-    const best = ranked.reduce((b, r) => (score(r) > score(b) ? r : b))
-    setCaption(best.a.text)
-    const p = best.p
+    // the recognizer's first guess isn't always the one that makes sense as a transaction ("to 50 lunch"
+    // beside "250 lunch"): lib/parseSpeech's pickAlternative says which reading to save
+    const { best } = pickAlternative(alternatives, (text) => readSpeech(text, on, cats, past, accs))
+    setCaption(best.text)
+    const p = best.parsed
     if (!p.amountMinor) {
       if (p.note || p.categoryId) {
         onNeedAmount({ kind: p.kind, note: p.note, categoryId: p.categoryId, dateISO: p.dateISO, accountId: p.accountId, paidBy: p.paidBy })
         close()
       } else {
-        setView({ kind: 'failed', reason: 'noAmount', heard: best.a.text })
+        setView({ kind: 'failed', reason: 'noAmount', heard: best.text })
       }
       return
     }
