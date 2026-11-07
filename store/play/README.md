@@ -2,9 +2,9 @@
 
 ## What is ready
 
-- A signed release bundle: `releases/taily-play-v2.13.0.aab` (package `com.jatindhir.taily`, version 23 / 2.13.0,
+- A signed release bundle: `releases/taily-play-v2.13.1.aab` (package `com.jatindhir.taily`, version 24 / 2.13.1,
   targets Android 16 / API 36)
-- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.13.0.apk`
+- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.13.1.apk`
 - A privacy policy at https://jatin-dhir.github.io/snowy/privacy.html (also linked from Settings in the app)
 - Listing copy (`listing.md`), data-safety answers (`data-safety.md`), release notes (`whats-new.txt`)
 - Graphics in `graphics/` (icon, feature graphic, eight captioned 1080 x 1920 screenshots)
@@ -19,7 +19,7 @@ signed in to Chrome, `/u/2/` in Play Console addresses).
   with the review code below; content rating PEGI 3 / ESRB Everyone with in-app purchases; target age 18+ only;
   data safety "no data collected or shared"; no advertising ID; not a government app; no financial features;
   no health features).
-- Live: internal testing, release 23 (2.13.0), to the "Internal testers" email list since 7 November. Opt-in link:
+- Live: internal testing, release 24 (2.13.1), to the "Internal testers" email list since 7 November. Opt-in link:
   https://play.google.com/apps/internaltest/4700958214368746059
 - Store listing: the new description (with "Trips with friends"), all eight screenshots and the feature graphic are
   uploaded and saved as a draft. Play now asks an AI asset declaration before the listing can be saved for review:
