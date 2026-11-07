@@ -159,6 +159,9 @@ try {
   await sleep(700)
 
   await tab('Home')
+  // closing a sheet hands focus back to the + that opened it; a scripted click counts as a keyboard, so it
+  // would wear a focus ring that a finger never sees
+  await browser.evaluate(`document.activeElement?.blur?.(); true`)
   await shot(browser, '03-home.jpg')
 
   // hold the + and say it, in Hindi: the panel shows what Taily understood while the finger is still down
