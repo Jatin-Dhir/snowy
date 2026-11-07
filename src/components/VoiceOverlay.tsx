@@ -12,6 +12,7 @@ import { guessAccount } from '../lib/smart'
 import { addDaysISO, fmtShortDate, todayISO } from '../lib/dates'
 import { DISTRIBUTION } from '../lib/distribution'
 import { onBack } from '../lib/backButton'
+import { focusFallback } from '../lib/sheetFocus'
 import {
   microphone,
   openAppSettings,
@@ -162,10 +163,8 @@ export function VoiceOverlay({
     clearTimers()
     session.current?.cancel()
     session.current = null
-    // focus goes back to the + rather than staying on a panel that's about to go
-    if (panel.current?.contains(document.activeElement)) {
-      document.querySelector<HTMLElement>('[data-voice-anchor]')?.focus({ preventScroll: true })
-    }
+    // focus goes back to the + (or the sheet this opened over) rather than staying on a panel that's about to go
+    if (panel.current?.contains(document.activeElement)) focusFallback()
     setLeaving(true)
     clearTimer('leave')
     timers.current.leave = window.setTimeout(() => {
@@ -349,18 +348,7 @@ export function VoiceOverlay({
     if (kind) panel.current?.focus({ preventScroll: true })
   }, [kind])
 
-  // Escape cancels, as on every sheet
-  useEffect(() => {
-    if (!request) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [request?.id])
-
-  // Android's back button cancels (lib/backButton: one listener for the app, last opened goes first)
+  // Android's back button and Escape cancel (lib/backButton: one listener for the app, last opened goes first)
   useEffect(() => {
     if (!request) return
     return onBack(() => close())

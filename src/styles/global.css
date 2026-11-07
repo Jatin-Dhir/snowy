@@ -728,7 +728,14 @@ button.txn-row:active {
   animation: sheet-up 440ms var(--ease-water);
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* Tab scrolls the next stop clear of the sticky button (.sheet-cta), not just into the sheet */
+  scroll-padding-bottom: calc(96px + env(safe-area-inset-bottom));
   will-change: transform;
+}
+
+/* focus lands here as it opens, for the keyboard and screen readers; Tab never stops on it */
+.sheet:focus {
+  outline: none;
 }
 
 .sheet.sheet-out {

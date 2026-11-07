@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NumPad } from './NumPad'
 import { keyFeedback } from '../state/ui'
 import { formatWait, pinCooldownMs } from '../lib/pin'
@@ -26,6 +26,7 @@ export function PinPad({
   const [entry, setEntry] = useState('')
   const [waitMs, setWaitMs] = useState(() => (guarded ? pinCooldownMs() : 0))
   const waiting = waitMs > 0
+  const wrap = useRef<HTMLDivElement>(null)
 
   // re-read after every miss, then tick down once a second while it runs
   useEffect(() => {
@@ -36,6 +37,15 @@ export function PinPad({
     const t = window.setTimeout(() => setWaitMs(pinCooldownMs()), Math.min(waitMs, 1000))
     return () => window.clearTimeout(t)
   }, [waiting, waitMs])
+
+  // every miss shakes it again; the keys stay mounted, so the one with focus keeps it
+  useEffect(() => {
+    const el = wrap.current
+    if (!el || shakeKey === 0) return
+    el.classList.remove('pin-shake')
+    void el.offsetWidth
+    el.classList.add('pin-shake')
+  }, [shakeKey])
 
   function digit(d: string) {
     if (waiting || entry.length >= 4) return
@@ -58,11 +68,7 @@ export function PinPad({
       : (hint ?? '')
 
   return (
-    <div
-      key={shakeKey}
-      className={`pin-wrap${shakeKey > 0 ? ' pin-shake' : ''}`}
-      style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
-    >
+    <div ref={wrap} className="pin-wrap" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
         <span style={{ fontWeight: 700, fontSize: 15 }}>{label}</span>
         <span
@@ -78,7 +84,11 @@ export function PinPad({
           {message}
         </span>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 18 }}>
+      <div
+        role="img"
+        aria-label={`${entry.length} of 4 digits entered`}
+        style={{ display: 'flex', justifyContent: 'center', gap: 18 }}
+      >
         {[0, 1, 2, 3].map((i) => (
           <span
             key={i}
@@ -100,8 +110,8 @@ export function PinPad({
       >
         <NumPad
           onDigit={digit}
-          onDot={() => undefined}
           onBackspace={() => {
+            if (waiting) return
             keyFeedback('delete')
             setEntry((e) => e.slice(0, -1))
           }}

@@ -916,7 +916,6 @@ export function SettingsSheet({
               </div>
             ) : (
               <PinPad
-                key={pinMode}
                 label={
                   pinMode === 'verify'
                     ? 'Enter your current PIN'

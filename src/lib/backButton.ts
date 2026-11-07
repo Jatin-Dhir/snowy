@@ -34,6 +34,20 @@ export async function leaveApp(): Promise<void> {
   }
 }
 
+/**
+ * Once, at startup. Escape is Back for a keyboard: the same stack, one layer a press. With
+ * nothing open it does nothing, and the lock screen isn't something it can leave.
+ */
+export function listenForEscape(): void {
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || e.repeat || e.isComposing) return
+    const top = stack[stack.length - 1]
+    if (!top || top.keep) return
+    stack.pop()
+    top.close()
+  })
+}
+
 let listening = false
 
 /** Once, at startup. Android only: the web build has no back button to take over. */
