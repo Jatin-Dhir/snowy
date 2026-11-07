@@ -20,6 +20,23 @@ const screensDir = join(outDir, 'src', 'screens')
 const appUrl = process.argv[2] ?? 'http://localhost:5180'
 mkdirSync(screensDir, { recursive: true })
 
+// The demo month only reads as a month near its end: made on the 2nd it would be crammed into two days, with a red
+// safe-to-spend and every budget ahead of pace. So the app's clock always says this, whichever day the graphics are made.
+const DEMO_NOW = new Date(2026, 9, 31, 6, 40).getTime()
+const DEMO_CLOCK = `(() => {
+  const Real = Date
+  const shift = ${DEMO_NOW} - Real.now()
+  window.Date = class extends Real {
+    constructor(...args) {
+      if (args.length) super(...args)
+      else super(Real.now() + shift)
+    }
+    static now() {
+      return Real.now() + shift
+    }
+  }
+})()`
+
 // what each uploaded screenshot is called, in the order Play shows them (src/screenshots.html has the words)
 const SHOTS = ['add', 'voice', 'home', 'insights', 'budgets', 'trip', 'dark', 'pro']
 
@@ -108,6 +125,7 @@ try {
   await browser.send('Page.enable')
   await browser.send('Emulation.setDeviceMetricsOverride', phone)
   await browser.send('Emulation.setTouchEmulationEnabled', { enabled: true })
+  await browser.send('Page.addScriptToEvaluateOnNewDocument', { source: DEMO_CLOCK })
   await browser.send('Page.addScriptToEvaluateOnNewDocument', { source: SCRIPTED_VOICE })
 
   console.log(`seeding a demo month into ${appUrl} ...`)

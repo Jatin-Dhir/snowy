@@ -112,7 +112,7 @@ export function AccountManager({ open, currency, onClose }: { open: boolean; cur
                       if (e.key === 'Enter') void saveRename(a.id)
                     }}
                   />
-                  <button className="icon-btn" style={{ color: 'var(--pos)' }} onClick={() => void saveRename(a.id)} aria-label="Save name">
+                  <button className="icon-btn" style={{ color: 'var(--pos-text)' }} onClick={() => void saveRename(a.id)} aria-label="Save name">
                     <Icon name="check" size={15} strokeWidth={2.4} />
                   </button>
                 </>
@@ -164,7 +164,7 @@ export function AccountManager({ open, currency, onClose }: { open: boolean; cur
                 />
                 <button
                   className="icon-btn"
-                  style={{ color: 'var(--pos)' }}
+                  style={{ color: 'var(--pos-text)' }}
                   onClick={() => void saveBalance(a.id, bal)}
                   aria-label={`Save balance for ${a.name}`}
                 >
@@ -190,8 +190,8 @@ export function AccountManager({ open, currency, onClose }: { open: boolean; cur
         <>
           <span className="label" style={{ fontSize: 10, paddingTop: 4 }}>Hidden</span>
           {archived.map((a) => (
-            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '2px 0', opacity: 0.6 }}>
-              <span style={{ flex: 1, minWidth: 0, fontWeight: 500, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '2px 0' }}>
+              <span style={{ flex: 1, minWidth: 0, fontWeight: 500, fontSize: 14, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {a.name}
               </span>
               <button

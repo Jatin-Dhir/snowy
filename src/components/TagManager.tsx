@@ -24,10 +24,10 @@ export function TagManager({ open, onClose }: { open: boolean; onClose: () => vo
   }
 
   const row = (c: Category) => (
-    <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: c.archived ? 0.55 : 1 }}>
+    <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       <button
         className="txn-icon"
-        style={{ background: `${c.color}26`, color: c.color, width: 38, height: 38 }}
+        style={{ background: `${c.color}26`, color: c.color, width: 38, height: 38, opacity: c.archived ? 0.55 : 1 }}
         onClick={() => void db.categories.update(c.id, { icon: cycle(TAG_ICONS, c.icon) })}
         aria-label="Change icon"
         title="Tap to change icon"
@@ -35,14 +35,14 @@ export function TagManager({ open, onClose }: { open: boolean; onClose: () => vo
         <Icon name={c.icon} size={19} />
       </button>
       <button
-        style={{ width: 22, height: 22, borderRadius: 11, background: c.color, flexShrink: 0, boxShadow: 'var(--raise-sm)' }}
+        style={{ width: 22, height: 22, borderRadius: 11, background: c.color, flexShrink: 0, boxShadow: 'var(--raise-sm)', opacity: c.archived ? 0.55 : 1 }}
         onClick={() => void db.categories.update(c.id, { color: cycle(TAG_COLORS, c.color) })}
         aria-label="Change color"
         title="Tap to change color"
       />
       <input
         className="field"
-        style={{ padding: '8px 12px', fontWeight: 600 }}
+        style={{ padding: '8px 12px', fontWeight: 600, color: c.archived ? 'var(--muted)' : undefined }}
         value={c.name}
         maxLength={24}
         onChange={(e) => void db.categories.update(c.id, { name: e.target.value })}

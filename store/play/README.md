@@ -20,8 +20,10 @@ App "Taily: Expense Tracker", `com.jatindhir.taily`, in the JatinDhir developer 
   no health features).
 - Live: internal testing, release 22 (2.12.0), to the "Internal testers" email list. Opt-in link:
   https://play.google.com/apps/internaltest/4700958214368746059
-- Not uploaded yet: version 23 (2.13.0, trip mode) and the new screenshot 6, `graphics/phone-06-trip.jpg`, which replaces
-  the Lent & borrowed frame. The listing text needs its new "Trips with friends" section pasted in too.
+- Not uploaded yet: version 23 (2.13.0, trip mode), rebuilt first: the bundle above predates the text contrast pass.
+  All eight screenshots and the feature graphic were regenerated for that pass, so they all replace what's on Play; the new
+  screenshot 6, `graphics/phone-06-trip.jpg`, takes the place of the Lent & borrowed frame. The listing text needs its new
+  "Trips with friends" section pasted in too.
 - Waiting on you: the payments (merchant) profile; then the `taily_pro` product can be created (below).
 - Next: a closed test (Play shows Taily needs its own before production access), then Send for review.
 
@@ -93,7 +95,8 @@ launch day, point `GET_TAILY` in `public/trip-view.js` at the listing** and chan
 ## Regenerating the graphics
 
 Everything in `graphics/` is generated from the real app, so it never drifts from the UI. The screenshots show an
-invented month of data, in a throwaway browser profile; your own data is never touched.
+invented month of data, in a throwaway browser profile; your own data is never touched. The app's clock is pinned to
+31 October in the script, because the demo month only reads as a month near its end.
 
 ```bash
 npx vite --mode play --port 5180     # leave this running

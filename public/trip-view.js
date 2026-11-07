@@ -98,7 +98,7 @@
     var c = personColor(name)
     var t = el('span', 'tile', (name.trim()[0] || '?').toUpperCase())
     t.style.background = c + '26'
-    t.style.color = c
+    t.style.color = 'color-mix(in srgb, ' + c + ' 50%, var(--ink))'
     t.setAttribute('aria-hidden', 'true')
     return t
   }

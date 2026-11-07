@@ -345,7 +345,7 @@ export function AddSheet({
         </div>
 
         <div className="amount-display">
-          <span className="amount-cur" style={kind === 'in' ? { color: 'var(--pos)' } : undefined}>
+          <span className="amount-cur" style={kind === 'in' ? { color: 'var(--pos-text)' } : undefined}>
             {kind === 'in' ? '+' : ''}{currencySymbol(currency)}
           </span>
           <span
@@ -536,7 +536,7 @@ export function AddSheet({
                     {a.name}
                   </span>
                   {account === a.id && (
-                    <span style={{ color: 'var(--pos)' }}>
+                    <span style={{ color: 'var(--pos-text)' }}>
                       <Icon name="check" size={16} strokeWidth={2.4} />
                     </span>
                   )}
@@ -584,7 +584,7 @@ export function AddSheet({
                   </span>
                   <span style={{ flex: 1 }}>{c.name}</span>
                   {isEdit && selectedCat === c.id && (
-                    <span style={{ color: 'var(--pos)' }}>
+                    <span style={{ color: 'var(--pos-text)' }}>
                       <Icon name="check" size={16} strokeWidth={2.4} />
                     </span>
                   )}

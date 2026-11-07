@@ -83,9 +83,9 @@ export function TransactionRow({
       </span>
       <span className="txn-main">
         <span className="txn-title">{title}</span>
-        <span className="txn-sub">{subParts.join(' · ')}</span>
+        <span className="txn-sub" style={selected ? { color: 'var(--ink)' } : undefined}>{subParts.join(' · ')}</span>
       </span>
-      <span className="txn-amount" style={isIn ? { color: 'var(--pos)' } : undefined}>
+      <span className="txn-amount" style={isIn ? { color: 'var(--pos-text)' } : undefined}>
         {isIn ? '+' : ''}
         {formatMinor(txn.amountMinor, txn.currency)}
       </span>

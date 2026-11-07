@@ -111,7 +111,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
                   </span>
                   <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5 }}>{c.name}</span>
                   {currency === c.code && (
-                    <span style={{ color: 'var(--pos)' }}>
+                    <span style={{ color: 'var(--pos-text)' }}>
                       <Icon name="check" size={16} strokeWidth={2.4} />
                     </span>
                   )}

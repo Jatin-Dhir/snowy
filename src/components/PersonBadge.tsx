@@ -18,10 +18,10 @@ export function PersonBadge({ name, me = false, size = 40 }: { name: string; me?
         width: size,
         height: size,
         background: me ? 'var(--pos-soft)' : `${color}26`,
-        color: me ? 'var(--accent)' : color
+        color: me ? 'var(--accent-text)' : color
       }}
     >
-      <span style={{ fontWeight: 800, fontSize: Math.round(size * 0.4) }}>{name.trim()[0]?.toUpperCase() ?? '?'}</span>
+      <span className={me ? undefined : 'tile-initial'} style={{ fontWeight: 800, fontSize: Math.round(size * 0.4) }}>{name.trim()[0]?.toUpperCase() ?? '?'}</span>
     </span>
   )
 }
