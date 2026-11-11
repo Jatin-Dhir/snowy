@@ -9,26 +9,31 @@
 - Listing copy (`listing.md`), data-safety answers (`data-safety.md`), release notes (`whats-new.txt`)
 - Graphics in `graphics/` (icon, feature graphic, eight captioned 1080 x 1920 screenshots)
 
-## Where Play Console stands (7 November 2026)
+## Where Play Console stands (11 November 2026)
 
 App "Taily: Expense Tracker", `com.jatindhir.taily`, in the JatinDhir developer account (the third Google account
 signed in to Chrome, `/u/2/` in Play Console addresses).
 
-- Done: store listing (text, icon, feature graphic, 8 screenshots), category Finance with tags Finance and
-  Personal finance, contact email, privacy policy, and every App content declaration (no ads; sign-in details
-  with the review code below; content rating PEGI 3 / ESRB Everyone with in-app purchases; target age 18+ only;
-  data safety "no data collected or shared"; no advertising ID; not a government app; no financial features;
-  no health features).
-- Live: internal testing, release 24 (2.13.1), to the "Internal testers" email list since 7 November. Opt-in link:
+- Done: store listing (text with "Trips with friends", icon, feature graphic, 8 screenshots; AI asset declaration
+  "Don't label assets", since every image comes from `scripts/play-graphics.mjs` or `scripts/gen-icons.mjs`),
+  category Finance with tags Finance and Personal finance, contact email, privacy policy, and every App content
+  declaration (no ads; sign-in details with the review code below; content rating PEGI 3 / ESRB Everyone with in-app
+  purchases; target age 18+ only; data safety "no data collected or shared"; no advertising ID; not a government app;
+  no financial features; no health features).
+- Live: internal testing, release 24 (2.13.1), to the "Internal testers" email list. Opt-in link:
   https://play.google.com/apps/internaltest/4700958214368746059
-- Store listing: the new description (with "Trips with friends"), all eight screenshots and the feature graphic are
-  uploaded and saved as a draft. Play now asks an AI asset declaration before the listing can be saved for review:
-  none of the images are AI-made (screenshots and graphics come from `scripts/play-graphics.mjs`, the icon from
-  `scripts/gen-icons.mjs`), so the answer is "Don't label assets", then Save. That's yours to answer.
+- Sent for review on 11 November (14 changes): the store listing, the App content above, and closed testing
+  ("Closed testing - Alpha"): release 24 (2.13.1), every country, testers from the "Internal testers" list. Google
+  says reviews usually take up to seven days.
+- **Before Taily can go public**, Play requires the closed test to have **at least 12 testers opted in for 14 days in
+  a row**, then an application for production access (questions about the test), then a production review.
+  Testers count only if their Google account is on the test's tester list, they opt in through the test's link and
+  install Taily from Google Play; a sideloaded copy doesn't count. The owner is sending the testers' Gmail addresses:
+  put them in a new email list on the closed track's Testers tab (15 to 20 is safer, since dropping below 12 can
+  restart the 14 days), then share the "Join on Android" link from that tab.
 - Waiting on you: the payments (merchant) profile; then the `taily_pro` product can be created (below).
-- Waiting on you: Play wants the account's trader status declared by 1 February 2027 (Play Console home), or the account's
-  apps come down.
-- Next: a closed test (Play shows Taily needs its own before production access), then Send for review.
+- Waiting on you: Play wants the account's trader status declared by 1 February 2027 (Play Console home), or the
+  account's apps come down.
 
 Upload-key certificate, SHA-256 (public):
 `B2:6B:DC:00:10:3E:3C:A7:11:80:AF:06:51:D5:18:FE:6E:3A:F9:9E:CA:11:DA:97:7B:17:0C:A9:E6:8D:2A:EA`
