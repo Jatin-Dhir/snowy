@@ -100,8 +100,10 @@ export function UiProvider({ children }: { children: ReactNode }) {
   const showToast = useCallback((message: string, undo?: () => void) => {
     clearTimers()
     setToast({ message, undo: undo && once(undo), leaving: false })
-    timers.current.push(window.setTimeout(() => setToast((t) => (t ? { ...t, leaving: true } : null)), 2500))
-    timers.current.push(window.setTimeout(() => setToast(null), 2760))
+    // a deleted thing stays one tap from coming back long enough to read, think, and reach for it
+    const shown = undo ? 6000 : 3000
+    timers.current.push(window.setTimeout(() => setToast((t) => (t ? { ...t, leaving: true } : null)), shown))
+    timers.current.push(window.setTimeout(() => setToast(null), shown + 260))
   }, [])
 
   return <UiContext.Provider value={{ toast, showToast, dismissToast }}>{children}</UiContext.Provider>

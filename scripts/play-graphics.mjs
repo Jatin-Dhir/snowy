@@ -206,10 +206,10 @@ try {
   await browser.evaluate(`import('/src/lib/pro.ts').then((m) => { m.closeProSheet(); return true })`)
   await sleep(700)
 
-  // the other theme and an accent, on the one screen no other frame shows: every entry, by day
+  // a special theme at night: Home in Blueberry, the cat with its ears under a starry sky
   await tab('Home')
   await sleep(500)
-  await browser.evaluate(`(async () => { const { saveSettings } = await import('/src/db/db.ts'); await saveSettings({ theme: 'dark', accent: 'lavender' }) })()`)
+  await browser.evaluate(`(async () => { const { saveSettings } = await import('/src/db/db.ts'); await saveSettings({ theme: 'dark', accent: 'blueberry' }) })()`)
   await sleep(600)
   // a headless browser only paints on demand, so a CSS colour transition (the hero number has one) can be
   // caught half-way through the theme change: drop transitions so every colour lands on its final value
@@ -218,7 +218,8 @@ try {
   await browser.evaluate(`(() => { const s = document.createElement('style'); s.textContent = '*{transition:none!important}'; document.head.appendChild(s); return true })()`)
   await sleep(200)
   console.log(`  hero colour after settling:  ${await heroColor()}`)
-  await tab('Activity')
+  await browser.evaluate(`(document.fonts ? document.fonts.ready : Promise.resolve()).then(() => true)`)
+  await sleep(400)
   await shot(browser, '07-dark.jpg')
 
   // a trip in full swing, last: while a trip is on it shows up on every other screen. Who pays whom is the point

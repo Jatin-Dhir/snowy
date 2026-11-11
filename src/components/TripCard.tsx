@@ -51,23 +51,15 @@ export function TripsRow({ currency, onOpen }: { currency: string; onOpen: () =>
   const overview = useLiveQuery(() => tripsOverview(), [])
   if (!overview || overview.some((o) => !o.trip.endedISO)) return null
   const unsettled = overview.find((o) => Math.abs(o.summary.mine) >= SQUARE_BELOW)
+  // one of Home's tiles
   return (
-    <button
-      className="card"
-      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 14, textAlign: 'left' }}
-      onClick={onOpen}
-    >
-      <span className="txn-icon" style={{ background: 'var(--pos-soft)', color: 'var(--accent)', width: 36, height: 36 }}>
-        <Icon name="trip" size={18} />
+    <button className="card tile" onClick={onOpen}>
+      <span className="tile-icon">
+        <Icon name="trip" size={17} />
       </span>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: 'block', fontWeight: 700, fontSize: 14 }}>Trips</span>
-        <span className="caption" style={{ fontSize: 12 }}>
-          {unsettled ? `${unsettled.trip.name}: ${position(unsettled.summary.mine, currency)}` : 'Split a trip with friends'}
-        </span>
-      </span>
-      <span className="faint">
-        <Icon name="chevronRight" size={16} />
+      <span className="tile-name">Trips</span>
+      <span className="tile-line">
+        {unsettled ? `${unsettled.trip.name}: ${position(unsettled.summary.mine, currency)}` : 'Split a trip with friends'}
       </span>
     </button>
   )

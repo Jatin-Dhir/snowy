@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, saveSettings, type Settings } from '../db/db'
 import { allLiveTxns } from '../db/repo'
@@ -11,9 +11,9 @@ import { fetchRate, type RateInfo } from '../lib/rates'
 import { convertEverything } from '../db/convert'
 import { APP_VERSION, checkForUpdate, type UpdateCheck } from '../lib/updater'
 import { PRIVACY_URL, SELF_UPDATE } from '../lib/distribution'
-import { applyCustomAccent } from '../lib/theme'
+import { applyCustomAccent, SPECIAL_THEMES } from '../lib/theme'
 import { clearPinFailures, hashPin, recordPinFailure, verifyPin } from '../lib/pin'
-import { todayISO } from '../lib/dates'
+import { fullDate, todayISO } from '../lib/dates'
 import { currentProfile, profileSlug } from '../lib/profiles'
 import { addVoiceTile, pinVoiceWidget, voiceShortcuts } from '../lib/voice'
 import { TAG_COLORS, TAG_ICONS } from '../db/seed'
@@ -73,7 +73,7 @@ function ActionRow({
           {title}
           {locked && <span className="pro-tag">Pro</span>}
         </span>
-        <span className="caption" style={{ fontSize: 11.5 }}>{sub}</span>
+        <span className="caption" style={{ display: 'block', fontSize: 11.5 }}>{sub}</span>
       </span>
       <span className="faint">
         <Icon name="chevronRight" size={15} />
@@ -326,6 +326,27 @@ export function SettingsSheet({
     setDragHue(null)
   }
 
+  // the slider from a keyboard: arrows step 5°, Shift 30°, Home and End go to the ends
+  function hueKey(e: React.KeyboardEvent) {
+    const step = e.shiftKey ? 30 : 5
+    const now = settings.accent === 'custom' ? settings.accentHue : displayHue
+    const next =
+      e.key === 'ArrowRight' || e.key === 'ArrowUp'
+        ? now + step
+        : e.key === 'ArrowLeft' || e.key === 'ArrowDown'
+          ? now - step
+          : e.key === 'Home'
+            ? 0
+            : e.key === 'End'
+              ? 359
+              : null
+    if (next === null) return
+    e.preventDefault()
+    const hue = ((next % 360) + 360) % 360
+    applyCustomAccent(hue, document.documentElement.dataset.theme === 'dark')
+    void saveSettings({ accent: 'custom', accentHue: hue })
+  }
+
   function openPinFlow() {
     setFirstPin('')
     setPinShake(0)
@@ -431,6 +452,7 @@ export function SettingsSheet({
               <button
                 key={t}
                 className={`pill${settings.theme === t ? ' active' : ''}`}
+                aria-pressed={settings.theme === t}
                 style={{ flex: 1, justifyContent: 'center', textTransform: 'capitalize' }}
                 onClick={() => void saveSettings({ theme: t })}
               >
@@ -447,6 +469,7 @@ export function SettingsSheet({
               <button
                 key={a.id}
                 aria-label={`${a.name} color`}
+                aria-pressed={settings.accent === a.id}
                 title={a.name}
                 onClick={() => {
                   haptic('selection')
@@ -468,6 +491,8 @@ export function SettingsSheet({
             ))}
             <button
               aria-label="Custom color"
+              aria-pressed={settings.accent === 'custom'}
+              aria-expanded={showCustom}
               title="Custom"
               onClick={() => {
                 haptic('selection')
@@ -494,10 +519,13 @@ export function SettingsSheet({
               ref={hueBar}
               className="hue-bar"
               role="slider"
+              tabIndex={0}
               aria-label="Pastel color slider"
               aria-valuemin={0}
               aria-valuemax={359}
               aria-valuenow={displayHue}
+              aria-valuetext={`Hue ${displayHue} degrees`}
+              onKeyDown={hueKey}
               onPointerDown={(e) => {
                 try {
                   e.currentTarget.setPointerCapture(e.pointerId)
@@ -524,22 +552,72 @@ export function SettingsSheet({
           )}
         </div>
 
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <span className="label" style={{ fontSize: 10.5 }} id="special-themes">Special themes</span>
+          <div className="special-grid" role="group" aria-labelledby="special-themes">
+            {Object.entries(SPECIAL_THEMES).map(([id, t]) => {
+              // each card shows the theme as it will look in the mode the app is in now
+              const dark = settings.theme === 'dark' || (settings.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+              const look = dark ? t.dark : t.light
+              const on = settings.accent === id
+              return (
+                <button
+                  key={id}
+                  className={`special-card${on ? ' on' : ''}`}
+                  aria-pressed={on}
+                  onClick={() => {
+                    haptic('selection')
+                    setShowCustom(false)
+                    void saveSettings({ accent: id })
+                  }}
+                  style={{ '--sp-bg': look.bg, '--sp-accent': look.accent } as CSSProperties}
+                >
+                  <span className="special-preview" aria-hidden="true">
+                    <svg viewBox="0 0 100 100" width="48" height="48">
+                      <g fill={look.accent} stroke={look.accent} strokeWidth="5" strokeLinejoin="round">
+                        <path d="M21 36 L22 9 L41 22 Z" />
+                        <path d="M79 36 L78 9 L59 22 Z" />
+                      </g>
+                      <circle cx="50" cy="56" r="33" fill="none" stroke={look.accent} strokeWidth="9" />
+                      <g fill="none" stroke={look.ink} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M37 54 Q41 49 45 54" />
+                        <path d="M55 54 Q59 49 63 54" />
+                        <path d="M44 61.5 Q47 65 50 61.5 Q53 65 56 61.5" />
+                      </g>
+                    </svg>
+                    {on && (
+                      <span className="special-check">
+                        <Icon name="check" size={11} strokeWidth={3} />
+                      </span>
+                    )}
+                  </span>
+                  <span className="special-name">{t.name}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span className="label" style={{ fontSize: 10.5 }}>Feedback</span>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               className={`pill${settings.haptics ? ' active' : ''}`}
+              aria-pressed={settings.haptics}
               style={{ flex: 1, justifyContent: 'center' }}
               onClick={() => void saveSettings({ haptics: !settings.haptics })}
             >
-              Haptics {settings.haptics ? 'on' : 'off'}
+              {settings.haptics && <Icon name="check" size={13} strokeWidth={2.6} />}
+              Haptics
             </button>
             <button
               className={`pill${settings.sounds ? ' active' : ''}`}
+              aria-pressed={settings.sounds}
               style={{ flex: 1, justifyContent: 'center' }}
               onClick={() => void saveSettings({ sounds: !settings.sounds })}
             >
-              Sounds {settings.sounds ? 'on' : 'off'}
+              {settings.sounds && <Icon name="check" size={13} strokeWidth={2.6} />}
+              Sounds
             </button>
           </div>
         </div>
@@ -714,8 +792,8 @@ export function SettingsSheet({
               {importPlan.dateFrom && importPlan.dateTo && (
                 <span className="caption" style={{ fontSize: 11.5 }}>
                   {importPlan.dateFrom === importPlan.dateTo
-                    ? importPlan.dateFrom
-                    : `${importPlan.dateFrom} → ${importPlan.dateTo}`}
+                    ? fullDate(importPlan.dateFrom)
+                    : `${fullDate(importPlan.dateFrom)} to ${fullDate(importPlan.dateTo)}`}
                 </span>
               )}
             </div>
@@ -753,7 +831,7 @@ export function SettingsSheet({
                 ? "That password didn't open it — try again. Banks usually use your PAN, date of birth, or account number."
                 : 'Banks usually protect statement PDFs with a password — often your PAN, date of birth, or account number.'}
             </span>
-            <input
+            <input aria-label="PDF password"
               className="field"
               type="password"
               placeholder="Password"
@@ -924,7 +1002,11 @@ export function SettingsSheet({
                       : 'Type it once more'
                 }
                 error={pinError}
-                hint={pinMode === 'set' ? "Pick one you don't use for UPI or your bank" : undefined}
+                hint={
+                  pinMode === 'set'
+                    ? "Pick one you don't use for UPI or your bank. Taily can't reset a forgotten PIN, so keep an encrypted backup."
+                    : undefined
+                }
                 shakeKey={pinShake}
                 guarded={pinMode === 'verify'}
                 onComplete={(p) => void handlePin(p)}

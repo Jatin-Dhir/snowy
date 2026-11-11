@@ -189,13 +189,15 @@ export function Insights({
 
   return (
     <div className="screen">
-      <div className="row-between">
-        <span className="screen-title">Insights</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      {/* wraps on the narrowest phones rather than pushing Settings off the screen */}
+      <div className="row-between" style={{ flexWrap: 'wrap', rowGap: 8 }}>
+        <h1 className="screen-title">Insights</h1>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
           <button className="icon-btn" onClick={() => setMonthKey(addMonths(monthKey, -1))} aria-label="Previous month">
             <Icon name="chevronLeft" size={16} />
           </button>
-          <span className="pill" style={{ minWidth: 92, justifyContent: 'center' }}>
+          {/* just words: the arrows either side are what change it */}
+          <span className="month-label" aria-live="polite">
             {monthLabel(monthKey)}
           </span>
           <button
@@ -254,7 +256,7 @@ export function Insights({
                 {budgetCtx.pct}% of your {budgetCtx.budgetLabel} budget{budgetCtx.paceLabel ? ` · ${budgetCtx.paceLabel}` : ''}
               </span>
             )}
-            {isCurrent && (
+            {isCurrent && today !== monthRange(monthKey).to && (
               <span className="caption">Projected {formatMinor(projected, currency)} by month end.</span>
             )}
             {received > 0 && (
@@ -265,7 +267,7 @@ export function Insights({
           </div>
 
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 13, padding: '15px 20px' }}>
-            <span className="label">Where it went</span>
+            <h2 className="label">Where it went</h2>
             {breakdown.top.map((r) => (
               <div key={String(r.id)} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {catRow(r)}
@@ -283,7 +285,6 @@ export function Insights({
                   style={{ display: 'flex', flexDirection: 'column', gap: 5, width: '100%', textAlign: 'start' }}
                   onClick={() => setShowRest((v) => !v)}
                   aria-expanded={showRest}
-                  aria-label={showRest ? 'Hide the rest of your tags' : 'Show the rest of your tags'}
                 >
                   {catRow(
                     { total: breakdown.restTotal, name: 'Everything else', color: 'var(--faint-future)' },
@@ -339,7 +340,7 @@ export function Insights({
 
           {notes.length > 0 && (
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '13px 20px' }}>
-              <span className="label">Smart notes</span>
+              <h2 className="label">Smart notes</h2>
               {notes.map((n, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                   <span style={{ width: 7, height: 7, borderRadius: 4, background: 'var(--pos)', flexShrink: 0, marginTop: 6 }} />
@@ -355,7 +356,7 @@ export function Insights({
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: 'block', fontWeight: 700, fontSize: 14 }}>Monthly report &amp; tips</span>
-              <span className="caption" style={{ fontSize: 11.5 }}>What happened, and how to do better</span>
+              <span className="caption" style={{ display: 'block', fontSize: 11.5 }}>What happened, and how to do better</span>
             </span>
             <span className="faint">
               <Icon name="chevronRight" size={15} />
@@ -368,7 +369,7 @@ export function Insights({
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: 'block', fontWeight: 700, fontSize: 14 }}>Lent &amp; borrowed</span>
-              <span className="caption" style={{ fontSize: 11.5 }}>
+              <span className="caption" style={{ display: 'block', fontSize: 11.5 }}>
                 {owedToMe > 0 || iOwe > 0
                   ? [
                       owedToMe > 0 ? `${formatMinor(owedToMe, currency)} owed to you` : '',
@@ -386,7 +387,7 @@ export function Insights({
 
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '13px 20px' }}>
             <div className="row-between">
-              <span className="label">Six months</span>
+              <h2 className="label">Six months</h2>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }}>
@@ -413,7 +414,7 @@ export function Insights({
                           textAnchor="middle"
                           fontFamily="Space Grotesk, Plus Jakarta Sans, sans-serif"
                           fontWeight="600"
-                          fontSize="9.5"
+                          fontSize="12"
                           fill={isLast ? 'var(--ink)' : 'var(--faint)'}
                         >
                           {fmtCompact(m.total, currency)}
@@ -424,7 +425,7 @@ export function Insights({
                         y={H - 4}
                         textAnchor="middle"
                         fontFamily="Plus Jakarta Sans, Segoe UI, sans-serif"
-                        fontSize="9"
+                        fontSize="12.5"
                         fill={isLast ? 'var(--accent-text)' : 'var(--faint)'}
                       >
                         {monthShort(m.key)}
@@ -436,7 +437,7 @@ export function Insights({
             </div>
             <span className="caption" style={{ fontSize: 11.5, textAlign: 'center' }}>
               {isCurrent
-                ? `Total spent each month — ${monthShort(monthKey)} is still counting`
+                ? `Total spent each month — ${monthLabel(monthKey)} is still counting`
                 : 'Total spent each month'}
             </span>
           </div>
@@ -541,7 +542,7 @@ export function Insights({
       {activeRules.length > 0 && (
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '13px 20px' }}>
           <div className="row-between">
-            <span className="label">Recurring</span>
+            <h2 className="label">Recurring</h2>
             <span className="mono muted" style={{ fontWeight: 600, fontSize: 12.5 }}>
               {formatMinor(rulesMonthly, currency)}/mo
             </span>

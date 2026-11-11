@@ -134,7 +134,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
                 One number unlocks safe-to-spend — how much you can still spend today without wrecking the month.
               </span>
             </div>
-            <input
+            <input aria-label="Monthly budget"
               className="field mono"
               type="number"
               inputMode="numeric"

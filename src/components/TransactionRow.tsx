@@ -14,13 +14,16 @@ export function TransactionRow({
   categories,
   onClick,
   onLongPress,
-  selected = false
+  selected = false,
+  selecting = false
 }: {
   txn: Txn
   categories: Category[]
   onClick?: () => void
   onLongPress?: () => void
   selected?: boolean
+  /** while picking several rows, each row says whether it's picked */
+  selecting?: boolean
 }) {
   const cat = categoryOf(txn, categories)
   const color = cat?.color ?? '#7A8794'
@@ -28,10 +31,14 @@ export function TransactionRow({
   const title = txn.note.trim() || cat?.name || (isIn ? 'Received' : 'Untagged')
   const catLabel = cat?.name ?? (isIn ? 'Money in' : 'Untagged')
   // don't repeat the tag as both the title and the first word of the
-  // subtitle — the common case is exactly a tag-only entry with no note
-  const subParts = [...(catLabel === title ? [] : [catLabel]), fmtTime(txn.ts)]
+  // subtitle — the common case is exactly a tag-only entry with no note.
+  // A trip share leads: it's why the amount is less than the bill, and a narrow row cuts the end
+  const subParts = [
+    ...(txn.tripName ? [`${txn.tripName} share`] : []),
+    ...(catLabel === title ? [] : [catLabel]),
+    fmtTime(txn.ts)
+  ]
   if (txn.source === 'recurring') subParts.push('auto')
-  if (txn.tripName) subParts.push(`your share, ${txn.tripName}`)
   const isFresh = Date.now() - txn.createdAt < 1600
 
   const pressTimer = useRef<number | null>(null)
@@ -55,6 +62,7 @@ export function TransactionRow({
   return (
     <button
       className={`txn-row${isFresh ? ' txn-new' : ''}`}
+      aria-pressed={selecting ? selected : undefined}
       style={selected ? { background: 'var(--pos-soft)', paddingLeft: 8, paddingRight: 8 } : undefined}
       onClick={() => {
         if (longFired.current) {
@@ -68,7 +76,15 @@ export function TransactionRow({
       onPointerLeave={pressCancel}
       onPointerCancel={pressCancel}
       onContextMenu={(e) => {
-        if (onLongPress) e.preventDefault()
+        if (!onLongPress) return
+        e.preventDefault()
+        // the keyboard's context-menu key (or Shift+F10) selects the row, as a long press does.
+        // A touch's long press may get here first: either way it runs once
+        if (longFired.current) return
+        pressCancel() // a phone that sends this before the long-press timer runs it once, here
+        longFired.current = true
+        onLongPress()
+        window.setTimeout(() => (longFired.current = false), 700)
       }}
     >
       <span

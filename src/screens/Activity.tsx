@@ -4,7 +4,7 @@ import { db, type Txn } from '../db/db'
 import { allLiveTxns, softDeleteTxn, restoreTxn } from '../db/repo'
 import { groupByDay, sum } from '../db/stats'
 import { formatMinor } from '../lib/money'
-import { currentMonthKey, fmtDayHeading, monthShort } from '../lib/dates'
+import { currentMonthKey, fmtDayHeading, monthShort, shortDate, todayISO } from '../lib/dates'
 import { TransactionRow } from '../components/TransactionRow'
 import { Icon } from '../components/Icon'
 import { haptic, useUi } from '../state/ui'
@@ -120,6 +120,20 @@ export function Activity({
     setShowDatePick(false)
   }
 
+  // an empty result names what it's filtered by, so you know which filter to loosen
+  function noMatchLine(): string {
+    const tag = catFilter ? catName.get(catFilter) : null
+    const acc = accFilter ? accName.get(accFilter) : null
+    const q = query.trim()
+    return (
+      `No ${tag ? `${tag} ` : ''}entries` +
+      (acc ? ` from ${acc}` : '') +
+      (dateFilter ? ` on ${shortDate(dateFilter)}` : '') +
+      (q ? ` matching “${q}”` : '') +
+      '.'
+    )
+  }
+
   const shown = filtered.slice(0, limit)
   const groups = useMemo(() => groupByDay(shown), [shown])
   const usedCategories = useMemo(() => {
@@ -131,7 +145,7 @@ export function Activity({
     <div className="screen">
       {selecting ? (
         <div className="row-between">
-          <span className="screen-title">{selectedIds.size} selected</span>
+          <h1 className="screen-title">{selectedIds.size} selected</h1>
           <span style={{ display: 'flex', gap: 8 }}>
             <button
               className="icon-btn"
@@ -148,7 +162,7 @@ export function Activity({
         </div>
       ) : (
         <div className="row-between">
-          <span className="screen-title">Activity</span>
+          <h1 className="screen-title">Activity</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span className="mono faint" style={{ fontWeight: 600, fontSize: 12 }}>
               {hasFilters
@@ -172,7 +186,7 @@ export function Activity({
           <span className="faint" style={{ display: 'flex' }}>
             <Icon name="search" size={16} />
           </span>
-          <input
+          <input aria-label="Search entries"
             placeholder='Search — try "chai", ">500"'
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -208,11 +222,11 @@ export function Activity({
 
       {(showDatePick || dateFilter) && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
+          <input aria-label="Show one day"
             className="field"
             type="date"
             value={dateFilter ?? ''}
-            max={new Date().toISOString().slice(0, 10)}
+            max={todayISO()}
             onChange={(e) => setDateFilter(e.target.value || null)}
           />
           {dateFilter && (
@@ -233,6 +247,7 @@ export function Activity({
         <div className="chip-row" style={{ flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
           <button
             className={`pill${catFilter === null ? ' active' : ''}`}
+            aria-pressed={catFilter === null}
             style={{ flexShrink: 0 }}
             onClick={() => setCatFilter(null)}
           >
@@ -242,6 +257,7 @@ export function Activity({
             <button
               key={c.id}
               className={`pill${catFilter === c.id ? ' active' : ''}`}
+              aria-pressed={catFilter === c.id}
               style={{ flexShrink: 0 }}
               onClick={() => setCatFilter(catFilter === c.id ? null : c.id)}
             >
@@ -256,6 +272,7 @@ export function Activity({
         <div className="chip-row" style={{ flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
           <button
             className={`pill${accFilter === null ? ' active' : ''}`}
+            aria-pressed={accFilter === null}
             style={{ flexShrink: 0 }}
             onClick={() => setAccFilter(null)}
           >
@@ -267,6 +284,7 @@ export function Activity({
               <button
                 key={a.id}
                 className={`pill${accFilter === a.id ? ' active' : ''}`}
+                aria-pressed={accFilter === a.id}
                 style={{ flexShrink: 0 }}
                 onClick={() => setAccFilter(accFilter === a.id ? null : a.id)}
               >
@@ -282,7 +300,7 @@ export function Activity({
             <span>
               {txns.length === 0
                 ? 'Your ledger is empty. Add your first expense and it lands here.'
-                : 'Nothing matches that search.'}
+                : noMatchLine()}
             </span>
             {txns.length === 0 ? (
               <button className="btn" style={{ width: 'auto', padding: '10px 22px' }} onClick={onAdd}>
@@ -298,9 +316,9 @@ export function Activity({
           groups.map((g) => (
             <div key={g.iso}>
               <div className="day-heading">
-                <span className="label" style={{ fontSize: 10.5 }}>
+                <h2 className="label" style={{ fontSize: 10.5 }}>
                   {fmtDayHeading(g.iso)}
-                </span>
+                </h2>
                 <span className="mono faint" style={{ fontWeight: 600, fontSize: 12 }}>
                   {formatMinor(g.total, currency)}
                 </span>
@@ -311,6 +329,7 @@ export function Activity({
                   txn={t}
                   categories={categories}
                   selected={selectedIds.has(t.id)}
+                  selecting={selecting}
                   onLongPress={() => enterSelect(t.id)}
                   onClick={() => (selecting ? toggleSelect(t.id) : onEdit(t))}
                 />

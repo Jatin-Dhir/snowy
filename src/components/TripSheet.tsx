@@ -14,7 +14,7 @@ import {
   updateTrip,
   type TripOverview
 } from '../db/trips'
-import { fmtDayHeading, fromISO, todayISO } from '../lib/dates'
+import { fmtDayHeading, fromISO, shortDate, todayISO } from '../lib/dates'
 import { currencySymbol, formatMinor } from '../lib/money'
 import { shareMessage } from '../lib/saveFile'
 import { ME, type Transfer } from '../lib/split'
@@ -26,10 +26,6 @@ import { Progress } from './Progress'
 import { Sheet } from './Sheet'
 import { personLabel, splitLabel } from './TripSplitSheet'
 import { haptic, useUi } from '../state/ui'
-
-function shortDate(iso: string): string {
-  return fromISO(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short' })
-}
 
 /** "Day 3" while it's on, "26 Oct to 29 Oct" once it's over. */
 function whenLine(trip: Trip): string {

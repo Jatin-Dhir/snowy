@@ -23,6 +23,12 @@ const emptyForm = (): RuleForm => ({
   cat: 'bills'
 })
 
+/** 1st, 2nd, 3rd, 4th … 11th, 12th, 13th … 21st, 22nd, 31st */
+function ordinal(n: number): string {
+  const teen = n % 100 >= 11 && n % 100 <= 13
+  return `${n}${teen ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`
+}
+
 /** Monthly payments & subscriptions: a plain list — tap one to manage it. */
 export function RecurringManager({ currency }: { currency: string }) {
   const { showToast } = useUi()
@@ -93,7 +99,7 @@ export function RecurringManager({ currency }: { currency: string }) {
             <span className="txn-main">
               <span className="txn-title" style={r.paused ? { color: 'var(--muted)' } : undefined}>{r.name}</span>
               <span className="txn-sub">
-                {r.paused ? 'paused' : `day ${r.dayOfMonth} of every month`}
+                {r.paused ? 'Paused' : `On the ${ordinal(r.dayOfMonth)}`}
                 {c ? ` · ${c.name}` : ''}
               </span>
             </span>
@@ -176,7 +182,7 @@ export function RecurringManager({ currency }: { currency: string }) {
               <Icon name="x" size={14} strokeWidth={2.2} />
             </button>
           </div>
-          <input
+          <input aria-label="Name"
             className="field"
             placeholder="Name — e.g. Rent, Netflix, SIP"
             value={form.name}
@@ -184,7 +190,7 @@ export function RecurringManager({ currency }: { currency: string }) {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input
+            <input aria-label="Amount"
               className="field mono"
               type="number"
               inputMode="decimal"
@@ -194,7 +200,7 @@ export function RecurringManager({ currency }: { currency: string }) {
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
             />
             <span className="caption" style={{ flexShrink: 0, fontSize: 12.5 }}>on day</span>
-            <input
+            <input aria-label="Day of the month"
               className="field mono"
               style={{ width: 74 }}
               type="number"

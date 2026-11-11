@@ -29,7 +29,7 @@ export function TagManager({ open, onClose }: { open: boolean; onClose: () => vo
         className="txn-icon"
         style={{ background: `${c.color}26`, color: c.color, width: 38, height: 38, opacity: c.archived ? 0.55 : 1 }}
         onClick={() => void db.categories.update(c.id, { icon: cycle(TAG_ICONS, c.icon) })}
-        aria-label="Change icon"
+        aria-label={`Change icon for ${c.name || 'this tag'}`}
         title="Tap to change icon"
       >
         <Icon name={c.icon} size={19} />
@@ -37,10 +37,10 @@ export function TagManager({ open, onClose }: { open: boolean; onClose: () => vo
       <button
         style={{ width: 22, height: 22, borderRadius: 11, background: c.color, flexShrink: 0, boxShadow: 'var(--raise-sm)', opacity: c.archived ? 0.55 : 1 }}
         onClick={() => void db.categories.update(c.id, { color: cycle(TAG_COLORS, c.color) })}
-        aria-label="Change color"
+        aria-label={`Change color for ${c.name || 'this tag'}`}
         title="Tap to change color"
       />
-      <input
+      <input aria-label="Tag name"
         className="field"
         style={{ padding: '8px 12px', fontWeight: 600, color: c.archived ? 'var(--muted)' : undefined }}
         value={c.name}
@@ -54,7 +54,7 @@ export function TagManager({ open, onClose }: { open: boolean; onClose: () => vo
           void db.categories.update(c.id, { archived: c.archived ? 0 : 1 })
           if (!c.archived) showToast(`${c.name || 'Tag'} hidden — old expenses keep it`)
         }}
-        aria-label={c.archived ? 'Show tag' : 'Hide tag'}
+        aria-label={`${c.archived ? 'Show' : 'Hide'} ${c.name || 'this tag'}`}
       >
         <Icon name={c.archived ? 'plus' : 'x'} size={13} strokeWidth={2.2} />
       </button>

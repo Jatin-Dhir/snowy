@@ -6,6 +6,31 @@ const CUSTOM_PROPS = ['--accent', '--on-accent', '--pos', '--pos-soft', '--accen
 /** The pastel presets share the custom formula at fixed hues; mono and cream stay CSS-driven. */
 export const PRESET_HUES: Record<string, number> = { blue: 210, lavender: 262, pink: 335, green: 150 }
 
+/**
+ * The special themes: whole colour worlds in global.css, light and dark, that also wear the shared kit
+ * ([data-special]). Here are the few values outside the CSS: Settings' previews and the home-screen widget.
+ */
+export const SPECIAL_THEMES: Record<
+  string,
+  { name: string; light: { bg: string; ink: string; accent: string; onAccent: string }; dark: { bg: string; ink: string; accent: string; onAccent: string } }
+> = {
+  strawberry: {
+    name: 'Strawberry milk',
+    light: { bg: '#fbf0f3', ink: '#3b2430', accent: '#f29bb9', onAccent: '#4a1328' },
+    dark: { bg: '#241620', ink: '#fbe9f0', accent: '#f4a3c0', onAccent: '#3b0f22' }
+  },
+  matcha: {
+    name: 'Matcha',
+    light: { bg: '#f1f0e4', ink: '#263120', accent: '#a3c98a', onAccent: '#1f3313' },
+    dark: { bg: '#161b13', ink: '#ecf1e3', accent: '#a8d390', onAccent: '#17260e' }
+  },
+  blueberry: {
+    name: 'Blueberry',
+    light: { bg: '#eef0fb', ink: '#20233f', accent: '#a9b5f7', onAccent: '#1c2156' },
+    dark: { bg: '#141629', ink: '#e9eafc', accent: '#b4beff', onAccent: '#181c4d' }
+  }
+}
+
 // from global.css: the ground that's hardest to read on in each theme (--sunken; the top of dark's --raised-bg), and --ink
 const LIGHT_GROUND = '#e8ecf2'
 const DARK_GROUND = '#242b33'
@@ -87,6 +112,10 @@ function readableTone(h: number, s: number, from: number, step: 1 | -1, grounds:
 export function widgetAccent(accent: string, hue: number) {
   if (accent === 'mono') return { accent: '#222a35', onAccent: '#f4f6f9', accentNight: '#e8ebf0', onAccentNight: '#14171b' }
   if (accent === 'cream') return { accent: '#a16529', onAccent: '#fdf9f1', accentNight: '#e0a458', onAccentNight: '#1a140b' }
+  const special = SPECIAL_THEMES[accent]
+  if (special) {
+    return { accent: special.light.accent, onAccent: special.light.onAccent, accentNight: special.dark.accent, onAccentNight: special.dark.onAccent }
+  }
   const h = accent === 'custom' ? hue : (PRESET_HUES[accent] ?? 210)
   return {
     accent: hslHex(h, 60, 73),

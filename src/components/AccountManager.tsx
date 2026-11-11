@@ -77,7 +77,7 @@ export function AccountManager({ open, currency, onClose }: { open: boolean; cur
       </span>
 
       <div style={{ display: 'flex', gap: 8 }}>
-        <input
+        <input aria-label="New account name"
           className="field"
           placeholder="New account — e.g. HDFC, Paytm, Mom's card"
           value={newName}
@@ -102,7 +102,7 @@ export function AccountManager({ open, currency, onClose }: { open: boolean; cur
               </span>
               {editing === a.id ? (
                 <>
-                  <input
+                  <input aria-label="Account name"
                     className="field"
                     value={editName}
                     maxLength={30}
@@ -150,7 +150,7 @@ export function AccountManager({ open, currency, onClose }: { open: boolean; cur
 
             {editingBalance === a.id ? (
               <div style={{ display: 'flex', gap: 8, paddingLeft: 44 }}>
-                <input
+                <input aria-label="Balance"
                   className="field mono"
                   type="number"
                   inputMode="decimal"

@@ -18,7 +18,7 @@ import { formatEntry, currencySymbol, formatMinor } from '../lib/money'
 import { guessAccount, guessCategory } from '../lib/smart'
 import type { ParsedSpeech } from '../lib/parseSpeech'
 import { useAmountEntry } from '../lib/useAmountEntry'
-import { todayISO, addDaysISO } from '../lib/dates'
+import { todayISO, addDaysISO, shortDate } from '../lib/dates'
 import { ME } from '../lib/split'
 import { Icon } from './Icon'
 import { NumPad } from './NumPad'
@@ -294,7 +294,7 @@ export function AddSheet({
   })
 
   const dateLabel =
-    dateISO === todayISO() ? 'Today' : dateISO === addDaysISO(todayISO(), -1) ? 'Yesterday' : dateISO.slice(5)
+    dateISO === todayISO() ? 'Today' : dateISO === addDaysISO(todayISO(), -1) ? 'Yesterday' : shortDate(dateISO)
 
   const chip = (cat: Category) => {
     const selected = isEdit ? selectedCat === cat.id : false
@@ -302,6 +302,7 @@ export function AddSheet({
       <button
         key={cat.id}
         className={`chip${selected ? ' selected' : ''}`}
+        aria-pressed={selected}
         style={selected ? { background: `${cat.color}26` } : undefined}
         disabled={!isEdit && !canSave}
         onClick={() => tapCategory(cat.id)}
@@ -327,9 +328,10 @@ export function AddSheet({
               </button>
             </span>
           )}
-          <div style={{ display: 'flex', gap: 8 }}>
+          {/* Delete is red and stands further off Close: one slip shouldn't take an entry */}
+          <div style={{ display: 'flex', gap: isEdit ? 16 : 8 }}>
             {isEdit && (
-              <button className="icon-btn" onClick={() => void deleteEdit()} aria-label="Delete">
+              <button className="icon-btn" style={{ color: 'var(--red)' }} onClick={() => void deleteEdit()} aria-label="Delete">
                 <Icon name="trash" size={15} />
               </button>
             )}
@@ -420,6 +422,7 @@ export function AddSheet({
                 </button>
                 <button
                   className={`pill${showNote ? ' active' : ''}`}
+                  aria-pressed={showNote}
                   onClick={() => {
                     if (showNote) {
                       setShowNote(false)
@@ -438,7 +441,7 @@ export function AddSheet({
               {(showNote || showDate) && (
                 <div style={{ display: 'flex', gap: 8, paddingBottom: 12 }}>
                   {showNote && (
-                    <input
+                    <input aria-label="Note"
                       ref={noteRef}
                       className="field"
                       placeholder="Note — e.g. Zepto, chai with Ananya"
@@ -448,7 +451,7 @@ export function AddSheet({
                     />
                   )}
                   {showDate && (
-                    <input
+                    <input aria-label="Date"
                       ref={dateRef}
                       className="field"
                       type="date"
@@ -544,7 +547,7 @@ export function AddSheet({
               ))}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <input
+              <input aria-label="New account name"
                 className="field"
                 placeholder="New account — e.g. HDFC, Paytm"
                 value={newAccountName}

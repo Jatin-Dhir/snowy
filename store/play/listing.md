@@ -41,7 +41,7 @@ Keep track of people and payments
 
 Made for India, works anywhere
 • Rupees by default, with live conversion if you switch currency
-• Light and dark themes with soft pastel accent colours
+• Light and dark themes in soft pastel colours, plus three cute special themes: Strawberry milk, Matcha and Blueberry, where Taily the cat grows ears
 • App lock with a 4-digit PIN that locks again when you step away
 • Export everything to CSV whenever you like
 

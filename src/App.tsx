@@ -11,7 +11,7 @@ import { syncPrivacyScreen } from './lib/privacyScreen'
 import { initPro } from './lib/pro'
 import { ProSheet } from './components/ProSheet'
 import { onVoiceLaunch, setVoicePrefs, takeVoiceLaunch, type VoiceLaunch } from './lib/voice'
-import { applyCustomAccent, clearCustomAccent, PRESET_HUES, widgetAccent } from './lib/theme'
+import { applyCustomAccent, clearCustomAccent, PRESET_HUES, SPECIAL_THEMES, widgetAccent } from './lib/theme'
 import { syncStatusBar } from './lib/statusbar'
 import { LockScreen } from './components/LockScreen'
 import { TabBar, type Tab } from './components/TabBar'
@@ -104,11 +104,26 @@ export default function App() {
     function apply() {
       const resolved = settings.theme === 'system' ? (media.matches ? 'dark' : 'light') : settings.theme
       const root = document.documentElement
+      // a new theme recolours nearly every element at once, and each one's own colour transition
+      // would fire together: the page smears through in-between colours. Let it snap instead
+      const look = `${resolved} ${settings.accent} ${settings.accentHue}`
+      const flip = root.dataset.look !== undefined && root.dataset.look !== look
+      const still = flip ? document.createElement('style') : null
+      if (still) {
+        still.textContent = '*,*::before,*::after{transition:none!important}'
+        document.head.appendChild(still)
+      }
+      root.dataset.look = look
       root.dataset.theme = resolved
       root.dataset.accent = settings.accent
+      root.toggleAttribute('data-special', settings.accent in SPECIAL_THEMES)
       if (settings.accent === 'custom') applyCustomAccent(settings.accentHue, resolved === 'dark')
       else if (settings.accent in PRESET_HUES) applyCustomAccent(PRESET_HUES[settings.accent], resolved === 'dark')
       else clearCustomAccent()
+      if (still) {
+        void getComputedStyle(document.body).backgroundColor // settle the new colours while nothing transitions
+        requestAnimationFrame(() => still.remove())
+      }
       localStorage.setItem('tally.fx', JSON.stringify({ haptics: settings.haptics, sounds: settings.sounds }))
       void syncStatusBar(resolved === 'dark')
       const meta = document.querySelector('meta[name="theme-color"]')
@@ -332,7 +347,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <div key={tab} className={`tab-host ${slideDir}`}>
+      <main key={tab} className={`tab-host ${slideDir}`}>
         {tab === 'home' && (
           <Home
             currency={settings.currency}
@@ -355,7 +370,7 @@ export default function App() {
         {tab === 'insights' && (
           <Insights currency={settings.currency} onAdd={openAdd} onOpenSettings={() => setSettingsOpen(true)} />
         )}
-      </div>
+      </main>
 
       <TabBar
         tab={tab}

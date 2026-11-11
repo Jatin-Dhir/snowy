@@ -4,16 +4,12 @@ import { db, type Loan } from '../db/db'
 import { addLoan, settleLoan, unsettleLoan, updateLoan, updateLoanReminder, deleteLoan, restoreLoan } from '../db/loans'
 import { formatEntry, formatMinor, currencySymbol } from '../lib/money'
 import { useAmountEntry } from '../lib/useAmountEntry'
-import { addDaysISO, fmtDayHeading, fromISO, todayISO } from '../lib/dates'
+import { addDaysISO, shortDate, todayISO } from '../lib/dates'
 import { personColor } from './PersonBadge'
 import { Icon } from './Icon'
 import { NumPad } from './NumPad'
 import { Sheet } from './Sheet'
 import { haptic, useUi } from '../state/ui'
-
-function shortDate(iso: string): string {
-  return fromISO(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short' })
-}
 
 const REMIND_CHIPS = [
   { label: 'Tomorrow', days: 1 },
@@ -171,14 +167,19 @@ export function LoansSheet({
         <span className="txn-main">
           <span className="txn-title">{l.person}</span>
           <span className="txn-sub" style={overdue ? { color: 'var(--amber-text)', fontWeight: 600 } : undefined}>
+            {/* the reminder before the note: it's what gets cut off last, and "overdue" says it in words */}
             {[
               l.settledISO
                 ? `${l.direction === 'lent' ? 'returned' : 'paid back'} · ${shortDate(l.settledISO)}`
                 : l.direction === 'lent'
                   ? 'owes you'
                   : 'you owe',
-              l.note,
-              !l.settledISO && l.remindISO ? `remind ${fmtDayHeading(l.remindISO).toLowerCase()}` : null
+              !l.settledISO && l.remindISO
+                ? overdue
+                  ? `overdue since ${shortDate(l.remindISO)}`
+                  : `remind ${shortDate(l.remindISO)}`
+                : null,
+              l.note
             ]
               .filter(Boolean)
               .join(' · ')}
@@ -238,6 +239,7 @@ export function LoansSheet({
                 <button
                   key={p}
                   className={`chip${person === p && !typingPerson ? ' selected' : ''}`}
+                  aria-pressed={person === p && !typingPerson}
                   style={{ flexShrink: 0 }}
                   onClick={() => {
                     haptic('selection')
@@ -250,6 +252,7 @@ export function LoansSheet({
               ))}
               <button
                 className={`chip${typingPerson ? ' selected' : ''}`}
+                aria-pressed={typingPerson}
                 style={{ color: 'var(--accent-text)', fontWeight: 700, flexShrink: 0 }}
                 onClick={() => {
                   setTypingPerson(true)
@@ -262,7 +265,7 @@ export function LoansSheet({
             {/* side by side, so a new name doesn't cost the row Remind me needs on a short phone */}
             <div style={{ display: 'flex', gap: 8 }}>
               {typingPerson && (
-                <input
+                <input aria-label="Their name"
                   className="field"
                   style={{ minWidth: 0 }}
                   placeholder="Their name"
@@ -271,7 +274,7 @@ export function LoansSheet({
                   onChange={(e) => setPerson(e.target.value)}
                 />
               )}
-              <input
+              <input aria-label="What for"
                 className="field"
                 style={{ minWidth: 0 }}
                 placeholder={typingPerson ? 'What for?' : 'What for? — optional, e.g. concert tickets'}
@@ -289,6 +292,7 @@ export function LoansSheet({
                 <button
                   key={o.days}
                   className={`chip${remindDays === o.days ? ' selected' : ''}`}
+                  aria-pressed={remindDays === o.days}
                   style={{ flexShrink: 0 }}
                   onClick={() => {
                     haptic('selection')
@@ -300,6 +304,7 @@ export function LoansSheet({
               ))}
               <button
                 className={`chip${remindDays === -1 ? ' selected' : ''}`}
+                aria-pressed={remindDays === -1}
                 style={{ flexShrink: 0 }}
                 onClick={() => {
                   haptic('selection')
@@ -310,7 +315,7 @@ export function LoansSheet({
               </button>
             </div>
             {remindDays === -1 && (
-              <input
+              <input aria-label="Date"
                 ref={reveal}
                 className="field"
                 type="date"
@@ -419,14 +424,14 @@ export function LoansSheet({
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <span className="label" style={{ fontSize: 10 }}>Who and how much</span>
-                <input
+                <input aria-label="Their name"
                   className="field"
                   placeholder="Their name"
                   value={editPerson}
                   maxLength={40}
                   onChange={(e) => setEditPerson(e.target.value)}
                 />
-                <input
+                <input aria-label="Amount"
                   className="field mono"
                   type="number"
                   inputMode="decimal"
@@ -435,7 +440,7 @@ export function LoansSheet({
                   min={0}
                   onChange={(e) => setEditAmount(e.target.value)}
                 />
-                <input
+                <input aria-label="What for"
                   className="field"
                   placeholder="What for? — optional"
                   value={editNote}
@@ -494,7 +499,7 @@ export function LoansSheet({
                     {active.direction === 'lent' ? 'Got it back' : 'Paid it back'}
                   </button>
                   {editingReminder ? (
-                    <input
+                    <input aria-label="Reminder date"
                       className="field"
                       type="date"
                       min={todayISO()}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Capacitor } from '@capacitor/core'
 import { PinPad } from './PinPad'
 import { TailyMark } from '../screens/Welcome'
 import { saveSettings } from '../db/db'
@@ -16,6 +17,7 @@ import { haptic } from '../state/ui'
  */
 export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: () => void }) {
   const [shakeKey, setShakeKey] = useState(0)
+  const [forgot, setForgot] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -61,12 +63,12 @@ export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: (
         zIndex: 90,
         background: 'var(--bg)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        overflowY: 'auto',
         padding: 24
       }}
     >
-      <div style={{ width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 26 }}>
+      {/* auto margins centre it, and a short screen scrolls instead of cutting off the top */}
+      <div style={{ margin: 'auto', width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 26 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
           <span
             style={{
@@ -92,6 +94,23 @@ export function LockScreen({ pinHash, onUnlock }: { pinHash: string; onUnlock: (
           guarded
           onComplete={(p) => void tryPin(p)}
         />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <button
+            className="faint"
+            style={{ fontWeight: 600, fontSize: 13, padding: '8px 12px' }}
+            aria-expanded={forgot}
+            onClick={() => setForgot((v) => !v)}
+          >
+            Forgot your PIN?
+          </button>
+          {forgot && (
+            <span className="caption" style={{ display: 'block', fontSize: 12.5, textAlign: 'center', textWrap: 'pretty' }}>
+              {Capacitor.isNativePlatform()
+                ? "Taily keeps everything on this phone and can't reset your PIN. To start over, clear Taily's storage in Android Settings › Apps › Taily › Storage. That deletes your entries, so restore your latest encrypted backup afterwards."
+                : "Taily keeps everything in this browser and can't reset your PIN. To start over, clear this site's data in your browser settings. That deletes your entries, so restore your latest encrypted backup afterwards."}
+            </span>
+          )}
+        </div>
       </div>
     </div>,
     document.body

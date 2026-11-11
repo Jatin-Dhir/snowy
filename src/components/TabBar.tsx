@@ -194,6 +194,7 @@ export function TabBar({
         btnRefs.current[t.id] = el
       }}
       className={`tab${tab === t.id ? ' active' : ''}`}
+      aria-current={tab === t.id ? 'page' : undefined}
       onClick={() => {
         haptic('selection')
         onTab(t.id)
@@ -239,6 +240,14 @@ export function TabBar({
             </span>
           )}
           <Icon name="plus" size={24} strokeWidth={2.2} />
+          {/* a special theme turns the + into Taily's head (global.css, [data-special]). After the +, so the
+              + stays the button's first icon */}
+          <svg className="fab-ears" viewBox="0 0 58 18" aria-hidden="true">
+            <path className="ear" d="M7 17 L9 3 L21 11 Z" />
+            <path className="ear" d="M51 17 L49 3 L37 11 Z" />
+            <path className="ear-in" d="M10.5 13.5 L11.5 7 L17 10.5 Z" />
+            <path className="ear-in" d="M47.5 13.5 L46.5 7 L41 10.5 Z" />
+          </svg>
         </button>
         {TABS.slice(2).map(item)}
       </div>

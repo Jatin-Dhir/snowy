@@ -53,6 +53,8 @@
   --ease-water: cubic-bezier(0.16, 1, 0.3, 1);
   --font-ui: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
   --font-num: 'Space Grotesk', 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  /* the big numbers on Home: a special theme swaps in its rounded face */
+  --font-display: var(--font-num);
   --r-lg: 22px;
   --r-md: 18px;
   --r-sm: 15px;
@@ -196,6 +198,251 @@
   --scrim: rgba(0, 0, 0, 0.6);
 }
 
+/* ---------- special themes (Settings ▸ Special themes) ----------
+   Each is a whole colour world in light and dark, like cream, plus a kit they share ([data-special], set by
+   App): a rounded face for the big numbers, rounder corners, a faint pattern on the ground, and Taily's cat
+   grows ears and blushes. Every text pair here was measured at 4.5:1 or better; scripts/contrast.mjs checks
+   them on every screen. */
+[data-accent='strawberry'] {
+  --bg: #fbf0f3;
+  --card: #fbf0f3;
+  --raised-bg: var(--card);
+  --sheet-bg: var(--card);
+  --btn-bg: var(--card);
+  --sunken: #f5e4e9;
+  --surface-2: #f8e9ee;
+  --ink: #3b2430;
+  --muted: #74505f;
+  --faint: #7a5665;
+  --line: #efd9e0;
+  --line-soft: #f3e2e8;
+  --line-strong: #e0bfca;
+  --accent: #f29bb9;
+  --on-accent: #4a1328;
+  --pos: #ee86ab;
+  --pos-soft: #fde3ec;
+  --accent-text: #a93465;
+  --pos-text: #a93465;
+  --pos-on-ink: #f6a9c4;
+  --amber: #c97a2b;
+  --amber-text: #99521a;
+  --red: #b5222e;
+  --bar-idle: #f1d6df;
+  --bar-empty: #f6e6ec;
+  --faint-future: #d7b4c1;
+  --nm-hi: rgba(255, 255, 255, 0.9);
+  --nm-lo: rgba(196, 132, 155, 0.4);
+  --btn-shadow: -3px -3px 7px rgba(255, 255, 255, 0.9), 3px 3px 7px rgba(196, 132, 155, 0.4);
+  --btn-shadow-active: inset -2px -2px 5px rgba(255, 255, 255, 0.9), inset 2px 2px 5px rgba(196, 132, 155, 0.4);
+  --dock-shadow: 0 -8px 22px rgba(196, 132, 155, 0.3);
+  --fab-glow: 0 10px 24px rgba(238, 134, 171, 0.42);
+  --scrim: rgba(59, 36, 48, 0.42);
+  --ear-in: #ffd3e1;
+  --blush: #f7a3bf;
+  --deco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='104' viewBox='0 0 104 104'%3E%3Cg fill='%23ee86ab' fill-opacity='.17'%3E%3Cpath d='M21 31c-3-4-10-2-9 4 1 4 9 9 9 9s8-5 9-9c1-6-6-8-9-4z'/%3E%3Cpath d='M76 79c-2-3-7-1.5-6.5 2.8.7 2.9 6.5 6.2 6.5 6.2s5.8-3.3 6.5-6.2c.5-4.3-4.5-5.8-6.5-2.8z'/%3E%3Cpath d='M78 17l2 5 5 2-5 2-2 5-2-5-5-2 5-2z'/%3E%3Cpath d='M27 77l1.4 3.4 3.4 1.4-3.4 1.4-1.4 3.4-1.4-3.4-3.4-1.4 3.4-1.4z'/%3E%3C/g%3E%3C/svg%3E");
+}
+[data-theme='dark'][data-accent='strawberry'] {
+  --bg: #241620;
+  --card: #241620;
+  --raised-bg: linear-gradient(150deg, #34212e 0%, #1c1119 100%);
+  --sheet-bg: #2a1a25;
+  --btn-bg: #33202d;
+  --sunken: #170d14;
+  --surface-2: #2a1a25;
+  --ink: #fbe9f0;
+  --muted: #c9a3b4;
+  --faint: #b8919f;
+  --line: #3a2533;
+  --line-soft: #301e2a;
+  --line-strong: #553a49;
+  --accent: #f4a3c0;
+  --on-accent: #3b0f22;
+  --pos: #f7a9c6;
+  --pos-soft: #4a2238;
+  --accent-text: #f7a9c6;
+  --pos-text: #f7a9c6;
+  --pos-on-ink: #a93465;
+  --amber: #f0a868;
+  --amber-text: #f0a868;
+  --red: #ff8d95;
+  --bar-idle: #3a2533;
+  --bar-empty: #2a1a25;
+  --faint-future: #5a3d4d;
+  --nm-hi: rgba(255, 255, 255, 0.06);
+  --nm-lo: rgba(0, 0, 0, 0.72);
+  --btn-shadow: 0 2px 7px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --btn-shadow-active: inset 0 2px 7px rgba(0, 0, 0, 0.72);
+  --dock-shadow: 0 -8px 24px rgba(0, 0, 0, 0.6);
+  --fab-glow: 0 10px 26px rgba(244, 163, 192, 0.3);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --ear-in: #7d3a5a;
+  --blush: #e57ca3;
+  --deco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='104' viewBox='0 0 104 104'%3E%3Cg fill='%23f7a9c6' fill-opacity='.1'%3E%3Cpath d='M21 31c-3-4-10-2-9 4 1 4 9 9 9 9s8-5 9-9c1-6-6-8-9-4z'/%3E%3Cpath d='M76 79c-2-3-7-1.5-6.5 2.8.7 2.9 6.5 6.2 6.5 6.2s5.8-3.3 6.5-6.2c.5-4.3-4.5-5.8-6.5-2.8z'/%3E%3Cpath d='M78 17l2 5 5 2-5 2-2 5-2-5-5-2 5-2z'/%3E%3Cpath d='M27 77l1.4 3.4 3.4 1.4-3.4 1.4-1.4 3.4-1.4-3.4-3.4-1.4 3.4-1.4z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+[data-accent='matcha'] {
+  --bg: #f1f0e4;
+  --card: #f1f0e4;
+  --raised-bg: var(--card);
+  --sheet-bg: var(--card);
+  --btn-bg: var(--card);
+  --sunken: #e7e6d6;
+  --surface-2: #ecebdd;
+  --ink: #263120;
+  --muted: #56624c;
+  --faint: #5a6650;
+  --line: #e0dfcc;
+  --line-soft: #e8e7d8;
+  --line-strong: #cfcfb6;
+  --accent: #a3c98a;
+  --on-accent: #1f3313;
+  --pos: #86b86c;
+  --pos-soft: #e1ecd3;
+  --accent-text: #3d6829;
+  --pos-text: #3d6829;
+  --pos-on-ink: #a8d38f;
+  --amber: #b8752e;
+  --amber-text: #8a5212;
+  --red: #ad3732;
+  --bar-idle: #dfe0cb;
+  --bar-empty: #e9e8d9;
+  --faint-future: #b6b9a0;
+  --nm-hi: rgba(255, 255, 255, 0.9);
+  --nm-lo: rgba(140, 146, 110, 0.42);
+  --btn-shadow: -3px -3px 7px rgba(255, 255, 255, 0.9), 3px 3px 7px rgba(140, 146, 110, 0.42);
+  --btn-shadow-active: inset -2px -2px 5px rgba(255, 255, 255, 0.9), inset 2px 2px 5px rgba(140, 146, 110, 0.42);
+  --dock-shadow: 0 -8px 22px rgba(140, 146, 110, 0.3);
+  --fab-glow: 0 10px 24px rgba(134, 184, 108, 0.4);
+  --scrim: rgba(38, 49, 32, 0.42);
+  --ear-in: #f4d6c8;
+  --blush: #f0b39b;
+  --deco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='104' viewBox='0 0 104 104'%3E%3Cg fill='%2386b86c' fill-opacity='.2'%3E%3Cpath d='M15 40c2-11 11-16 20-15-2 11-11 16-20 15z'/%3E%3Cpath d='M64 86c1-8 8-12 15-11-1 8-8 12-15 11z'/%3E%3Ccircle cx='78' cy='24' r='2.6'/%3E%3Ccircle cx='31' cy='76' r='2'/%3E%3C/g%3E%3C/svg%3E");
+}
+[data-theme='dark'][data-accent='matcha'] {
+  --bg: #161b13;
+  --card: #161b13;
+  --raised-bg: linear-gradient(150deg, #243020 0%, #11160e 100%);
+  --sheet-bg: #1c2318;
+  --btn-bg: #222c1d;
+  --sunken: #0d110a;
+  --surface-2: #1c2318;
+  --ink: #ecf1e3;
+  --muted: #aab59d;
+  --faint: #98a48b;
+  --line: #283222;
+  --line-soft: #20281b;
+  --line-strong: #3a4732;
+  --accent: #a8d390;
+  --on-accent: #17260e;
+  --pos: #b2da9b;
+  --pos-soft: #23361a;
+  --accent-text: #b2da9b;
+  --pos-text: #b2da9b;
+  --pos-on-ink: #3d6829;
+  --amber: #e3a462;
+  --amber-text: #e3a462;
+  --red: #f08a7e;
+  --bar-idle: #283222;
+  --bar-empty: #1c2318;
+  --faint-future: #3f4b37;
+  --nm-hi: rgba(255, 255, 255, 0.06);
+  --nm-lo: rgba(0, 0, 0, 0.72);
+  --btn-shadow: 0 2px 7px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --btn-shadow-active: inset 0 2px 7px rgba(0, 0, 0, 0.72);
+  --dock-shadow: 0 -8px 24px rgba(0, 0, 0, 0.6);
+  --fab-glow: 0 10px 26px rgba(168, 211, 144, 0.26);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --ear-in: #6b4a3d;
+  --blush: #c98a74;
+  --deco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='104' viewBox='0 0 104 104'%3E%3Cg fill='%23b2da9b' fill-opacity='.09'%3E%3Cpath d='M15 40c2-11 11-16 20-15-2 11-11 16-20 15z'/%3E%3Cpath d='M64 86c1-8 8-12 15-11-1 8-8 12-15 11z'/%3E%3Ccircle cx='78' cy='24' r='2.6'/%3E%3Ccircle cx='31' cy='76' r='2'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+[data-accent='blueberry'] {
+  --bg: #eef0fb;
+  --card: #eef0fb;
+  --raised-bg: var(--card);
+  --sheet-bg: var(--card);
+  --btn-bg: var(--card);
+  --sunken: #e3e6f7;
+  --surface-2: #e8ebf9;
+  --ink: #20233f;
+  --muted: #52577c;
+  --faint: #575c82;
+  --line: #dde0f4;
+  --line-soft: #e4e7f7;
+  --line-strong: #c6cbea;
+  --accent: #a9b5f7;
+  --on-accent: #1c2156;
+  --pos: #8e9cf2;
+  --pos-soft: #e0e5fd;
+  --accent-text: #4150c2;
+  --pos-text: #4150c2;
+  --pos-on-ink: #aab6fb;
+  --amber: #c07a2e;
+  --amber-text: #90531a;
+  --red: #b2343d;
+  --bar-idle: #dadff6;
+  --bar-empty: #e6e9fa;
+  --faint-future: #b1b7da;
+  --nm-hi: rgba(255, 255, 255, 0.92);
+  --nm-lo: rgba(120, 128, 180, 0.38);
+  --btn-shadow: -3px -3px 7px rgba(255, 255, 255, 0.92), 3px 3px 7px rgba(120, 128, 180, 0.38);
+  --btn-shadow-active: inset -2px -2px 5px rgba(255, 255, 255, 0.92), inset 2px 2px 5px rgba(120, 128, 180, 0.38);
+  --dock-shadow: 0 -8px 22px rgba(120, 128, 180, 0.28);
+  --fab-glow: 0 10px 24px rgba(142, 156, 242, 0.42);
+  --scrim: rgba(32, 35, 63, 0.42);
+  --ear-in: #ffd6e0;
+  --blush: #f6aec3;
+  --deco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='104' viewBox='0 0 104 104'%3E%3Cg fill='%238e9cf2' fill-opacity='.17'%3E%3Cpath d='M26 17l2.2 5.6 5.8.4-4.5 3.7 1.5 5.7-5-3.2-5 3.2 1.5-5.7-4.5-3.7 5.8-.4z'/%3E%3Cpath d='M63 70a7 7 0 0 1 13.4-2.6A5.5 5.5 0 1 1 78 78H65a5 5 0 0 1-2-8z'/%3E%3Ccircle cx='80' cy='22' r='2'/%3E%3Ccircle cx='24' cy='80' r='1.6'/%3E%3C/g%3E%3C/svg%3E");
+}
+[data-theme='dark'][data-accent='blueberry'] {
+  --bg: #141629;
+  --card: #141629;
+  --raised-bg: linear-gradient(150deg, #23264a 0%, #121428 100%);
+  --sheet-bg: #1a1d38;
+  --btn-bg: #22254a;
+  --sunken: #0c0d1c;
+  --surface-2: #1a1d38;
+  --ink: #e9eafc;
+  --muted: #a7abd8;
+  --faint: #9599c8;
+  --line: #262a4d;
+  --line-soft: #1f2242;
+  --line-strong: #3a3f6b;
+  --accent: #b4beff;
+  --on-accent: #181c4d;
+  --pos: #bcc5ff;
+  --pos-soft: #262b5c;
+  --accent-text: #bcc5ff;
+  --pos-text: #bcc5ff;
+  --pos-on-ink: #4150c2;
+  --amber: #f0b06e;
+  --amber-text: #f0b06e;
+  --red: #ff8f95;
+  --bar-idle: #262a4d;
+  --bar-empty: #1a1d38;
+  --faint-future: #3d4170;
+  --nm-hi: rgba(255, 255, 255, 0.06);
+  --nm-lo: rgba(0, 0, 0, 0.72);
+  --btn-shadow: 0 2px 7px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --btn-shadow-active: inset 0 2px 7px rgba(0, 0, 0, 0.72);
+  --dock-shadow: 0 -8px 24px rgba(0, 0, 0, 0.6);
+  --fab-glow: 0 10px 26px rgba(180, 190, 255, 0.28);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --ear-in: #5a4a8a;
+  --blush: #c99bd8;
+  /* a starry night: the one pattern that's a little brighter in the dark */
+  --deco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='104' viewBox='0 0 104 104'%3E%3Cg fill='%23d6dcff' fill-opacity='.14'%3E%3Cpath d='M26 17l2.2 5.6 5.8.4-4.5 3.7 1.5 5.7-5-3.2-5 3.2 1.5-5.7-4.5-3.7 5.8-.4z'/%3E%3Cpath d='M63 70a7 7 0 0 1 13.4-2.6A5.5 5.5 0 1 1 78 78H65a5 5 0 0 1-2-8z'/%3E%3Ccircle cx='80' cy='22' r='2'/%3E%3Ccircle cx='24' cy='80' r='1.6'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* the kit every special theme shares */
+[data-special] {
+  --font-display: 'Baloo 2', 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  --r-lg: 26px;
+  --r-md: 21px;
+  --r-sm: 17px;
+}
+
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -320,6 +567,15 @@ select {
   font-weight: 800;
   font-size: 25px;
   letter-spacing: -0.02em;
+  margin: 0;
+}
+
+/* the month a screen shows, beside the arrows that change it: words, not a button */
+.month-label {
+  font-weight: 700;
+  font-size: 14px;
+  padding: 0 6px;
+  white-space: nowrap;
 }
 
 .row-between {
@@ -336,6 +592,8 @@ select {
   letter-spacing: 0.11em;
   text-transform: uppercase;
   color: var(--faint);
+  /* section labels are h2s now, so screen readers can jump between them */
+  margin: 0;
 }
 
 /* marks a Settings row that needs Taily Pro (Play build, not bought yet) */
@@ -443,6 +701,362 @@ button.pill:active {
   text-overflow: ellipsis;
 }
 
+/* ---------- Home: today, the month, and the places money sits ---------- */
+.today-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 18px 16px;
+}
+
+.today-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.today-words {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.today-card .hero-num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  text-align: left;
+  width: fit-content;
+  transition: color 300ms ease;
+}
+
+/* the ring: what's left of today, with Taily's cat in it */
+.room-ring {
+  flex: none;
+  overflow: visible;
+}
+
+@media (max-width: 360px) {
+  .room-ring {
+    width: 78px;
+    height: 78px;
+  }
+}
+
+.room-ring .ring-track {
+  fill: none;
+  stroke: var(--bar-idle);
+  stroke-width: 9;
+}
+
+.room-ring.is-over .ring-track {
+  stroke: var(--red);
+  stroke-opacity: 0.28;
+}
+
+.room-ring .ring-arc {
+  fill: none;
+  stroke: var(--pos);
+  stroke-width: 9;
+  stroke-linecap: round;
+  /* longer than a UI response on purpose: it sweeps in alongside the number counting to today's room
+     (useAnimatedNumber, 560ms), and when a spend is saved it shows the room shrinking */
+  transition: stroke-dashoffset 560ms var(--ease-water);
+}
+
+.room-ring .stroke {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.room-ring .eye {
+  fill: var(--ink);
+}
+
+/* a special theme's cat has ears and rosy cheeks; everywhere else it's just a face */
+.room-ring .ring-ears,
+.room-ring .blush {
+  display: none;
+}
+
+[data-special] .room-ring .ring-ears,
+[data-special] .room-ring .blush {
+  display: inline;
+}
+
+.room-ring .ear,
+.fab-ears .ear {
+  fill: var(--accent);
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.room-ring .ear-in,
+.fab-ears .ear-in {
+  fill: var(--ear-in);
+}
+
+.room-ring .blush {
+  fill: var(--blush);
+  opacity: 0.7;
+}
+
+/* ...and the + becomes Taily's head */
+.fab-ears {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: -11px;
+  width: 58px;
+  height: 18px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+[data-special] .fab-ears {
+  display: block;
+}
+
+/* a special theme speaks softly: its little headings are in the rounded face, in sentence case. The sizes and
+   tracking some labels set inline were tuned for small capitals, so here the theme's own win */
+[data-special] .label {
+  font-family: var(--font-display);
+  font-size: 12.5px !important;
+  font-weight: 700;
+  letter-spacing: 0.01em !important;
+  text-transform: none;
+  line-height: 1.2;
+}
+
+/* the theme's pattern, on the ground under everything */
+[data-special] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--deco);
+  background-size: 104px 104px;
+}
+
+.month-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  width: 100%;
+  padding: 12px 14px 11px;
+  border-radius: var(--r-sm);
+  background: var(--sunken);
+  box-shadow: var(--inset-sm);
+}
+
+.month-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.month-figures {
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.month-cta {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* the places money sits: one wide tile, then two side by side */
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 14px 14px 13px;
+  text-align: left;
+  min-width: 0;
+}
+
+.tile-wide {
+  gap: 10px;
+}
+
+.tile-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.tile-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: var(--pos-soft);
+  color: var(--accent-text);
+}
+
+.tile-name {
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.tile-head .tile-name {
+  flex: 1;
+}
+
+.tile-value {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.tile-line {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.tile-grid > .tile {
+  height: 100%;
+}
+
+.tile-grid .bar-track {
+  width: 100%;
+  margin: 2px 0;
+}
+
+.tile-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mini-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--sunken);
+  box-shadow: var(--inset-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mini-chip .mono {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* heads-up: everything that wants a word, in one card */
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px 6px 14px;
+}
+
+.note-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+}
+
+.note-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  flex: none;
+  background: var(--pos);
+}
+
+.note-dot.over {
+  background: var(--red);
+}
+
+.note-dot.warn,
+.note-dot.bill {
+  background: var(--amber);
+}
+
+.note-text {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.note-x {
+  width: 34px;
+  height: 34px;
+  border-radius: 17px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--faint);
+}
+
+.week-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* the day letters under the bars: the daily line sits this far up */
+  --day-h: 19px;
+}
+
+.week-card .weekbars {
+  position: relative;
+  height: calc(64px + var(--day-h));
+}
+
+/* the budget's even share of a day, across the bars */
+.week-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1.5px dashed var(--line-strong);
+  pointer-events: none;
+}
+
+.week-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.week-key i {
+  width: 14px;
+  border-top: 1.5px dashed var(--line-strong);
+}
+
 /* ---------- floating navigation dock ---------- */
 .tabbar {
   position: fixed;
@@ -489,7 +1103,7 @@ button.pill:active {
   align-items: center;
   gap: 2px;
   color: var(--faint);
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 600;
   padding: 5px 0 3px;
   border-radius: var(--r-lg);
@@ -861,6 +1475,14 @@ button.txn-row:active {
   flex-shrink: 0;
   box-shadow: var(--btn-shadow);
   transition: box-shadow 150ms var(--ease-soft), transform 150ms var(--ease-soft);
+  position: relative;
+}
+
+/* 32px to see, 40px to hit: a ring of reach that stops short of a neighbour 8px away */
+.icon-btn::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
 }
 
 .icon-btn:active {
@@ -1136,7 +1758,10 @@ button.chip:active {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
   animation: toast-in 340ms var(--ease-spring);
   max-width: min(92vw, 480px);
-  white-space: nowrap;
+  width: max-content;
+  /* a long message wraps rather than losing its end */
+  line-height: 1.35;
+  text-wrap: pretty;
   cursor: pointer;
 }
 
@@ -1169,6 +1794,8 @@ button.chip:active {
   padding: 4px 10px;
   border-radius: 999px;
   letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ---------- inputs: carved wells ---------- */
@@ -1269,8 +1896,14 @@ select.field {
   flex: 1;
   border: none;
   background: none;
-  font-size: 14.5px;
+  /* 16px, or iPhone Safari zooms the page when it's tapped */
+  font-size: 16px;
   min-width: 0;
+}
+
+/* the field draws no ring of its own, so its well shows where focus is */
+.searchbar:focus-within {
+  box-shadow: var(--inset), 0 0 0 2px var(--focus);
 }
 
 .searchbar input::placeholder {
@@ -1339,7 +1972,64 @@ button.weekbar-col:disabled {
   color: var(--faint);
 }
 
+/* Settings ▸ Special themes: each card is a little window onto the theme */
+.special-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.special-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  padding: 7px 7px 9px;
+  border-radius: var(--r-md);
+  background: var(--btn-bg);
+  border: 1px solid var(--edge);
+  box-shadow: var(--btn-shadow);
+}
+
+.special-card.on {
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--sp-accent);
+}
+
+.special-preview {
+  position: relative;
+  height: 66px;
+  border-radius: calc(var(--r-md) - 6px);
+  background: var(--sp-bg);
+  display: grid;
+  place-items: center;
+}
+
+.special-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.special-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink);
+}
+
 /* custom pastel slider */
+.hue-bar:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
 .hue-bar {
   position: relative;
   height: 34px;

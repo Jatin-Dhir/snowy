@@ -75,7 +75,7 @@ export function ProfilesSheet({ open, onClose }: { open: boolean; onClose: () =>
       </span>
 
       <div style={{ display: 'flex', gap: 8 }}>
-        <input
+        <input aria-label="New profile name"
           className="field"
           placeholder="New profile — e.g. Mom, Shop, Trips"
           value={newName}
@@ -111,7 +111,7 @@ export function ProfilesSheet({ open, onClose }: { open: boolean; onClose: () =>
             </button>
             {editing === p.id ? (
               <>
-                <input
+                <input aria-label="Profile name"
                   className="field"
                   value={editName}
                   maxLength={24}

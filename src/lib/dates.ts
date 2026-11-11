@@ -1,5 +1,10 @@
 const DAY_MS = 86400000
 
+// written out rather than asked of the locale: en-IN says "Sept" beside "Aug", and older
+// Android WebViews disagree with newer ones. Every short date reads the same on every phone
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
 export function toISO(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -55,9 +60,20 @@ export function monthLabel(key: string, opts: { withYear?: boolean } = {}): stri
   return opts.withYear || y !== new Date().getFullYear() ? `${name} ${y}` : name
 }
 
+/** "Oct" */
 export function monthShort(key: string): string {
-  const [y, m] = key.split('-').map(Number)
-  return new Date(y, m - 1, 1).toLocaleString('en-IN', { month: 'short' }).toUpperCase()
+  return MONTHS[Number(key.slice(5, 7)) - 1]
+}
+
+/** "27 Oct" */
+export function shortDate(iso: string): string {
+  const d = fromISO(iso)
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`
+}
+
+/** "27 Oct 2026" */
+export function fullDate(iso: string): string {
+  return `${shortDate(iso)} ${iso.slice(0, 4)}`
 }
 
 /** Monday-started week containing `iso`, as 7 ISO dates. */
@@ -68,31 +84,32 @@ export function weekDaysOf(iso: string): string[] {
   return Array.from({ length: 7 }, (_, i) => toISO(new Date(mon.getTime() + i * DAY_MS)))
 }
 
+/** "8:10 pm", the way a phone in India shows the time */
 export function fmtTime(ts: number): string {
+  const d = new Date(ts)
+  const h = d.getHours()
+  return `${h % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`
+}
+
+/** "20:10", for exports a spreadsheet reads */
+export function fmtTime24(ts: number): string {
   const d = new Date(ts)
   return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
+/** "Today · Sat, 31 Oct", "Yesterday", "Thu, 29 Oct", "Mon, 3 Nov 2025" */
 export function fmtDayHeading(iso: string): string {
   const today = todayISO()
-  if (iso === today) {
-    const d = fromISO(iso)
-    return `Today · ${d.toLocaleString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}`
-  }
   if (iso === addDaysISO(today, -1)) return 'Yesterday'
-  const d = fromISO(iso)
-  const sameYear = iso.slice(0, 4) === today.slice(0, 4)
-  return d.toLocaleString('en-IN', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    ...(sameYear ? {} : { year: 'numeric' })
-  })
+  const day = `${WEEKDAYS[fromISO(iso).getDay()]}, ${shortDate(iso)}`
+  if (iso === today) return `Today · ${day}`
+  return iso.slice(0, 4) === today.slice(0, 4) ? day : `${day} ${iso.slice(0, 4)}`
 }
 
+/** "Sun 27" */
 export function fmtShortDate(iso: string): string {
   const d = fromISO(iso)
-  return d.toLocaleString('en-IN', { weekday: 'short', day: 'numeric' })
+  return `${WEEKDAYS[d.getDay()]} ${d.getDate()}`
 }
 
 export function weekdayName(iso: string): string {

@@ -1,5 +1,5 @@
 import type { Account, Category, Txn } from '../db/db'
-import { fmtTime } from './dates'
+import { fmtTime24 } from './dates'
 
 function esc(v: string): string {
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
@@ -20,7 +20,7 @@ export function txnsToCsv(txns: Txn[], categories: Category[], accounts: Account
   const rows = txns.map((t) =>
     [
       t.dateISO,
-      fmtTime(t.ts),
+      fmtTime24(t.ts),
       (t.kind ?? 'out') === 'in' ? 'received' : 'spent',
       (t.amountMinor / 100).toFixed(2),
       t.currency,

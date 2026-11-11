@@ -133,7 +133,7 @@ export function ProSheet() {
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: 'block', fontWeight: 700, fontSize: 14 }}>{f.title}</span>
-              <span className="caption" style={{ fontSize: 11.5, textWrap: 'pretty' }}>{f.sub}</span>
+              <span className="caption" style={{ display: 'block', fontSize: 11.5, textWrap: 'pretty' }}>{f.sub}</span>
             </span>
           </div>
         ))}

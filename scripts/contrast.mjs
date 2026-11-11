@@ -21,7 +21,7 @@ const args = process.argv.slice(2)
 const appUrl = args.find((a) => a.startsWith('http')) ?? 'http://localhost:5180'
 const only = args.filter((a) => a.includes(':') && !a.startsWith('http'))
 const THEMES = ['light', 'dark']
-const PRESETS = ['blue', 'lavender', 'pink', 'green', 'mono', 'cream']
+const PRESETS = ['blue', 'lavender', 'pink', 'green', 'mono', 'cream', 'strawberry', 'matcha', 'blueberry']
 // the custom hues that sit nearest the bar: yellow reads lightest, blue-violet darkest
 const CUSTOM_HUES = [60, 245]
 

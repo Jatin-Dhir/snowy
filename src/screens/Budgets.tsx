@@ -38,7 +38,7 @@ function BudgetDialog({
             <Icon name="x" size={14} strokeWidth={2.2} />
           </button>
         </div>
-        <input
+        <input aria-label="Amount per month"
           className="field mono"
           type="number"
           inputMode="numeric"
@@ -140,7 +140,7 @@ function GoalDialog({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span className="label" style={{ fontSize: 10 }}>Add or take out money</span>
           <div style={{ display: 'flex', gap: 8 }}>
-            <input
+            <input aria-label="Amount"
               className="field mono"
               type="number"
               inputMode="decimal"
@@ -166,14 +166,14 @@ function GoalDialog({
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <span className="label" style={{ fontSize: 10 }}>{goal ? 'Rename or retarget' : 'What and how much?'}</span>
-        <input
+        <input aria-label="What you're saving for"
           className="field"
           placeholder="What for? — e.g. iPhone, Goa trip, emergency fund"
           value={name}
           maxLength={40}
           onChange={(e) => setName(e.target.value)}
         />
-        <input
+        <input aria-label="Target amount"
           className="field mono"
           type="number"
           inputMode="numeric"
@@ -234,9 +234,12 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
   }
 
   async function removeBudget(id: string) {
+    const was = await db.budgets.get(id)
     await db.budgets.delete(id)
     setDialog(null)
-    showToast('Budget removed')
+    showToast('Budget removed', () => {
+      if (was) void db.budgets.put(was)
+    })
   }
 
   function stateColor(state: 'ok' | 'warn' | 'over', fallback: string): string {
@@ -252,9 +255,9 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
   return (
     <div className="screen">
       <div className="row-between">
-        <span className="screen-title">Budgets</span>
+        <h1 className="screen-title">Budgets</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="pill">{monthLabel(monthKey)}</span>
+          <span className="month-label">{monthLabel(monthKey)}</span>
           <button
             className="icon-btn"
             style={{ width: 36, height: 36, borderRadius: 18 }}
@@ -299,8 +302,12 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
             height={8}
           />
           <span className="caption">
-            Day {parseInt(today.slice(8, 10), 10)} of {daysInMonth(monthKey)} — the tick is today. Projected{' '}
-            {formatMinor(projected, currency)}.
+            {/* on the month's last day a projection would only repeat what's spent: say how it ended instead */}
+            {parseInt(today.slice(8, 10), 10) === daysInMonth(monthKey)
+              ? spent <= overall.amountMinor
+                ? `Last day of the month — ${formatMinor(overall.amountMinor - spent, currency)} under budget.`
+                : `Last day of the month — ${formatMinor(spent - overall.amountMinor, currency)} over budget.`
+              : `Day ${parseInt(today.slice(8, 10), 10)} of ${daysInMonth(monthKey)} — the tick is today. Projected ${formatMinor(projected, currency)}.`}
           </span>
         </button>
       ) : (
@@ -356,7 +363,7 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <span className="label">Saving for</span>
+        <h2 className="label">Saving for</h2>
         {[...goals]
           .sort((a, b) => a.createdAt - b.createdAt)
           .map((g) => {
@@ -410,9 +417,9 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
 
       {bills.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span className="label" style={{ paddingBottom: 4 }}>
+          <h2 className="label" style={{ paddingBottom: 4 }}>
             Next 14 days
-          </span>
+          </h2>
           {bills.map((r) => (
             <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0' }}>
               <span className="mono" style={{ fontWeight: 600, fontSize: 11.5, width: 56, color: 'var(--amber-text)' }}>
