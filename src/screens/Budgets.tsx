@@ -7,7 +7,7 @@ import { byCategory, pace, projectMonth, sum } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
 import { guessAccount } from '../lib/smart'
-import { currentMonthKey, daysInMonth, monthLabel, todayISO } from '../lib/dates'
+import { currentMonthKey, daysInMonth, monthLabel, shortDate, todayISO } from '../lib/dates'
 import { Progress } from '../components/Progress'
 import { Icon } from '../components/Icon'
 import { Sheet } from '../components/Sheet'
@@ -285,14 +285,14 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
               </span>
             </span>
             <span
-              className="mono"
+              className="mono caps"
               style={{
                 fontWeight: 600,
                 fontSize: 12,
                 color: stateText(overallPace.state, 'var(--pos-text)')
               }}
             >
-              {overallPace.state === 'over' ? 'OVER' : overallPace.state === 'warn' ? 'AHEAD OF PACE' : 'ON PACE'}
+              {overallPace.state === 'over' ? 'Over' : overallPace.state === 'warn' ? 'Ahead of pace' : 'On pace'}
             </span>
           </div>
           <Progress
@@ -422,8 +422,8 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
           </h2>
           {bills.map((r) => (
             <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0' }}>
-              <span className="mono" style={{ fontWeight: 600, fontSize: 11.5, width: 56, color: 'var(--amber-text)' }}>
-                {r.nextRunISO.slice(8, 10)} {monthLabel(r.nextRunISO.slice(0, 7)).slice(0, 3).toUpperCase()}
+              <span className="mono caps" style={{ fontWeight: 600, fontSize: 11.5, width: 56, flexShrink: 0, color: 'var(--amber-text)' }}>
+                {shortDate(r.nextRunISO)}
               </span>
               <span style={{ flex: 1, fontWeight: 500, fontSize: 14 }}>{r.name}</span>
               <span className="mono muted" style={{ fontWeight: 600, fontSize: 14 }}>

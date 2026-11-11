@@ -835,6 +835,18 @@ button.pill:active {
   line-height: 1.2;
 }
 
+/* small words set in capitals, like a pace or a date in a list: words in the source, capitals from here,
+   so the special themes can keep them in sentence case like their labels */
+.caps {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+[data-special] .caps {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 /* the theme's pattern, on the ground under everything */
 [data-special] body::before {
   content: '';

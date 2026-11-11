@@ -40,7 +40,7 @@ export function NumPad({
   onBackspace
 }: {
   onDigit: (d: string) => void
-  /** Without it (a PIN) the key stays in the grid, switched off. */
+  /** Without it (a PIN) the key's corner of the grid is left empty. */
   onDot?: () => void
   onBackspace: () => void
 }) {
@@ -77,9 +77,14 @@ export function NumPad({
           {d}
         </Key>
       ))}
-      <Key aria-label="Decimal point" disabled={!onDot} fire={() => onDot?.()}>
-        .
-      </Key>
+      {onDot ? (
+        <Key aria-label="Decimal point" fire={onDot}>
+          .
+        </Key>
+      ) : (
+        // a PIN has no decimal point: its corner stays empty, as on a phone's own PIN pad, so 0 keeps its place
+        <span aria-hidden="true" />
+      )}
       <Key fire={() => onDigit('0')}>0</Key>
       <Key
         aria-label="Backspace"
