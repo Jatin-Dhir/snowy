@@ -82,8 +82,9 @@ const PLAIN_NAMES: Record<string, string> = {
   people: 'people', other: 'other', return: 'return', payment: 'payment', online: 'online', savings: 'savings'
 }
 
-// what a recognizer writes for a word it misheard
-const MISHEARD: Record<string, string> = { launch: 'lunch' }
+// what a recognizer writes for a word it misheard. Google's English (India) recognizer, fed synthetic voices,
+// wrote "dinner" as "Dinar" in 4 of 6 tries (scripts/voice-phrases/cases.mjs, group 14)
+const MISHEARD: Record<string, string> = { launch: 'lunch', dinar: 'dinner' }
 
 /* ------------------------------------------------------------------ money in or out */
 
@@ -117,7 +118,7 @@ const PAY_WORDS = ['cash', 'upi', 'card', 'credit', 'debit', 'wallet', 'bank', '
 const FILLERS = new Set([
   'i', 'a', 'an', 'the', 'on', 'for', 'of', 'at', 'in', 'to', 'my', 'me', 'it', 'is', 'was', 'and', 'just', 'add',
   'log', 'note', 'oh', 'god', 'um', 'uh', 'umm', 'please', 'like', 'some', 'expense', 'so', 'okay', 'ok', 'then',
-  'spent', 'spend', 'paid', 'pay', 'bought', 'buy', 'received', 'got', 'back', 'from', 'credited', 'gave', 'sent',
+  'spent', 'spend', 'paid', 'pay', 'bought', 'buy', 'received', 'receive', 'got', 'back', 'from', 'credited', 'gave', 'sent',
   // Hindi glue words, as an English (India) recognizer writes them
   'ka', 'ki', 'ke', 'ko', 'ne', 'par', 'pe', 'mein', 'se', 'aur', 'hai', 'tha', 'thi', 'maine', 'mene', 'mera',
   'meri', 'mere', 'abhi', 'diye', 'diya', 'liye', 'liya', 'mile', 'mila', 'mili', 'kharcha', 'kharch', 'wala',
@@ -209,6 +210,8 @@ const SCALES: Record<string, number> = {
 }
 // short forms count only right after a number: "5k", "2 cr" — not "R K Stores" or "CR Park"
 const SHORT_SCALES: Record<string, number> = { k: 1e3, cr: 1e7 }
+// a scale written in digits, read as one only right after a half: "one and half 1000"
+const WRITTEN_SCALES = new Set([100, 1e3, 1e5, 1e7])
 
 const isNumberWord = (w: string | undefined) =>
   w !== undefined && (w in UNITS || w in TENS || w in HINDI || w in HALVES || w in MODIFIERS || w in SCALES || SIXTY.has(w))
@@ -307,7 +310,14 @@ const DEVANAGARI: Record<string, string> = {
   'दवा': 'dawa', 'दवाइयां': 'dawai', 'डॉक्टर': 'doctor', 'डाक्टर': 'doctor', 'अस्पताल': 'hospital', 'मूवी': 'movie',
   'फिल्म': 'movie', 'कपडे': 'clothes', 'जूते': 'shoes', 'शॉपिंग': 'shopping', 'गिफ्ट': 'gift', 'तोहफा': 'gift',
   'मोबाइल': 'mobile', 'इंटरनेट': 'internet', 'बीमा': 'insurance', 'मम्मी': 'mummy', 'मां': 'maa', 'पापा': 'papa',
-  'भाई': 'bhai', 'दीदी': 'didi'
+  'भाई': 'bhai', 'दीदी': 'didi',
+  // English words as Google's Hindi recognizer spells them ("250 लंच", "1500 ग्रोसरीज", "2000 फ्रॉम राहुल")
+  'लंच': 'lunch', 'लॉन्च': 'launch', 'डिनर': 'dinner', 'ब्रेकफास्ट': 'breakfast', 'स्नैक्स': 'snacks', 'पिज्जा': 'pizza',
+  'बर्गर': 'burger', 'बिरयानी': 'biryani', 'ग्रोसरी': 'grocery', 'ग्रॉसरी': 'grocery', 'ग्रोसरीज': 'groceries',
+  'स्विगी': 'swiggy', 'जोमैटो': 'zomato', 'उबर': 'uber', 'ओला': 'ola', 'अमेजन': 'amazon', 'अमेजॉन': 'amazon',
+  'फ्लिपकार्ट': 'flipkart', 'ब्लिंकिट': 'blinkit', 'जेप्टो': 'zepto', 'नेटफ्लिक्स': 'netflix', 'जियो': 'jio',
+  'एयरटेल': 'airtel', 'रेंट': 'rent', 'पार्किंग': 'parking', 'इलेक्ट्रिसिटी': 'electricity', 'मेडिसिन': 'medicine',
+  'फोनपे': 'phonepe', 'फ्रॉम': 'from', 'गॉट': 'got', 'रिसीव्ड': 'received'
 }
 /** Devanagari spelled one way: precomposed nukta letters taken apart and the nukta dropped, chandrabindu as anusvara. */
 function devanagari(s: string): string {
@@ -336,8 +346,12 @@ const TOKEN = /₹|\$|€|£|\d{1,2}:\d{2}(?!\d)|\d{1,2}(?:st|nd|rd|th)(?![\p{L}
 const MAX_RUPEES = 99999999
 
 function tokenize(raw: string): Token[] {
+  const hindi = /[\u0900-\u097F]/.test(raw)
   const text = raw
     .replace(/[\u0966-\u096F]/g, (d) => String(d.charCodeAt(0) - 0x0966))
+    // Google's Hindi recognizer breaks a number with a hyphen, "2-50", "1-500" and "100-0" beside Devanagari words
+    // (lunch, groceries, shopping); in English, "2-3 days" is a range
+    .replace(/(?<![\d.,-])(\d{1,3})-(\d{1,3})(?![\d.,]|-\d)/g, (m, a: string, b: string) => (hindi ? a + b : m))
     // "cash back" is one thing, not the cash account
     .replace(/\bcash\s+back\b/gi, (m) => (m[0] === 'C' ? 'Cashback' : 'cashback'))
   return [...text.matchAll(TOKEN)].map((m) => {
@@ -447,6 +461,9 @@ function atomAt(tokens: Token[], i: number): Atom | null {
   if (w in HALVES) return { t: 'num', v: HALVES[w], kind: 'half' }
   if (w in MODIFIERS) return { t: 'mod', v: MODIFIERS[w] }
   if (w in SCALES) return { t: 'scale', v: SCALES[w] }
+  // "1.2 lock rent": how Google's English (India) recognizer wrote "1.2 lakh" beside it, twice in two voices. Only
+  // after a decimal, which counts no locks
+  if ((w === 'lock' || w === 'lack') && /^\d+\.\d+$/.test(tokens[i - 1]?.low ?? '')) return { t: 'scale', v: 1e5 }
   if (w in SHORT_SCALES) {
     // "5k", "2 cr", but not "R K Stores", "auto 80 to CR Park", "300 K R Puram"
     const prev = atomAt(tokens, i - 1)
@@ -505,8 +522,10 @@ function readNumber(tokens: Token[], start: number): NumberRead | null {
   let clock = false
   let j = start
   for (;;) {
-    const a = atomAt(tokens, j)
+    let a = atomAt(tokens, j)
     if (!a) break
+    // "one and half 1000 shopping", "two and a half 1000": the recognizer wrote the scale word in digits
+    if (a.t === 'num' && a.kind === 'digit' && has && !Number.isInteger(cur) && WRITTEN_SCALES.has(a.v)) a = { t: 'scale', v: a.v }
     if (a.t === 'mod') {
       // "saade teen sau": the number right after it is a half more; "sava sau", "paune sau": of one hundred
       const next = atomAt(tokens, j + 1)
@@ -1207,17 +1226,43 @@ function endsIn(long: number, short: number): boolean {
   return long > short && long % 100 === 0 && short % 100 === 0 && String(long / 100).endsWith(String(short / 100))
 }
 
+/** A number straight after a word that may be a lost piece of it: "to 50", "for fifty", "won 80". */
+function lostPiece(text: string): boolean {
+  const t = tokenize(text)
+  return t.some((x, i) => HOMOPHONES.has(x.low) && t[i + 1] !== undefined && (digitValue(t[i + 1]) !== null || isNumberWord(t[i + 1].low)))
+}
+
+/**
+ * Below this, the recognizer's score for its first reading says it wasn't sure what it heard. Google's scores
+ * crowd near 1: in a study of 480 utterances through Google's speech-to-text, 0.93 was the line that caught 85%
+ * of the utterances with a word wrong while letting 75% of the right ones through (Nowrin and Vertanen, PETRA '25,
+ * arXiv 2410.20564). Android's Google recognizer scores only its first reading, the rest come as 0, and Chrome
+ * gave 0 for every reading in Taily's hearing check: so 0, like -1, is no score, not a low one.
+ */
+export const LOW_CONFIDENCE = 0.93
+
+export interface Picked {
+  /** the reading to save, or to show */
+  best: Heard
+  all: Heard[]
+  /**
+   * Safe to save without asking: the recognizer's own first reading has the amount, every reading with an amount
+   * has the same one, and the recognizer didn't score its first reading low.
+   */
+  sure: boolean
+  /** the other amounts heard, one reading each, in the recognizer's order */
+  others: Heard[]
+}
+
 /**
  * Of the recognizer's alternatives, the one to save. A reading with an amount beats one without. A price said
  * in pieces goes to the reading that heard all of it: "to 50 lunch" beside "250 lunch" or "two 50 lunch" is
- * 250, which is how "to", "for" and "won" (two, four, one) get trusted, only when another alternative agrees.
- * Otherwise the recognizer knows best: its confidence, then its order. A tag found in one reading only decides
- * between readings of the same amount that the recognizer ranks the same.
+ * 250, which is how "to", "for" and "won" (two, four, one) get trusted, only when another alternative agrees;
+ * without such a word, "Amazon 999" stays 999 beside "Amazon 9999". Otherwise the recognizer knows best: its
+ * confidence, then its order. A tag found in one reading only decides between readings of the same amount that
+ * the recognizer ranks the same.
  */
-export function pickAlternative(
-  alternatives: { text: string; confidence: number }[],
-  read: (text: string) => ParsedSpeech
-): { best: Heard; all: Heard[] } {
+export function pickAlternative(alternatives: { text: string; confidence: number }[], read: (text: string) => ParsedSpeech): Picked {
   const all: Heard[] = alternatives.map((a) => ({ text: a.text, confidence: a.confidence, parsed: read(a.text) }))
   const conf = (h: Heard) => Math.max(0, h.confidence)
   const prefer = (pool: Heard[]): Heard => {
@@ -1228,13 +1273,23 @@ export function pickAlternative(
   if (priced.length === 0) {
     // nothing to save: what found a tag or a note goes on to the add sheet
     const found = all.filter((h) => h.parsed.categoryId || h.parsed.note)
-    return { best: found.length ? prefer(found) : all[0], all }
+    return { best: found.length ? prefer(found) : all[0], all, sure: false, others: [] }
   }
   let best = prefer(priced)
-  for (let step = 0; step < priced.length; step++) {
+  for (let step = 0; step < priced.length && lostPiece(best.text); step++) {
     const whole = priced.filter((h) => endsIn(h.parsed.amountMinor!, best.parsed.amountMinor!) && sameButAmount(h.parsed, best.parsed))
     if (whole.length === 0) break
     best = prefer(whole)
   }
-  return { best, all }
+  const amount = best.parsed.amountMinor
+  const first = all[0]
+  const sure =
+    first.parsed.amountMinor === amount &&
+    priced.every((h) => h.parsed.amountMinor === amount) &&
+    !(first.confidence > 0 && first.confidence < LOW_CONFIDENCE)
+  const others: Heard[] = []
+  for (const h of priced) {
+    if (h.parsed.amountMinor !== amount && !others.some((o) => o.parsed.amountMinor === h.parsed.amountMinor)) others.push(h)
+  }
+  return { best, all, sure, others }
 }

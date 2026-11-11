@@ -12,7 +12,9 @@
 //                        the same shape, whose groups may be names; it's scored by group, without the trip set
 //
 // Groups 1-12 make the headline pass rate (171 phrases in 2.13.0); 13 are probes, right transcripts phrased the
-// way people talk. `fresh` phrases were written for 2.13.1 before its fixes and are scored apart, by cause.
+// way people talk; 14 is what Google's recognizer really wrote in the 2.13.2 hearing check. `fresh` phrases were
+// written for 2.13.1 before its fixes and are scored apart, by cause. Sets of alternatives also report whether
+// the voice screen would save them without asking (pickAlternative's `sure`) or show its check state.
 // The 18 phrases of the trip end-to-end test are checked the way that test checks them.
 // Trees from before 2.13.1 have no readSpeech/pickAlternative in src/lib/parseSpeech.ts: for those, both are
 // lifted verbatim out of src/components/VoiceOverlay.tsx, as the first measurement did.
@@ -147,7 +149,13 @@ try {
       readSpeech = P.readSpeech
       rank = (alts, on) => {
         const r = P.pickAlternative(alts, (text) => P.readSpeech(text, on, cats, [], accs))
-        return { best: { text: r.best.text, p: r.best.parsed }, all: r.all.map((x) => ({ text: x.text, confidence: x.confidence, p: x.parsed })) }
+        return {
+          best: { text: r.best.text, p: r.best.parsed },
+          all: r.all.map((x) => ({ text: x.text, confidence: x.confidence, p: x.parsed })),
+          // 2.13.2 on: whether Taily saves it without asking, and the other amounts the check state offers
+          sure: r.sure,
+          others: r.others?.map((x) => x.parsed.amountMinor)
+        }
       }
     } else {
       api = 'VoiceOverlay.tsx excerpts'
@@ -159,7 +167,7 @@ try {
       const on = c.onTrip ? trip : null
       if (c.alts) {
         const r = rank(c.alts.map(([text, confidence]) => ({ text, confidence })), on)
-        return { got: r.best.p, picked: r.best.text, all: r.all.map((x) => ({ text: x.text, score: x.score, amt: x.p.amountMinor, tag: x.p.categoryId })) }
+        return { got: r.best.p, picked: r.best.text, sure: r.sure, others: r.others, all: r.all.map((x) => ({ text: x.text, score: x.score, amt: x.p.amountMinor, tag: x.p.categoryId })) }
       }
       return { got: readSpeech(c.t, on, cats, [], accs) }
     })
@@ -216,7 +224,7 @@ const rupees = (minor) => (minor == null ? 'none' : `₹${minor / 100}`)
 const tagStr = (t) => (Array.isArray(t) ? t.map((x) => x ?? 'none').join('|') : t ?? 'none')
 const keyOf = (c) => `${c.g}:${c.alts ? c.alts.map(([t]) => t).join(' | ') : c.t}`
 const results = cases.map((c, i) => {
-  const { got, picked, all } = page.res[i]
+  const { got, picked, all, sure, others } = page.res[i]
   const exp = {
     amount: c.rupees == null ? null : Math.round(c.rupees * 100),
     kind: c.kind,
@@ -233,7 +241,7 @@ const results = cases.map((c, i) => {
   if ((got.accountId ?? undefined) !== exp.acc) diffs.push(['account', got.accountId ?? 'none', exp.acc ?? 'none'])
   if ((got.paidBy ?? undefined) !== exp.payer) diffs.push(['payer', got.paidBy ?? 'you', exp.payer ?? 'you'])
   if (c.note !== undefined && got.note !== c.note) diffs.push(['note', JSON.stringify(got.note), JSON.stringify(c.note)])
-  return { key: keyOf(c), ...c, got, picked, all, diffs, pass: diffs.length === 0 }
+  return { key: keyOf(c), ...c, got, picked, all, sure, others, diffs, pass: diffs.length === 0 }
 })
 const trips = page.trips
 
@@ -259,8 +267,8 @@ for (const g of Object.keys(GROUPS)) {
   const rs = scored(results.filter((r) => String(r.g) === g && !r.fresh))
   if (!rs.length) continue
   const p = rs.filter((r) => r.pass).length
-  // the probes (group 13) stay out of the headline rate, as in the 2.13.0 measurement
-  if (other || g !== '13') {
+  // the probes (group 13) stay out of the headline rate, as in the 2.13.0 measurement, and so do later groups
+  if (other || Number(g) <= 12) {
     pAll += p
     nAll += rs.length
     bAll += was(rs) ?? 0
@@ -298,6 +306,20 @@ if (fresh.length) {
     lines.push(`F${String(n).padEnd(2)} ${CAUSES[n].padEnd(28)} ${before ? cell(was(rs), rs.length) + '    ' : ''}${cell(p, rs.length)}`)
   }
   lines.push(`${'Fresh overall'.padEnd(32)} ${before ? cell(fb, scored(fresh).length) + '    ' : ''}${cell(fp, scored(fresh).length)}`)
+  lines.push('')
+}
+// 2.13.2 on: what the voice screen does with each set of alternatives. Saved without asking only when sure;
+// otherwise the check state, with the picked amount big and the others as chips
+const ranked = results.filter((r) => r.alts && r.sure !== undefined)
+if (ranked.length) {
+  const want = (r) => (r.rupees == null ? null : Math.round(r.rupees * 100))
+  const saved = ranked.filter((r) => r.sure && r.got.amountMinor)
+  const wrong = saved.filter((r) => r.got.amountMinor !== want(r))
+  const checked = ranked.filter((r) => !r.sure && r.got.amountMinor)
+  const big = checked.filter((r) => r.got.amountMinor === want(r)).length
+  const chip = checked.filter((r) => r.got.amountMinor !== want(r) && r.others?.includes(want(r))).length
+  lines.push(`alternatives: ${saved.length} of ${ranked.length} saved without asking (${wrong.length} with the wrong amount), ${checked.length} checked (${big} with the right amount big, ${chip} in a chip)`)
+  for (const r of wrong) lines.push(`SAVED WRONG G${r.g} "${r.t}" :: ${rupees(r.got.amountMinor)} (want ${rupees(want(r))})`)
   lines.push('')
 }
 if (trips.length) {

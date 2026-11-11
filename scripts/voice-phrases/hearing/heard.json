@@ -1,0 +1,2259 @@
+{
+ "recognizer": "Google, through Chrome for Testing 153 Web Speech API, start(track) from a fake microphone",
+ "date": "2026-11-11",
+ "en_IN": {
+  "p01": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "250 lunch",
+      0
+     ],
+     [
+      "250 launch",
+      0
+     ],
+     [
+      "251",
+      0
+     ]
+    ]
+   ]
+  },
+  "p02": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "launch 250",
+      0
+     ],
+     [
+      "launch 2:15",
+      0
+     ],
+     [
+      "lunch 250",
+      0
+     ],
+     [
+      "launch 215",
+      0
+     ]
+    ]
+   ]
+  },
+  "p03": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "1500 groceries",
+      0
+     ]
+    ]
+   ]
+  },
+  "p04": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "one and half thousand shopping",
+      0
+     ],
+     [
+      "one and half 1000 shopping",
+      0
+     ],
+     [
+      "one and a half thousand shopping",
+      0
+     ],
+     [
+      "one and a half 1000 shopping",
+      0
+     ],
+     [
+      "one and half hours in shopping",
+      0
+     ]
+    ]
+   ]
+  },
+  "p05": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "12",
+      0
+     ],
+     [
+      "125",
+      0
+     ]
+    ]
+   ]
+  },
+  "p06": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "2500 groceries",
+      0
+     ]
+    ]
+   ]
+  },
+  "p07": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "499 Netflix",
+      0
+     ],
+     [
+      "$499 Netflix",
+      0
+     ]
+    ]
+   ]
+  },
+  "p08": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "€150",
+      0
+     ]
+    ]
+   ]
+  },
+  "p09": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "999 shoes",
+      0
+     ]
+    ]
+   ]
+  },
+  "p10": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "Rs 50 chai",
+      0
+     ],
+     [
+      "50 rupees chai",
+      0
+     ],
+     [
+      "Rs 50 chart",
+      0
+     ],
+     [
+      "50 rupees chart",
+      0
+     ],
+     [
+      "Rs 50",
+      0
+     ]
+    ]
+   ]
+  },
+  "p11": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "two and a half thousand groceries",
+      0
+     ],
+     [
+      "two and a half 1000 groceries",
+      0
+     ],
+     [
+      "groceries",
+      0
+     ]
+    ]
+   ]
+  },
+  "p12": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "120000 rent",
+      0
+     ],
+     [
+      "120000 rate",
+      0
+     ]
+    ]
+   ]
+  },
+  "p13": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "7120000",
+      0
+     ],
+     [
+      "71 20000",
+      0
+     ],
+     [
+      "71200",
+      0
+     ]
+    ]
+   ]
+  },
+  "p14": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "5K rent",
+      0
+     ],
+     [
+      "5K event",
+      0
+     ]
+    ]
+   ]
+  },
+  "p15": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "2.5 K shopping",
+      0
+     ],
+     [
+      "2.5k shopping",
+      0
+     ],
+     [
+      "2.5 kg shopping",
+      0
+     ],
+     [
+      "2.5 ke shopping",
+      0
+     ]
+    ]
+   ]
+  },
+  "p16": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "rupees 250 lunch",
+      0
+     ],
+     [
+      "rupees 250 launch",
+      0
+     ],
+     [
+      "Rs 250 launch",
+      0
+     ]
+    ]
+   ]
+  },
+  "p17": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "250 Dinar",
+      0
+     ],
+     [
+      "250 dinner",
+      0
+     ],
+     [
+      "250 rupees dinner",
+      0
+     ],
+     [
+      "£250 Dinar",
+      0
+     ]
+    ]
+   ]
+  },
+  "p18": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "$350 order",
+      0
+     ],
+     [
+      "$350 auto",
+      0
+     ]
+    ]
+   ]
+  },
+  "p19": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "640 groceries",
+      0
+     ],
+     [
+      "$640 groceries",
+      0
+     ]
+    ]
+   ]
+  },
+  "p20": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "4:53",
+      0
+     ],
+     [
+      "4503",
+      0
+     ]
+    ]
+   ]
+  },
+  "p21": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "180 parking",
+      0
+     ]
+    ]
+   ]
+  },
+  "p22": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "1100 electricity bill",
+      0
+     ]
+    ]
+   ]
+  },
+  "p23": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "2500 shopping",
+      0
+     ]
+    ]
+   ]
+  },
+  "p24": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "3200 rent",
+      0
+     ],
+     [
+      "3200",
+      0
+     ]
+    ]
+   ]
+  },
+  "p25": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "1.2 lakh rent",
+      0
+     ],
+     [
+      "1.2 lock rent",
+      0
+     ],
+     [
+      "1.201",
+      0
+     ]
+    ]
+   ]
+  },
+  "p26": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "70 rupees chart",
+      0
+     ],
+     [
+      "70 rupees chai",
+      0
+     ],
+     [
+      "70 rupees join",
+      0
+     ],
+     [
+      "70 rupees joy",
+      0
+     ]
+    ]
+   ]
+  },
+  "p27": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Jalsa lunch",
+      0
+     ],
+     [
+      "Jalsa launch",
+      0
+     ],
+     [
+      "Jalsa launcher",
+      0
+     ],
+     [
+      "Jalsa launched",
+      0
+     ]
+    ]
+   ]
+  },
+  "p28": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "300 Pulsar petrol",
+      0
+     ],
+     [
+      "scenes of purchase petrol",
+      0
+     ],
+     [
+      "300 Pulsar",
+      0
+     ]
+    ]
+   ]
+  },
+  "p29": {
+   "voice": "Zira",
+   "alternatives": []
+  },
+  "p30": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "28000 shopping",
+      0
+     ]
+    ]
+   ]
+  },
+  "p31": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Panch Shakha petrol",
+      0
+     ],
+     [
+      "Panch Shakha Patrol",
+      0
+     ],
+     [
+      "petrol",
+      0
+     ]
+    ]
+   ]
+  },
+  "p32": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "torture is rupay Ki Chai",
+      0
+     ]
+    ]
+   ]
+  },
+  "p33": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "1000 shopping",
+      0
+     ]
+    ]
+   ]
+  },
+  "p34": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "sorry baby cartoon",
+      0
+     ],
+     [
+      "sorry baby card order",
+      0
+     ],
+     [
+      "sorry baby car order",
+      0
+     ],
+     [
+      "sorry baby call order",
+      0
+     ],
+     [
+      "sorry baby car",
+      0
+     ]
+    ]
+   ]
+  },
+  "p35": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "3340",
+      0
+     ],
+     [
+      "23:40",
+      0
+     ],
+     [
+      "6340",
+      0
+     ]
+    ]
+   ]
+  },
+  "p36": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "Zomato 450",
+      0
+     ]
+    ]
+   ]
+  },
+  "p37": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Uber 230",
+      0
+     ],
+     [
+      "Uber to study",
+      0
+     ],
+     [
+      "Uber to sorry",
+      0
+     ],
+     [
+      "Uber 2:30",
+      0
+     ]
+    ]
+   ]
+  },
+  "p38": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "blanket 5",
+      0
+     ],
+     [
+      "blinking 5",
+      0
+     ],
+     [
+      "blanket 520",
+      0
+     ]
+    ]
+   ]
+  },
+  "p39": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Amazon 999",
+      0
+     ],
+     [
+      "Amazon 9999",
+      0
+     ],
+     [
+      "Amazon Rs 999",
+      0
+     ],
+     [
+      "Amazon $99",
+      0
+     ]
+    ]
+   ]
+  },
+  "p40": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "Flipkart 1299",
+      0
+     ]
+    ]
+   ]
+  },
+  "p41": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Netflix 649",
+      0
+     ],
+     [
+      "Netflix €649",
+      0
+     ],
+     [
+      "network 649",
+      0
+     ]
+    ]
+   ]
+  },
+  "p42": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "jio recharge 399",
+      0
+     ],
+     [
+      "jio recharge 299",
+      0
+     ]
+    ]
+   ]
+  },
+  "p43": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "electricity bill 1200",
+      0
+     ]
+    ]
+   ]
+  },
+  "p44": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "when 15000",
+      0
+     ],
+     [
+      "15000",
+      0
+     ]
+    ]
+   ]
+  },
+  "p45": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "petrol 500",
+      0
+     ]
+    ]
+   ]
+  },
+  "p46": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "i20",
+      0
+     ],
+     [
+      "chai 20",
+      0
+     ],
+     [
+      "520",
+      0
+     ]
+    ]
+   ]
+  },
+  "p47": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Metro 40",
+      0
+     ],
+     [
+      "natural 40",
+      0
+     ]
+    ]
+   ]
+  },
+  "p48": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "DMart 2200",
+      0
+     ]
+    ]
+   ]
+  },
+  "p49": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "2000 from Rahul",
+      0
+     ],
+     [
+      "2000 from Lahore",
+      0
+     ],
+     [
+      "2000 from the whole",
+      0
+     ],
+     [
+      "2000 from a whole",
+      0
+     ]
+    ]
+   ]
+  },
+  "p50": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "salary 50000",
+      0
+     ]
+    ]
+   ]
+  },
+  "p51": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "refund",
+      0
+     ],
+     [
+      "recent",
+      0
+     ],
+     [
+      "refund 300",
+      0
+     ],
+     [
+      "reference",
+      0
+     ]
+    ]
+   ]
+  },
+  "p52": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "receive 1500 from Priya",
+      0
+     ],
+     [
+      "receive 1500 from 3 year",
+      0
+     ],
+     [
+      "receive 1500 from 3 years",
+      0
+     ],
+     [
+      "receive 1500 from prayer",
+      0
+     ]
+    ]
+   ]
+  },
+  "p53": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Prabhu Ke 500",
+      0
+     ],
+     [
+      "Prabhu Ke",
+      0
+     ]
+    ]
+   ]
+  },
+  "p54": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "250 launch yesterday",
+      0
+     ],
+     [
+      "$250 launch yesterday",
+      0
+     ],
+     [
+      "250 launched yesterday",
+      0
+     ],
+     [
+      "250 launches today",
+      0
+     ],
+     [
+      "250 launches yesterday",
+      0
+     ]
+    ]
+   ]
+  },
+  "p55": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "500 petrol by card",
+      0
+     ],
+     [
+      "500 petrol bike card",
+      0
+     ]
+    ]
+   ]
+  },
+  "p56": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "120 order gpay",
+      0
+     ],
+     [
+      "120 order GPA",
+      0
+     ],
+     [
+      "120 order GP",
+      0
+     ],
+     [
+      "120 RS gpay",
+      0
+     ],
+     [
+      "120000",
+      0
+     ]
+    ]
+   ]
+  },
+  "p57": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "450 dinner phonepe",
+      0
+     ],
+     [
+      "$450 dinner phonepe",
+      0
+     ],
+     [
+      "450 Dinar phonepe",
+      0
+     ],
+     [
+      "450 dinner phone pay",
+      0
+     ],
+     [
+      "$450 Dinar phonepe",
+      0
+     ]
+    ]
+   ]
+  },
+  "p58": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "250 lunch cash",
+      0
+     ],
+     [
+      "250 launch cash",
+      0
+     ],
+     [
+      "250 launch cache",
+      0
+     ],
+     [
+      "250 lunch cache",
+      0
+     ],
+     [
+      "250 launcher",
+      0
+     ]
+    ]
+   ]
+  },
+  "p59": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Rahul Patel 100 cab",
+      0
+     ],
+     [
+      "Rahul Patel 100 cap",
+      0
+     ],
+     [
+      "100 cab",
+      0
+     ],
+     [
+      "Rahul Patel 100cc",
+      0
+     ]
+    ]
+   ]
+  },
+  "p60": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "European 1200 for dinner",
+      0
+     ],
+     [
+      "Mirabai 1200 for dinner",
+      0
+     ],
+     [
+      "European 12004 dinner",
+      0
+     ],
+     [
+      "European 120040",
+      0
+     ]
+    ]
+   ]
+  }
+ },
+ "en_IN_other_voice": {
+  "p01": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "250 launch",
+      0
+     ],
+     [
+      "250 lunch",
+      0
+     ],
+     [
+      "$250 launch",
+      0
+     ],
+     [
+      "250 lounge",
+      0
+     ],
+     [
+      "$250 lunch",
+      0
+     ]
+    ]
+   ]
+  },
+  "p02": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "1250",
+      0
+     ],
+     [
+      "1 to 50",
+      0
+     ]
+    ]
+   ]
+  },
+  "p03": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "1500 groceries",
+      0
+     ],
+     [
+      "Rs 1500 groceries",
+      0
+     ]
+    ]
+   ]
+  },
+  "p04": {
+   "voice": "Zira",
+   "alternatives": []
+  },
+  "p05": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "1250 petrol",
+      0
+     ]
+    ]
+   ]
+  },
+  "p06": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "2500 groceries",
+      0
+     ]
+    ]
+   ]
+  },
+  "p07": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "499 Netflix",
+      0
+     ],
+     [
+      "$499 Netflix",
+      0
+     ]
+    ]
+   ]
+  },
+  "p08": {
+   "voice": "Zira",
+   "alternatives": []
+  },
+  "p09": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "999 shoes",
+      0
+     ],
+     [
+      "9999 shoes",
+      0
+     ]
+    ]
+   ]
+  },
+  "p10": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Rs 50 chai",
+      0
+     ],
+     [
+      "Rs 50 try",
+      0
+     ],
+     [
+      "Rs 50",
+      0
+     ]
+    ]
+   ]
+  },
+  "p11": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "two and a half thousand groceries",
+      0
+     ],
+     [
+      "you and I have thousand groceries",
+      0
+     ],
+     [
+      "two and a half 1000 groceries",
+      0
+     ],
+     [
+      "two and a half hours and groceries",
+      0
+     ]
+    ]
+   ]
+  },
+  "p12": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "120000 rent",
+      0
+     ]
+    ]
+   ]
+  },
+  "p13": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "salary 120000",
+      0
+     ],
+     [
+      "salary 1020000",
+      0
+     ],
+     [
+      "salary 102",
+      0
+     ]
+    ]
+   ]
+  },
+  "p14": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "5K rent",
+      0
+     ],
+     [
+      "5K event",
+      0
+     ],
+     [
+      "5 km",
+      0
+     ],
+     [
+      "five Kiran",
+      0
+     ],
+     [
+      "5G",
+      0
+     ]
+    ]
+   ]
+  },
+  "p15": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "2.5 K shopping",
+      0
+     ],
+     [
+      "2.5 kg shopping",
+      0
+     ]
+    ]
+   ]
+  },
+  "p16": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "rupees 250 lunch",
+      0
+     ],
+     [
+      "Rs 250 lunch",
+      0
+     ],
+     [
+      "rupees 250 launch",
+      0
+     ],
+     [
+      "Rs 250 launch",
+      0
+     ]
+    ]
+   ]
+  },
+  "p17": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "250 dinner",
+      0
+     ],
+     [
+      "250 Dinar",
+      0
+     ],
+     [
+      "250 rupees dinner",
+      0
+     ]
+    ]
+   ]
+  },
+  "p18": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "$350",
+      0
+     ],
+     [
+      "350",
+      0
+     ]
+    ]
+   ]
+  },
+  "p19": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "640 groceries",
+      0
+     ],
+     [
+      "$640 groceries",
+      0
+     ]
+    ]
+   ]
+  },
+  "p20": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "4:53",
+      0
+     ],
+     [
+      "4503",
+      0
+     ]
+    ]
+   ]
+  },
+  "p21": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "180 parking",
+      0
+     ]
+    ]
+   ]
+  },
+  "p22": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "1100 electricity bill",
+      0
+     ]
+    ]
+   ]
+  },
+  "p23": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "2500 shopping",
+      0
+     ]
+    ]
+   ]
+  },
+  "p24": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "3200",
+      0
+     ],
+     [
+      "3200 rent",
+      0
+     ]
+    ]
+   ]
+  },
+  "p25": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "1.2 lakh rent",
+      0
+     ],
+     [
+      "1.2 lock rent",
+      0
+     ],
+     [
+      "1.2 lakh range",
+      0
+     ],
+     [
+      "1.201 rent",
+      0
+     ],
+     [
+      "1.2 lakh rate",
+      0
+     ]
+    ]
+   ]
+  },
+  "p26": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Rs 70 chai",
+      0
+     ],
+     [
+      "Rs 70 try",
+      0
+     ],
+     [
+      "70 rupees try",
+      0
+     ],
+     [
+      "70 rupees joy",
+      0
+     ],
+     [
+      "70 rupees chai",
+      0
+     ]
+    ]
+   ]
+  },
+  "p27": {
+   "voice": "David",
+   "alternatives": []
+  },
+  "p28": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "3750 petrol",
+      0
+     ],
+     [
+      "Chin 750 petrol",
+      0
+     ]
+    ]
+   ]
+  },
+  "p29": {
+   "voice": "David",
+   "alternatives": []
+  },
+  "p30": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "28000 shopping",
+      0
+     ]
+    ]
+   ]
+  },
+  "p31": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "petrol",
+      0
+     ],
+     [
+      "petrol petrol",
+      0
+     ]
+    ]
+   ]
+  },
+  "p32": {
+   "voice": "Zira",
+   "alternatives": []
+  },
+  "p33": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "1000 shopping",
+      0
+     ]
+    ]
+   ]
+  },
+  "p34": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "sorry sorry",
+      0
+     ],
+     [
+      "sorry bhai",
+      0
+     ]
+    ]
+   ]
+  },
+  "p35": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "swiggy 340",
+      0
+     ],
+     [
+      "swiggy 3:40",
+      0
+     ],
+     [
+      "swiggy 3:14",
+      0
+     ]
+    ]
+   ]
+  },
+  "p36": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Zomato 450",
+      0
+     ],
+     [
+      "geometry 450",
+      0
+     ]
+    ]
+   ]
+  },
+  "p37": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "Uber 2:30",
+      0
+     ],
+     [
+      "Uber 230",
+      0
+     ],
+     [
+      "super 2:30",
+      0
+     ]
+    ]
+   ]
+  },
+  "p38": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "2520",
+      0
+     ],
+     [
+      "25",
+      0
+     ]
+    ]
+   ]
+  },
+  "p39": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "Amazon 999",
+      0
+     ],
+     [
+      "Amazon 9999",
+      0
+     ]
+    ]
+   ]
+  },
+  "p40": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "Flipkart 1299",
+      0
+     ]
+    ]
+   ]
+  },
+  "p41": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "Netflix 649",
+      0
+     ],
+     [
+      "Netflix €649",
+      0
+     ]
+    ]
+   ]
+  },
+  "p42": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "jio recharge 299",
+      0
+     ],
+     [
+      "jio recharge to 99",
+      0
+     ]
+    ]
+   ]
+  },
+  "p43": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "electricity bill 1200",
+      0
+     ]
+    ]
+   ]
+  },
+  "p44": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "when 15000",
+      0
+     ],
+     [
+      "15000",
+      0
+     ]
+    ]
+   ]
+  },
+  "p45": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "petrol 500",
+      0
+     ]
+    ]
+   ]
+  },
+  "p46": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "i20",
+      0
+     ],
+     [
+      "520",
+      0
+     ],
+     [
+      "5",
+      0
+     ],
+     [
+      "5:20",
+      0
+     ]
+    ]
+   ]
+  },
+  "p47": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "Metro 4D",
+      0
+     ],
+     [
+      "Metro 14",
+      0
+     ],
+     [
+      "Metro 4K",
+      0
+     ],
+     [
+      "Metro Ford",
+      0
+     ],
+     [
+      "natural food",
+      0
+     ]
+    ]
+   ]
+  },
+  "p48": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "DMart 2200",
+      0
+     ]
+    ]
+   ]
+  },
+  "p49": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "go to 2000",
+      0
+     ]
+    ]
+   ]
+  },
+  "p50": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "sorry 50000",
+      0
+     ],
+     [
+      "salary 50000",
+      0
+     ],
+     [
+      "750000",
+      0
+     ]
+    ]
+   ]
+  },
+  "p51": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "refund",
+      0
+     ],
+     [
+      "iPhone",
+      0
+     ]
+    ]
+   ]
+  },
+  "p52": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "receive 1500 from Priya",
+      0
+     ]
+    ]
+   ]
+  },
+  "p53": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "Rahul game",
+      0
+     ],
+     [
+      "Rahul k500",
+      0
+     ],
+     [
+      "Rahul ke",
+      0
+     ],
+     [
+      "Rahul ke 500",
+      0
+     ]
+    ]
+   ]
+  },
+  "p54": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "250 lunch yesterday",
+      0
+     ],
+     [
+      "$250 lunch yesterday",
+      0
+     ],
+     [
+      "$250 launch yesterday",
+      0
+     ],
+     [
+      "250 launch yesterday",
+      0
+     ],
+     [
+      "250 launches today",
+      0
+     ]
+    ]
+   ]
+  },
+  "p55": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "500 petrol by card",
+      0
+     ],
+     [
+      "500 petrol by God",
+      0
+     ],
+     [
+      "500 petrol by Karan",
+      0
+     ],
+     [
+      "500 petrol by cards",
+      0
+     ]
+    ]
+   ]
+  },
+  "p56": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "128 GB",
+      0
+     ],
+     [
+      "1205",
+      0
+     ],
+     [
+      "120 pay",
+      0
+     ],
+     [
+      "120 hai",
+      0
+     ],
+     [
+      "128gb",
+      0
+     ]
+    ]
+   ]
+  },
+  "p57": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "450 dinner phonepe",
+      0
+     ],
+     [
+      "$450 dinner phonepe",
+      0
+     ],
+     [
+      "450 Dinar phonepe",
+      0
+     ]
+    ]
+   ]
+  },
+  "p58": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "250 lunch cash",
+      0
+     ],
+     [
+      "$250 lunch cash",
+      0
+     ],
+     [
+      "250 lunch cache",
+      0
+     ],
+     [
+      "$250 lunch cache",
+      0
+     ]
+    ]
+   ]
+  },
+  "p59": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "Royal Paint 800 cab",
+      0
+     ],
+     [
+      "Royal Enfield 800 cab",
+      0
+     ],
+     [
+      "Royal Paint 800 cap",
+      0
+     ],
+     [
+      "Royal Enfield 800 cap",
+      0
+     ]
+    ]
+   ]
+  },
+  "p60": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "nearby 1200 for dinner",
+      0
+     ],
+     [
+      "nearby $1200",
+      0
+     ],
+     [
+      "nearby 1200",
+      0
+     ],
+     [
+      "nearby 120040",
+      0
+     ]
+    ]
+   ]
+  }
+ },
+ "hi_IN": {
+  "p01": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "250 लंच",
+      0
+     ],
+     [
+      "2-50 लंच",
+      0
+     ],
+     [
+      "-250 लंच",
+      0
+     ],
+     [
+      "250 लॉन्च",
+      0
+     ],
+     [
+      "251",
+      0
+     ]
+    ]
+   ]
+  },
+  "p03": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "1500 ग्रोसरीज",
+      0
+     ],
+     [
+      "1-500 ग्रोसरीज",
+      0
+     ]
+    ]
+   ]
+  },
+  "p08": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "€150",
+      0
+     ]
+    ]
+   ]
+  },
+  "p27": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "जलसा लंच",
+      0
+     ],
+     [
+      "जलसा लॉन्च",
+      0
+     ],
+     [
+      "जलसा लांचर",
+      0
+     ],
+     [
+      "जलसा लॉन्च्ड",
+      0
+     ]
+    ]
+   ]
+  },
+  "p28": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "300 पल्सर पेट्रोल",
+      0
+     ],
+     [
+      "सिनेस का परचेज पैट्रोल",
+      0
+     ],
+     [
+      "300 पल्सर",
+      0
+     ]
+    ]
+   ]
+  },
+  "p29": {
+   "voice": "Zira",
+   "alternatives": []
+  },
+  "p30": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "28000 शॉपिंग",
+      0
+     ]
+    ]
+   ]
+  },
+  "p31": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "पांच शाखा पेट्रोल",
+      0
+     ],
+     [
+      "पांच शाखा पेट्रोल",
+      0
+     ],
+     [
+      "पेट्रोल",
+      0
+     ]
+    ]
+   ]
+  },
+  "p32": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "टॉर्चर इस रुपए की चाय",
+      0
+     ]
+    ]
+   ]
+  },
+  "p33": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "1000 शॉपिंग",
+      0
+     ],
+     [
+      "100-0 शॉपिंग",
+      0
+     ],
+     [
+      "-1000 शॉपिंग",
+      0
+     ]
+    ]
+   ]
+  },
+  "p34": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "सॉरी बेबी कार्टून",
+      0
+     ],
+     [
+      "सॉरी बेबी कार्ड ऑर्डर",
+      0
+     ],
+     [
+      "सॉरी बेबी का ऑर्डर",
+      0
+     ],
+     [
+      "सॉरी बेबी कॉल ऑर्डर",
+      0
+     ],
+     [
+      "सॉरी बेबी कार",
+      0
+     ]
+    ]
+   ]
+  },
+  "p36": {
+   "voice": "David",
+   "alternatives": [
+    [
+     [
+      "जोमैटो 450",
+      0
+     ]
+    ]
+   ]
+  },
+  "p45": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "पेट्रोल 500",
+      0
+     ],
+     [
+      "पेट्रोल -500",
+      0
+     ]
+    ]
+   ]
+  },
+  "p49": {
+   "voice": "Zira",
+   "alternatives": [
+    [
+     [
+      "2000 फ्रॉम राहुल",
+      0
+     ],
+     [
+      "2000 फ्रॉम लाहौर",
+      0
+     ],
+     [
+      "2000 फ्रॉम थे व्होल",
+      0
+     ],
+     [
+      "2000 फ्रॉम ए होल",
+      0
+     ]
+    ]
+   ]
+  }
+ }
+}

@@ -1,0 +1,73 @@
+// The hearing check's 60 phrases: what a person says (the words a TTS voice reads) and what they meant,
+// [group, spoken, rupees, kind, tag, extras]. The spoken forms are the Indian ways of saying the amounts in
+// ../cases.mjs. Hindi words are respelled so an English voice says them roughly the Indian way ("dhai sau" ->
+// "dhaai saw"); with only en-US voices that barely works, so the "hindi" group says little about Hindi speakers.
+// Phrase n is "p" + n, two digits: p01 is the first. heard.json has what Google wrote for each.
+export const PHRASES = [
+  // amounts said the Indian way, English words
+  ['amounts', 'two fifty lunch', 250, 'out', 'food'],
+  ['amounts', 'lunch two fifty', 250, 'out', 'food'],
+  ['amounts', 'fifteen hundred groceries', 1500, 'out', 'groceries'],
+  ['amounts', 'one and a half thousand shopping', 1500, 'out', 'shopping'],
+  ['amounts', 'twelve hundred fifty petrol', 1250, 'out', 'transport'],
+  ['amounts', 'two thousand five hundred groceries', 2500, 'out', 'groceries'],
+  ['amounts', 'four ninety nine Netflix', 499, 'out', 'entertainment'],
+  ['amounts', 'one fifty auto', 150, 'out', 'transport'],
+  ['amounts', 'nine ninety nine shoes', 999, 'out', 'shopping'],
+  ['amounts', 'fifty rupees chai', 50, 'out', 'food'],
+  ['amounts', 'two and a half thousand groceries', 2500, 'out', 'groceries'],
+  ['amounts', 'one lakh twenty thousand rent', 120000, 'out', 'rent'],
+  ['amounts', 'salary one lakh twenty thousand', 120000, 'in', 'salary'],
+  ['amounts', 'five k rent', 5000, 'out', 'rent'],
+  ['amounts', 'two point five k shopping', 2500, 'out', 'shopping'],
+  ['amounts', 'rupees two hundred fifty lunch', 250, 'out', 'food'],
+  ['amounts', 'two hundred and fifty rupees dinner', 250, 'out', 'food'],
+  ['amounts', 'three fifty auto', 350, 'out', 'transport'],
+  ['amounts', 'six forty groceries', 640, 'out', 'groceries'],
+  ['amounts', 'four fifty tea', 450, 'out', 'food'],
+  ['amounts', 'one eighty parking', 180, 'out', 'transport'],
+  ['amounts', 'eleven hundred electricity bill', 1100, 'out', 'bills'],
+  ['amounts', 'twenty five hundred shopping', 2500, 'out', 'shopping'],
+  ['amounts', 'three thousand two hundred rent', 3200, 'out', 'rent'],
+  ['amounts', 'one point two lakh rent', 120000, 'out', 'rent'],
+  ['amounts', 'seventy rupees chai', 70, 'out', 'food'],
+  // Hindi numbers, respelled for an English voice
+  ['hindi', 'doe saw lunch', 200, 'out', 'food'],
+  ['hindi', 'teen saw puh chaas petrol', 350, 'out', 'transport'],
+  ['hindi', 'dhaai saw kaa khaana', 250, 'out', 'food'],
+  ['hindi', 'day dh huh zaar shopping', 1500, 'out', 'shopping'],
+  ['hindi', 'paanch saw kaa petrol', 500, 'out', 'transport'],
+  ['hindi', 'puh chaas rupay kee chai', 50, 'out', 'food'],
+  ['hindi', 'ake huh zaar shopping', 1000, 'out', 'shopping'],
+  ['hindi', 'saw rupay kaa auto', 100, 'out', 'transport'],
+  // merchants and everyday words
+  ['merchants', 'Swiggy three forty', 340, 'out', 'food'],
+  ['merchants', 'Zomato four fifty', 450, 'out', 'food'],
+  ['merchants', 'Uber two thirty', 230, 'out', 'transport'],
+  ['merchants', 'Blinkit five twenty', 520, 'out', 'groceries'],
+  ['merchants', 'Amazon nine ninety nine', 999, 'out', 'online'],
+  ['merchants', 'Flipkart twelve ninety nine', 1299, 'out', 'online'],
+  ['merchants', 'Netflix six forty nine', 649, 'out', 'entertainment'],
+  ['merchants', 'Jio recharge two ninety nine', 299, 'out', 'bills'],
+  ['merchants', 'electricity bill twelve hundred', 1200, 'out', 'bills'],
+  ['merchants', 'rent fifteen thousand', 15000, 'out', 'rent'],
+  ['merchants', 'petrol five hundred', 500, 'out', 'transport'],
+  ['merchants', 'chai twenty', 20, 'out', 'food'],
+  ['merchants', 'metro forty', 40, 'out', 'transport'],
+  ['merchants', 'D Mart twenty two hundred', 2200, 'out', 'groceries'],
+  // money in
+  ['money in', 'got two thousand from Rahul', 2000, 'in', ['payment', 'people']],
+  ['money in', 'salary fifty thousand', 50000, 'in', 'salary'],
+  ['money in', 'refund three hundred', 300, 'in', 'return'],
+  ['money in', 'received fifteen hundred from Priya', 1500, 'in', ['payment', 'people']],
+  ['money in', 'Rahul gave five hundred', 500, 'in', ['payment', 'people']],
+  // dates and accounts
+  ['dates & accounts', 'two fifty lunch yesterday', 250, 'out', 'food', { date: -1 }],
+  ['dates & accounts', 'five hundred petrol by card', 500, 'out', 'transport', { acc: 'card' }],
+  ['dates & accounts', 'one twenty auto G pay', 120, 'out', 'transport', { acc: 'upi' }],
+  ['dates & accounts', 'four fifty dinner phone pay', 450, 'out', 'food', { acc: 'upi' }],
+  ['dates & accounts', 'two fifty lunch cash', 250, 'out', 'food', { acc: 'cash' }],
+  // on a trip (you, Aarav, Rahul, Meera, Karan)
+  ['trip', 'Rahul paid eight hundred cab', 800, 'out', 'transport', { payer: 'rahul' }],
+  ['trip', 'Meera paid twelve hundred for dinner', 1200, 'out', 'food', { payer: 'meera' }]
+]

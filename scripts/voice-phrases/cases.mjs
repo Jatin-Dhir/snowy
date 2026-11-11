@@ -20,7 +20,8 @@ export const GROUPS = {
   10: 'Recognizer slips',
   11: 'Trip payer',
   12: 'Alternatives ranking',
-  13: 'Probes: correct transcripts'
+  13: 'Probes: correct transcripts',
+  14: 'Google heard it (synthetic)'
 }
 
 const cases = []
@@ -330,6 +331,32 @@ c(5, 'पचास रुपये का पेट्रोल', 50, 'out', 'tr
 c(8, '80 chai G pay', 80, 'out', 'food', f(13, { acc: 'upi', note: 'Chai' }))
 c(7, '300 dinner on the 3rd', 300, 'out', 'food', f(13, { date: { dom: 3 }, note: 'Dinner' }))
 c(10, '2 50 lunch', 250, 'out', 'food', f(13, { note: 'Lunch' }))
+
+// 14 What Google's recognizer wrote (Chrome's Web Speech API, en-IN unless Devanagari = hi-IN) for Windows'
+// en-US voices saying amounts the Indian way, from the 2.13.2 hearing check. Each one showed a misreading that
+// was then fixed; the confidences are Chrome's, 0 for every reading. The headline rate leaves this group out.
+a(14, [['Amazon 999', 0], ['Amazon 9999', 0], ['Amazon Rs 999', 0], ['Amazon $99', 0]], 999, 'out', 'online')
+a(14, [['Amazon 999', 0], ['Amazon 9999', 0]], 999, 'out', 'online')
+a(14, [['999 shoes', 0], ['9999 shoes', 0]], 999, 'out', 'shopping')
+c(14, '250 Dinar', 250, 'out', 'food', { note: 'Dinner' })
+c(14, '450 Dinar phonepe', 450, 'out', 'food', { acc: 'upi' })
+c(14, '1.2 lock rent', 120000, 'out', 'rent')
+c(14, 'one and half 1000 shopping', 1500, 'out', 'shopping')
+c(14, 'two and a half 1000 groceries', 2500, 'out', 'groceries')
+c(14, 'receive 1500 from Priya', 1500, 'in', ['payment', 'people'], { note: 'Priya' })
+c(14, '250 लंच', 250, 'out', 'food')
+c(14, '2-50 लंच', 250, 'out', 'food')
+c(14, '1500 ग्रोसरीज', 1500, 'out', 'groceries')
+c(14, '1-500 ग्रोसरीज', 1500, 'out', 'groceries')
+c(14, '100-0 शॉपिंग', 1000, 'out', 'shopping')
+c(14, 'जोमैटो 450', 450, 'out', 'food')
+c(14, '2000 फ्रॉम राहुल', 2000, 'in', ['payment', 'people'])
+// and the formats it used that already read right: currency signs, "K" after a space, a time for a price
+c(14, '$499 Netflix', 499, 'out', 'entertainment')
+c(14, '€150', 150, 'out', null)
+c(14, '2.5 K shopping', 2500, 'out', 'shopping')
+c(14, 'Uber 2:30', 230, 'out', 'transport')
+c(14, 'one and half thousand shopping', 1500, 'out', 'shopping')
 
 // ---- the 18 phrases of trip-e2e.mjs's "--- parser" section, checked the way it checks them: tripPayer with
 // these people, then parseSpeech; payer, amount (minor), tag and kind must match exactly
