@@ -15,7 +15,7 @@ import { applyCustomAccent, SPECIAL_THEMES } from '../lib/theme'
 import { clearPinFailures, hashPin, recordPinFailure, verifyPin } from '../lib/pin'
 import { fullDate, todayISO } from '../lib/dates'
 import { currentProfile, profileSlug } from '../lib/profiles'
-import { addVoiceTile, pinVoiceWidget, voiceShortcuts } from '../lib/voice'
+import { addVoiceTile, pinVoiceWidget, VOICE_LANGUAGES, voiceAvailable, voiceShortcuts } from '../lib/voice'
 import { TAG_COLORS, TAG_ICONS } from '../db/seed'
 import { AccountManager } from '../components/AccountManager'
 import { ProfilesSheet } from '../components/ProfilesSheet'
@@ -121,9 +121,12 @@ export function SettingsSheet({
   const dragHueRef = useRef<number | null>(null)
   // the Android app only: what this phone lets Taily add for voice from outside the app
   const [voiceExtras, setVoiceExtras] = useState<{ widget: boolean; tile: boolean } | null>(null)
+  // whether this phone or browser can listen at all: the voice language is no use where it can't
+  const [canListen, setCanListen] = useState(false)
 
   useEffect(() => {
     if (open) void voiceShortcuts().then(setVoiceExtras)
+    if (open) void voiceAvailable().then(setCanListen)
   }, [open])
 
   async function addWidget() {
@@ -621,6 +624,28 @@ export function SettingsSheet({
             </button>
           </div>
         </div>
+
+        {canListen && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span className="label" style={{ fontSize: 10.5 }} id="voice-language">Voice language</span>
+            <div role="group" aria-labelledby="voice-language" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {VOICE_LANGUAGES.map((l) => (
+                <button
+                  key={l.tag}
+                  className={`pill${settings.voiceLanguage === l.tag ? ' active' : ''}`}
+                  style={{ justifyContent: 'center' }}
+                  aria-pressed={settings.voiceLanguage === l.tag}
+                  onClick={() => {
+                    haptic('selection')
+                    void saveSettings({ voiceLanguage: l.tag })
+                  }}
+                >
+                  {l.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {voiceExtras && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

@@ -237,9 +237,10 @@ export default function App() {
     void setVoicePrefs({
       instant: !settings.pinHash,
       haptics: settings.haptics,
+      language: settings.voiceLanguage,
       appearance: widgetAccent(settings.accent, settings.accentHue)
     })
-  }, [settingsRow, settings.pinHash, settings.haptics, settings.accent, settings.accentHue])
+  }, [settingsRow, settings.pinHash, settings.haptics, settings.voiceLanguage, settings.accent, settings.accentHue])
 
   useEffect(() => {
     if (!settings.pinHash) return
@@ -393,12 +394,13 @@ export default function App() {
         holding={voiceHolding}
         away={voiceAway}
         currency={settings.currency}
+        language={settings.voiceLanguage}
         onClose={() => {
           setVoice(null)
           setVoiceHolding(false)
           setVoiceAway(false)
         }}
-        onNeedAmount={(draft) => {
+        onDraft={(draft) => {
           dismissToast()
           setEditTxn(null)
           setEditEntry(null)

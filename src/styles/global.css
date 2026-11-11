@@ -2345,6 +2345,7 @@ button.weekbar-col:disabled {
 
 .voice-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 4px;
 }
@@ -2367,6 +2368,74 @@ button.weekbar-col:disabled {
   line-height: 1.45;
   color: var(--muted);
   text-wrap: pretty;
+}
+
+/* not sure of the amount: it waits, big, with the other amounts heard a tap away. Amber, like an amount still
+   missing, says it needs a look; the numbers are the add sheet's */
+.voice-dot.check {
+  background: var(--amber);
+}
+
+.voice-big {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.voice-big.in {
+  color: var(--pos-text);
+}
+
+.voice-big-cur {
+  font-family: var(--font-num);
+  font-weight: 600;
+  font-size: 24px;
+  color: var(--faint);
+}
+
+.voice-big.in .voice-big-cur {
+  color: inherit;
+}
+
+.voice-big-num {
+  font-family: var(--font-num);
+  font-weight: 700;
+  font-size: 42px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  animation: pop 140ms var(--ease-soft);
+}
+
+/* lakhs and crores ("12,34,567") stay on one line on a 320px phone */
+.voice-big-num.long {
+  font-size: 32px;
+}
+
+.voice-alts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.voice-alts-label {
+  flex-basis: 100%;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.pill.voice-alt {
+  min-height: 44px;
+  padding: 0 16px;
+  font-family: var(--font-num);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
 }
 
 /* the mic, exactly where the + is */

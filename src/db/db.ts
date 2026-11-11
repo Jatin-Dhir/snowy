@@ -169,6 +169,8 @@ export interface Settings {
   sounds: boolean
   soundPack: 'tap' | 'click' | 'pop' | 'wood'
   pinHash: string | null
+  /** what the recognizer listens for: a tag from VOICE_LANGUAGES in lib/voice.ts */
+  voiceLanguage: string
   /** what friends call you, for what a trip shares with them */
   myName: string
 }
@@ -183,6 +185,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sounds: true,
   soundPack: 'tap',
   pinHash: null,
+  voiceLanguage: 'en-IN',
   myName: ''
 }
 

@@ -40,8 +40,8 @@ export function AddSheet({
   editTxn: Txn | null
   /** a spend on a trip, edited whole rather than as your share of it */
   editEntry?: TripEntry | null
-  /** a voice entry that was missing only its amount */
-  draft?: Omit<ParsedSpeech, 'amountMinor'> | null
+  /** a voice entry to finish: one missing its amount, or one Taily wasn't sure of, with the amount it showed */
+  draft?: (Omit<ParsedSpeech, 'amountMinor'> & { amountMinor?: number }) | null
   currency: string
   /** say it instead: listens hands-free, no holding the + */
   onVoice?: () => void
@@ -142,7 +142,8 @@ export function AddSheet({
       setShowNote(!!editTxn.note)
       setShowDate(editTxn.dateISO !== todayISO())
     } else {
-      amt.reset()
+      if (draft?.amountMinor) amt.setFromMinor(draft.amountMinor)
+      else amt.reset()
       setKind(draft?.kind ?? 'out')
       setNote(draft?.note ?? '')
       setDateISO(draft?.dateISO ?? todayISO())

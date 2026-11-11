@@ -314,6 +314,12 @@ public class VoicePlugin extends Plugin {
     if (!online()) intent.putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true);
     // holding the button: keep listening through a pause until it's let go
     if (full && hold) intent.putExtra("android.speech.extra.DICTATION_MODE", true);
+    // hands-free: a breath before the amount ("Jio recharge... 299") mustn't end it. A recognizer that doesn't
+    // take these ignores them; the JS side's own pause (SILENCE_MS in VoiceOverlay) is 2200 ms
+    if (full && !hold) {
+      intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L);
+      intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L);
+    }
     return intent;
   }
 

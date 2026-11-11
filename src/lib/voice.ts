@@ -59,6 +59,17 @@ export interface VoiceLaunch {
 
 const LANGUAGE = 'en-IN'
 
+/**
+ * What Taily can listen in, picked in Settings. Hindi comes back in Devanagari, with numbers in digits, which
+ * lib/parseSpeech reads like the rest.
+ */
+export const VOICE_LANGUAGES = [
+  { tag: 'en-IN', name: 'English (India)' },
+  { tag: 'hi-IN', name: 'Hindi' },
+  { tag: 'en-US', name: 'English (US)' },
+  { tag: 'en-GB', name: 'English (UK)' }
+] as const
+
 /* ------------------------------------------------------------------ native */
 
 interface NativeEvent {

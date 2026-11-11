@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
 import { addTxn, recentTxns, removeTxnPermanently } from '../db/repo'
-import { formatMinor } from '../lib/money'
+import { currencySymbol, formatEntry, formatMinor, minorToEntry } from '../lib/money'
 import { pickAlternative, readSpeech, type ParsedSpeech } from '../lib/parseSpeech'
 import { activeTrip, addTripEntry } from '../db/trips'
 import { ME } from '../lib/split'
@@ -37,10 +37,11 @@ export interface VoiceRequest {
   launch?: VoiceLaunch | null
 }
 
-export type VoiceDraft = Omit<ParsedSpeech, 'amountMinor'>
+/** What the add sheet finishes: a reading with no amount, or one Taily wasn't sure of, amount and all. */
+export type VoiceDraft = Omit<ParsedSpeech, 'amountMinor'> & { amountMinor?: number }
 
-/** Hands-free: this long without a new word, and it's over. */
-const SILENCE_MS = 1700
+/** Hands-free: this long without a new word, and it's over. Long enough for a breath before the amount. */
+const SILENCE_MS = 2200
 /** Hands-free: nothing said in this long, and it's over. */
 const NO_SPEECH_MS = 8000
 /** The saved card stays this long, then gets out of the way. */
@@ -52,6 +53,8 @@ type FailReason = VoiceFailure | 'noAmount'
 
 type View =
   | { kind: 'listen'; phase: VoicePhase }
+  /** not sure of the amount: `amounts[0]` is shown big, the rest are the other amounts heard, one tap to swap in */
+  | { kind: 'check'; parsed: ParsedSpeech; amounts: number[] }
   | { kind: 'saved'; txn: Txn; parsed: ParsedSpeech }
   | { kind: 'failed'; reason: FailReason; heard?: string }
 
@@ -67,8 +70,9 @@ export function VoiceOverlay({
   holding,
   away,
   currency,
+  language,
   onClose,
-  onNeedAmount,
+  onDraft,
   onType,
   onEdit
 }: {
@@ -78,9 +82,11 @@ export function VoiceOverlay({
   /** the finger slid off the +: letting go now cancels */
   away: boolean
   currency: string
+  /** what the recognizer listens for, from Settings: "en-IN", "hi-IN", "en-US", "en-GB" */
+  language: string
   onClose: () => void
-  /** heard a note or a tag but no amount: finish it in the add sheet */
-  onNeedAmount: (draft: VoiceDraft) => void
+  /** finish it in the add sheet: heard a note or a tag but no amount, or Edit on a reading Taily wasn't sure of */
+  onDraft: (draft: VoiceDraft) => void
   /** "Type it instead" */
   onType: () => void
   onEdit: (txn: Txn) => void
@@ -98,8 +104,10 @@ export function VoiceOverlay({
   const trip = useLiveQuery(() => activeTrip(), []) ?? null
 
   // callbacks from a session outlive the render that started it: they read these
-  const data = useRef({ categories, accounts, recent, currency, trip })
-  data.current = { categories, accounts, recent, currency, trip }
+  const data = useRef({ categories, accounts, recent, currency, trip, language })
+  data.current = { categories, accounts, recent, currency, trip, language }
+  // the check state's Save, once: a second tap mustn't save it twice
+  const saving = useRef(false)
   const session = useRef<VoiceSession | null>(null)
   const run = useRef(0)
   const heard = useRef(false)
@@ -240,7 +248,7 @@ export function VoiceOverlay({
       }
       // a permission prompt took the screen, and the finger with it: carry on hands-free
       if (modeRef.current === 'hold' && !holdingRef.current) toFree()
-      session.current = startVoice({ hold: modeRef.current === 'hold' }, on)
+      session.current = startVoice({ hold: modeRef.current === 'hold', language: data.current.language }, on)
     })().catch(() => {
       // whatever went wrong, the screen must never sit on "Getting the mic ready…"
       if (live()) setView({ kind: 'failed', reason: 'error' })
@@ -248,21 +256,34 @@ export function VoiceOverlay({
   }
 
   async function finish(alternatives: Alternative[], mine: number) {
-    const { categories: cats, accounts: accs, recent: past, currency: cur, trip: on } = data.current
+    const { categories: cats, accounts: accs, recent: past, trip: on } = data.current
     // the recognizer's first guess isn't always the one that makes sense as a transaction ("to 50 lunch"
-    // beside "250 lunch"): lib/parseSpeech's pickAlternative says which reading to save
-    const { best } = pickAlternative(alternatives, (text) => readSpeech(text, on, cats, past, accs))
+    // beside "250 lunch"): lib/parseSpeech's pickAlternative says which reading to save, and whether it's sure
+    const { best, sure, others } = pickAlternative(alternatives, (text) => readSpeech(text, on, cats, past, accs))
     setCaption(best.text)
     const p = best.parsed
     if (!p.amountMinor) {
       if (p.note || p.categoryId) {
-        onNeedAmount({ kind: p.kind, note: p.note, categoryId: p.categoryId, dateISO: p.dateISO, accountId: p.accountId, paidBy: p.paidBy })
+        onDraft({ kind: p.kind, note: p.note, categoryId: p.categoryId, dateISO: p.dateISO, accountId: p.accountId, paidBy: p.paidBy })
         close()
       } else {
         setView({ kind: 'failed', reason: 'noAmount', heard: best.text })
       }
       return
     }
+    // never a guess saved without asking: the readings disagree on the amount, or the recognizer wasn't sure
+    if (!sure) {
+      vibrate('light')
+      setView({ kind: 'check', parsed: p, amounts: [p.amountMinor, ...others.map((o) => o.parsed.amountMinor!)] })
+      return
+    }
+    await save(p, mine)
+  }
+
+  /** Saves a reading, splitting a spend on a trip like a typed one, and shows the saved card with Undo. */
+  async function save(p: ParsedSpeech, mine: number) {
+    if (!p.amountMinor) return
+    const { accounts: accs, recent: past, currency: cur, trip: on } = data.current
     const today = todayISO()
     const dateISO = p.dateISO ?? today
     const fields = {
@@ -284,6 +305,28 @@ export function VoiceOverlay({
     haptic('success')
     setView({ kind: 'saved', txn, parsed: p })
     timers.current.saved = window.setTimeout(close, SAVED_MS)
+  }
+
+  /** The check state's Save: the amount shown big, once however many taps. */
+  async function confirm(p: ParsedSpeech) {
+    if (saving.current) return
+    saving.current = true
+    try {
+      await save(p, run.current)
+    } finally {
+      saving.current = false
+    }
+  }
+
+  /** The check state: another amount heard takes the big place, and the one that was there takes its chip's. */
+  function swap(i: number) {
+    haptic('selection')
+    setView((v) => {
+      if (v?.kind !== 'check' || !v.amounts[i]) return v
+      const amounts = [...v.amounts]
+      ;[amounts[0], amounts[i]] = [amounts[i], amounts[0]]
+      return { ...v, amounts }
+    })
   }
 
   // a new request: start listening
@@ -339,6 +382,25 @@ export function VoiceOverlay({
     if (kind) panel.current?.focus({ preventScroll: true })
   }, [kind])
 
+  // while the panel holds the screen, Tab goes round inside it, as in a sheet (lib/sheetFocus steps aside for
+  // the voice screen); the saved card leaves the app usable, so not there
+  useEffect(() => {
+    if (!kind || kind === 'saved') return
+    const onKey = (e: KeyboardEvent) => {
+      const box = panel.current
+      if (e.key !== 'Tab' || !box) return
+      const stops = [...box.querySelectorAll<HTMLElement>('button:not(:disabled)')]
+      if (!stops.length) return
+      const active = document.activeElement
+      const edge = e.shiftKey ? stops[0] : stops[stops.length - 1]
+      if (box.contains(active) && active !== box && active !== edge) return
+      e.preventDefault()
+      ;(e.shiftKey ? stops[stops.length - 1] : stops[0]).focus()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [kind])
+
   // Android's back button and Escape cancel (lib/backButton: one listener for the app, last opened goes first)
   useEffect(() => {
     if (!request) return
@@ -376,15 +438,19 @@ export function VoiceOverlay({
 
   const panelBottom = anchor ? window.innerHeight - anchor.top + 26 : undefined
 
-  function entry(p: ParsedSpeech, live: boolean) {
+  /** What Taily understood, as chips; `amount` false leaves the amount out (the check state shows it big). */
+  function entry(p: ParsedSpeech, live: boolean, amount = true) {
     const cat = p.categoryId ? categories.find((c) => c.id === p.categoryId) : null
     const acc = p.accountId ? accounts.find((a) => a.id === p.accountId) : null
     const day = p.dateISO ? (p.dateISO === addDaysISO(todayISO(), -1) ? 'Yesterday' : fmtShortDate(p.dateISO)) : null
+    if (!amount && !cat && !acc && !day && !p.note && !(trip && p.kind === 'out')) return null
     return (
       <div className="voice-entry">
-        <span className={`voice-amount mono${p.kind === 'in' ? ' in' : ''}${p.amountMinor ? '' : ' missing'}`}>
-          {p.amountMinor ? `${p.kind === 'in' ? '+' : ''}${formatMinor(p.amountMinor, currency)}` : live ? 'No amount yet' : ''}
-        </span>
+        {amount && (
+          <span className={`voice-amount mono${p.kind === 'in' ? ' in' : ''}${p.amountMinor ? '' : ' missing'}`}>
+            {p.amountMinor ? `${p.kind === 'in' ? '+' : ''}${formatMinor(p.amountMinor, currency)}` : live ? 'No amount yet' : ''}
+          </span>
+        )}
         {trip && p.kind === 'out' && (
           <span className="voice-chip">
             <Icon name="trip" size={12} />
@@ -454,6 +520,62 @@ export function VoiceOverlay({
             </button>
           </div>
         )}
+      </>
+    )
+  } else if (view.kind === 'check') {
+    const shown = view.amounts[0]
+    const others = view.amounts.slice(1)
+    const p = { ...view.parsed, amountMinor: shown }
+    const cat = p.categoryId ? categories.find((c) => c.id === p.categoryId) : null
+    const sign = p.kind === 'in' ? '+' : ''
+    const { rupees, paise } = minorToEntry(shown)
+    const digits = formatEntry(rupees, paise, currency)
+    announcement =
+      [`Check the amount: ${sign}${formatMinor(shown, currency)}`, cat?.name, p.note].filter(Boolean).join(', ') +
+      (others.length ? `. Or did you say ${others.map((a) => sign + formatMinor(a, currency)).join(' or ')}?` : '')
+    body = (
+      <>
+        <div className="voice-status">
+          <span className="voice-dot check" aria-hidden="true" />
+          Check the amount
+        </div>
+        <div className={`voice-big${p.kind === 'in' ? ' in' : ''}`}>
+          <span className="voice-big-cur">
+            {sign}
+            {currencySymbol(currency)}
+          </span>
+          <span key={shown} className={`voice-big-num${digits.length > 8 ? ' long' : ''}`}>
+            {digits}
+          </span>
+        </div>
+        {entry(p, false, false)}
+        {others.length > 0 && (
+          <div className="voice-alts" role="group" aria-label="Other amounts heard">
+            <span className="voice-alts-label" aria-hidden="true">
+              Or did you say
+            </span>
+            {others.map((a, i) => (
+              <button key={i} className="pill voice-alt" onClick={() => swap(i + 1)}>
+                {sign}
+                {formatMinor(a, currency)}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="voice-actions">
+          <button
+            className="btn ghost"
+            onClick={() => {
+              onDraft(p)
+              close()
+            }}
+          >
+            Edit
+          </button>
+          <button className="btn" onClick={() => void confirm(p)}>
+            Save
+          </button>
+        </div>
       </>
     )
   } else if (view.kind === 'saved') {
