@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
+import { parseReleaseNotes, type NoteBlock, type NoteRun } from '../lib/releaseNotes'
 import { checkForUpdate, type UpdateInfo } from '../lib/updater'
 import { TailyMark } from '../screens/Welcome'
 
@@ -10,6 +11,7 @@ import { TailyMark } from '../screens/Welcome'
  */
 export function UpdateGate({ info, onRecheck }: { info: UpdateInfo; onRecheck: (info: UpdateInfo | null) => void }) {
   const [checking, setChecking] = useState(false)
+  const notes = useMemo(() => parseReleaseNotes(info.notes), [info.notes])
 
   async function recheck() {
     setChecking(true)
@@ -57,7 +59,7 @@ export function UpdateGate({ info, onRecheck }: { info: UpdateInfo; onRecheck: (
           </span>
         </div>
 
-        {info.notes && (
+        {notes.length > 0 && (
           <div
             className="card"
             style={{
@@ -65,15 +67,11 @@ export function UpdateGate({ info, onRecheck }: { info: UpdateInfo; onRecheck: (
               padding: '14px 16px',
               maxHeight: 220,
               overflowY: 'auto',
-              textAlign: 'left'
+              textAlign: 'left',
+              overflowWrap: 'break-word'
             }}
           >
-            <span
-              className="caption"
-              style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--muted)' }}
-            >
-              {info.notes}
-            </span>
+            <ReleaseNotes blocks={notes} />
           </div>
         )}
 
@@ -87,5 +85,71 @@ export function UpdateGate({ info, onRecheck }: { info: UpdateInfo; onRecheck: (
         </div>
       </div>
     </div>
+  )
+}
+
+// The notes used to be one pre-wrap span of 13px text inside the card, so each line was as tall as the card's own
+// 16px text makes it (24px; 13px at 1.6 alone would be 20.8). Every line here is that same span inside a block
+// that keeps the card's font, so plain-text notes land exactly where they always did.
+const NOTE: CSSProperties = { fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--muted)' }
+const STRONG: CSSProperties = { fontWeight: 700, color: 'var(--ink)' }
+
+// The bullet shares a text node with the item's first words: in a box of its own it nudges every word after it
+// by a fraction of a pixel, and a plain "• " line has to come out exactly as it always did
+const bulleted = (runs: NoteRun[]): NoteRun[] =>
+  runs[0] && !runs[0].bold
+    ? [{ text: `• ${runs[0].text}`, bold: false }, ...runs.slice(1)]
+    : [{ text: '• ', bold: false }, ...runs]
+
+function Runs({ runs }: { runs: NoteRun[] }) {
+  return <>{runs.map((r, i) => (r.bold ? <strong key={i} style={STRONG}>{r.text}</strong> : r.text))}</>
+}
+
+/** Release notes as React elements, never as HTML: the text comes from the network. */
+function ReleaseNotes({ blocks }: { blocks: NoteBlock[] }) {
+  return (
+    <>
+      {blocks.map((block, i) => {
+        switch (block.kind) {
+          case 'heading':
+            return (
+              <h2 key={i} style={{ margin: 0, font: 'inherit', textWrap: 'balance' }}>
+                <span className="caption" style={{ ...NOTE, ...STRONG }}>
+                  <Runs runs={block.runs} />
+                </span>
+              </h2>
+            )
+          case 'list':
+            return (
+              <ul key={i} style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                {block.items.map((runs, j) => (
+                  <li key={j}>
+                    <span className="caption" style={NOTE}>
+                      <Runs runs={bulleted(runs)} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )
+          case 'line':
+            return (
+              <p key={i} style={{ margin: 0 }}>
+                <span className="caption" style={NOTE}>
+                  <Runs runs={block.runs} />
+                </span>
+              </p>
+            )
+          case 'gap':
+            // a blank line exactly one line of notes tall
+            return (
+              <div key={i} aria-hidden="true">
+                <span className="caption" style={NOTE}>
+                  <br />
+                </span>
+              </div>
+            )
+        }
+      })}
+    </>
   )
 }
