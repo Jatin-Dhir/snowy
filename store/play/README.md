@@ -2,37 +2,40 @@
 
 ## What is ready
 
-- A signed release bundle: `releases/taily-play-v2.13.1.aab` (package `com.jatindhir.taily`, version 24 / 2.13.1,
+- A signed release bundle: `releases/taily-play-v2.14.0.aab` (package `com.jatindhir.taily`, version 25 / 2.14.0,
   targets Android 16 / API 36)
-- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.13.1.apk`
+- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.14.0.apk`
 - A privacy policy at https://jatin-dhir.github.io/snowy/privacy.html (also linked from Settings in the app)
 - Listing copy (`listing.md`), data-safety answers (`data-safety.md`), release notes (`whats-new.txt`)
 - Graphics in `graphics/` (icon, feature graphic, eight captioned 1080 x 1920 screenshots)
 
-## Where Play Console stands (11 November 2026)
+## Where Play Console stands (12 November 2026)
 
 App "Taily: Expense Tracker", `com.jatindhir.taily`, in the JatinDhir developer account (the third Google account
 signed in to Chrome, `/u/2/` in Play Console addresses).
 
-- Done: store listing (text with "Trips with friends", icon, feature graphic, 8 screenshots; AI asset declaration
-  "Don't label assets", since every image comes from `scripts/play-graphics.mjs` or `scripts/gen-icons.mjs`),
+- Done: store listing (text with "Trips with friends" and the three special themes, icon, feature graphic, 8
+  screenshots, refreshed for 2.14.0; AI asset declaration "Don't label assets", since every image comes from
+  `scripts/play-graphics.mjs` or `scripts/gen-icons.mjs`),
   category Finance with tags Finance and Personal finance, contact email, privacy policy, and every App content
   declaration (no ads; sign-in details with the review code below; content rating PEGI 3 / ESRB Everyone with in-app
   purchases; target age 18+ only; data safety "no data collected or shared"; no advertising ID; not a government app;
   no financial features; no health features).
-- Live: internal testing, release 24 (2.13.1), to the "Internal testers" email list. Opt-in link:
+- Live: internal testing, release 25 (2.14.0) since 12 November, to the "Internal testers" email list. Opt-in link:
   https://play.google.com/apps/internaltest/4700958214368746059
 - Reviewed and published on 11 November (14 changes, approved within minutes): the store listing, the App content
   above, and closed testing ("Closed testing - Alpha"): release 24 (2.13.1), every country, testers from the "Internal
   testers" list. Testers join with https://play.google.com/store/apps/details?id=com.jatindhir.taily on Android or
   https://play.google.com/apps/testing/com.jatindhir.taily on the web, once their address is on the tester list.
+- Sent for review on 12 November: closed testing release 25 (2.14.0) at full roll-out, with the listing's new
+  description line (the special themes) and 7 new phone screenshots (the eighth, the trip, didn't change).
 - **Before Taily can go public**, Play requires the closed test to have **at least 12 testers opted in for 14 days in
   a row**, then an application for production access (questions about the test), then a production review.
   Testers count only if their Google account is on the test's tester list, they opt in through the test's link and
   install Taily from Google Play; a sideloaded copy doesn't count. Testers' Gmail addresses go in the
   **"Taily closed testers"** email list (created 11 November, attached to the closed track next to "Internal testers"):
   Play Console, Testing, Closed testing, Manage track, Testers. Aim for 15 to 20, since dropping below 12 can restart
-  the 14 days. Attaching that list was itself a change Play sent for review.
+  the 14 days. Attaching that list was itself a change Play sent for review (approved 11 November).
 - Waiting on you: the payments (merchant) profile; then the `taily_pro` product can be created (below).
 - Waiting on you: Play wants the account's trader status declared by 1 February 2027 (Play Console home), or the
   account's apps come down.
