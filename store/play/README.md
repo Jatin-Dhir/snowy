@@ -22,9 +22,10 @@ signed in to Chrome, `/u/2/` in Play Console addresses).
   no financial features; no health features).
 - Live: internal testing, release 24 (2.13.1), to the "Internal testers" email list. Opt-in link:
   https://play.google.com/apps/internaltest/4700958214368746059
-- Sent for review on 11 November (14 changes): the store listing, the App content above, and closed testing
-  ("Closed testing - Alpha"): release 24 (2.13.1), every country, testers from the "Internal testers" list. Google
-  says reviews usually take up to seven days.
+- Reviewed and published on 11 November (14 changes, approved within minutes): the store listing, the App content
+  above, and closed testing ("Closed testing - Alpha"): release 24 (2.13.1), every country, testers from the "Internal
+  testers" list. Testers join with https://play.google.com/store/apps/details?id=com.jatindhir.taily on Android or
+  https://play.google.com/apps/testing/com.jatindhir.taily on the web, once their address is on the tester list.
 - **Before Taily can go public**, Play requires the closed test to have **at least 12 testers opted in for 14 days in
   a row**, then an application for production access (questions about the test), then a production review.
   Testers count only if their Google account is on the test's tester list, they opt in through the test's link and
