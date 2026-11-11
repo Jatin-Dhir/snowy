@@ -29,9 +29,10 @@ signed in to Chrome, `/u/2/` in Play Console addresses).
 - **Before Taily can go public**, Play requires the closed test to have **at least 12 testers opted in for 14 days in
   a row**, then an application for production access (questions about the test), then a production review.
   Testers count only if their Google account is on the test's tester list, they opt in through the test's link and
-  install Taily from Google Play; a sideloaded copy doesn't count. The owner is sending the testers' Gmail addresses:
-  put them in a new email list on the closed track's Testers tab (15 to 20 is safer, since dropping below 12 can
-  restart the 14 days), then share the "Join on Android" link from that tab.
+  install Taily from Google Play; a sideloaded copy doesn't count. Testers' Gmail addresses go in the
+  **"Taily closed testers"** email list (created 11 November, attached to the closed track next to "Internal testers"):
+  Play Console, Testing, Closed testing, Manage track, Testers. Aim for 15 to 20, since dropping below 12 can restart
+  the 14 days. Attaching that list was itself a change Play sent for review.
 - Waiting on you: the payments (merchant) profile; then the `taily_pro` product can be created (below).
 - Waiting on you: Play wants the account's trader status declared by 1 February 2027 (Play Console home), or the
   account's apps come down.
