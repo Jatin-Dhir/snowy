@@ -757,6 +757,13 @@ button.pill:active {
   stroke-opacity: 0.28;
 }
 
+/* a special theme's cat has ears behind the ring, and a see-through ring showed them through it. Its cards are
+   one solid colour, so the same tint is mixed in solid instead */
+[data-special] .room-ring.is-over .ring-track {
+  stroke: color-mix(in srgb, var(--red) 28%, var(--card));
+  stroke-opacity: 1;
+}
+
 .room-ring .ring-arc {
   fill: none;
   stroke: var(--pos);
@@ -777,6 +784,31 @@ button.pill:active {
 
 .room-ring .eye {
   fill: var(--ink);
+}
+
+.room-ring .brow {
+  stroke-width: 2.2;
+}
+
+/* the glint in a sad cat's eyes, in the card's own colour */
+.room-ring .shine {
+  fill: var(--card);
+}
+
+/* a sad cat lowers its ears: each turns about the ring's centre, so its base stays under the ring */
+.room-ring .ear-l,
+.room-ring .ear-r {
+  transform-box: view-box;
+  transform-origin: 50px 56px;
+  transition: transform 520ms var(--ease-spring);
+}
+
+.room-ring.mood-sad .ear-l {
+  transform: rotate(-15deg);
+}
+
+.room-ring.mood-sad .ear-r {
+  transform: rotate(15deg);
 }
 
 /* a special theme's cat has ears and rosy cheeks; everywhere else it's just a face */
@@ -813,11 +845,22 @@ button.pill:active {
   display: none;
   position: absolute;
   left: 0;
-  top: -11px;
+  top: -14px;
   width: 58px;
-  height: 18px;
+  height: 26px;
   overflow: visible;
   pointer-events: none;
+}
+
+/* drawn at 1:1, where the ring's 5 would round the tips into stubs */
+.fab-ears .ear {
+  stroke-width: 4;
+}
+
+.fab-ears .ear-in {
+  stroke: var(--ear-in);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
 }
 
 [data-special] .fab-ears {
@@ -1881,6 +1924,33 @@ select.field {
 .btn.ghost:active,
 .btn.danger:active {
   box-shadow: var(--btn-shadow-active);
+}
+
+/* a button that sits in a sentence, read as a link */
+.link-btn {
+  font: inherit;
+  font-weight: 700;
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  background: none;
+  border: 0;
+  padding: 6px 2px;
+}
+
+/* Settings' groups. A heading sits closer to what it names than to the group before it: the sheet's 18px gap,
+   plus 16 above and less 6 below */
+.settings-head {
+  margin: 16px 0 -6px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.settings-head:first-of-type {
+  margin-top: 0;
 }
 
 /* ---------- misc ---------- */

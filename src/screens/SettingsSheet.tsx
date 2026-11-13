@@ -20,6 +20,7 @@ import { TAG_COLORS, TAG_ICONS } from '../db/seed'
 import { AccountManager } from '../components/AccountManager'
 import { ProfilesSheet } from '../components/ProfilesSheet'
 import { BackupSheet } from '../components/BackupSheet'
+import { EraseSheet } from '../components/EraseSheet'
 import { Icon } from '../components/Icon'
 import { PinPad } from '../components/PinPad'
 import { Sheet } from '../components/Sheet'
@@ -107,6 +108,7 @@ export function SettingsSheet({
   const [currencyOpen, setCurrencyOpen] = useState(false)
   const [accountsOpen, setAccountsOpen] = useState(false)
   const [profilesOpen, setProfilesOpen] = useState(false)
+  const [eraseOpen, setEraseOpen] = useState(false)
   const [importPlan, setImportPlan] = useState<ImportPlan | null>(null)
   const [importBusy, setImportBusy] = useState(false)
   const importFile = useRef<HTMLInputElement | null>(null)
@@ -448,8 +450,10 @@ export function SettingsSheet({
           </button>
         </div>
 
+        <h2 className="settings-head">Look and feel</h2>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span className="label" style={{ fontSize: 10.5 }}>Theme</span>
+          <h3 className="label" style={{ fontSize: 10.5 }}>Theme</h3>
           <div style={{ display: 'flex', gap: 8 }}>
             {(['light', 'dark', 'system'] as const).map((t) => (
               <button
@@ -466,7 +470,7 @@ export function SettingsSheet({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <span className="label" style={{ fontSize: 10.5 }}>Color</span>
+          <h3 className="label" style={{ fontSize: 10.5 }}>Color</h3>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2px' }}>
             {BASE_COLORS.map((a) => (
               <button
@@ -556,7 +560,7 @@ export function SettingsSheet({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <span className="label" style={{ fontSize: 10.5 }} id="special-themes">Special themes</span>
+          <h3 className="label" style={{ fontSize: 10.5 }} id="special-themes">Special themes</h3>
           <div className="special-grid" role="group" aria-labelledby="special-themes">
             {Object.entries(SPECIAL_THEMES).map(([id, t]) => {
               // each card shows the theme as it will look in the mode the app is in now
@@ -602,7 +606,7 @@ export function SettingsSheet({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span className="label" style={{ fontSize: 10.5 }}>Feedback</span>
+          <h3 className="label" style={{ fontSize: 10.5 }}>Haptics and sounds</h3>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               className={`pill${settings.haptics ? ' active' : ''}`}
@@ -625,9 +629,37 @@ export function SettingsSheet({
           </div>
         </div>
 
+        <h2 className="settings-head">Money</h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <ActionRow
+            icon="globe"
+            tint="#C08A3E"
+            title="Currency"
+            sub={currentCurrency ? `${currentCurrency.symbol} ${currentCurrency.name}` : settings.currency}
+            onClick={() => setCurrencyOpen(true)}
+          />
+          <ActionRow
+            icon="wallet"
+            tint="#3E8FA8"
+            title="Accounts"
+            sub="Banks, wallets, cash. Name them all"
+            onClick={() => setAccountsOpen(true)}
+          />
+          <ActionRow
+            icon="person"
+            tint="#C75D8D"
+            title="Profiles"
+            sub={`You're in ${currentProfile().name}. Keep separate books, or start a fresh one`}
+            onClick={() => setProfilesOpen(true)}
+          />
+        </div>
+
+        {(canListen || voiceExtras) && <h2 className="settings-head">Voice</h2>}
+
         {canListen && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span className="label" style={{ fontSize: 10.5 }} id="voice-language">Voice language</span>
+            <h3 className="label" style={{ fontSize: 10.5 }} id="voice-language">Voice language</h3>
             <div role="group" aria-labelledby="voice-language" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {VOICE_LANGUAGES.map((l) => (
                 <button
@@ -649,7 +681,7 @@ export function SettingsSheet({
 
         {voiceExtras && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span className="label" style={{ fontSize: 10.5 }}>Voice from anywhere</span>
+            <h3 className="label" style={{ fontSize: 10.5 }}>Voice from anywhere</h3>
             {voiceExtras.widget && (
               <ActionRow
                 icon="mic"
@@ -677,44 +709,12 @@ export function SettingsSheet({
           </div>
         )}
 
+        <h2 className="settings-head">Privacy and data</h2>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span className="label" style={{ fontSize: 10.5 }}>More</span>
-          {PRO_FOR_SALE && (
-            <ActionRow
-              icon="star"
-              tint="#C9952B"
-              title={pro.owned ? 'Taily Pro' : 'Get Taily Pro'}
-              sub={
-                pro.byCode
-                  ? 'Unlocked on this phone with a code'
-                  : pro.owned
-                    ? 'Unlocked. Thank you for backing Taily'
-                    : `Statement import, encrypted backups, recurring payments and more${pro.price ? ` · ${pro.price} once` : ''}`
-              }
-              onClick={openProSheet}
-            />
-          )}
-          <ActionRow
-            icon="person"
-            tint="#C75D8D"
-            title="Profiles"
-            sub={`You're in ${currentProfile().name} — separate books for separate people`}
-            onClick={() => setProfilesOpen(true)}
-          />
-          <ActionRow
-            icon="wallet"
-            tint="#3E8FA8"
-            title="Accounts"
-            sub="Banks, wallets, cash — name them all"
-            onClick={() => setAccountsOpen(true)}
-          />
-          <ActionRow
-            icon="globe"
-            tint="#C08A3E"
-            title="Currency"
-            sub={currentCurrency ? `${currentCurrency.symbol} ${currentCurrency.name}` : settings.currency}
-            onClick={() => setCurrencyOpen(true)}
-          />
+          <span className="caption" style={{ fontSize: 12, marginBottom: 2 }}>
+            Everything lives on this device. No account, no cloud, no ads.
+          </span>
           <ActionRow
             icon="lock"
             tint="#7B61D6"
@@ -722,42 +722,11 @@ export function SettingsSheet({
             sub={settings.pinHash ? 'Change your PIN or turn it off' : 'Set a 4-digit PIN to open Taily'}
             onClick={openPinFlow}
           />
-          {SELF_UPDATE && (
-            <ActionRow
-              icon={update !== 'idle' && update !== 'checking' && update.status === 'update' ? 'download' : 'refresh'}
-              tint="#2B5FE3"
-              title={
-                update === 'idle'
-                  ? 'Check for updates'
-                  : update === 'checking'
-                    ? 'Checking…'
-                    : update.status === 'update'
-                      ? `Get Taily v${update.info.version}`
-                      : update.status === 'latest'
-                        ? "You're on the latest"
-                        : update.status === 'unavailable'
-                          ? 'Updates'
-                          : 'Check for updates'
-              }
-              sub={
-                update !== 'idle' && update !== 'checking' && update.status === 'update'
-                  ? 'Tap to download the new version'
-                  : `You have v${APP_VERSION} · checks daily on its own`
-              }
-              onClick={() => {
-                if (update !== 'idle' && update !== 'checking' && update.status === 'update') {
-                  window.open(update.info.url, '_blank')
-                } else if (update !== 'checking') {
-                  void runUpdateCheck()
-                }
-              }}
-            />
-          )}
           <ActionRow
             icon="download"
             tint="#2C9A67"
             title="Export as CSV"
-            sub="Every column — dates, in/out, tags, accounts, notes"
+            sub="Every column: dates, in and out, tags, accounts, notes"
             onClick={() => void exportCsv()}
           />
           <ActionRow
@@ -772,14 +741,73 @@ export function SettingsSheet({
             icon="arrowUp"
             tint="#B0764A"
             title="Import a statement"
-            sub="CSV, Excel, or PDF — pick one here, or Share it in from any app"
+            sub="CSV, Excel, or PDF. Pick one here, or share it in from any app"
             locked={locked}
             onClick={() => hasPro('import') && importFile.current?.click()}
           />
-          <span className="caption" style={{ fontSize: 11.5 }}>
-            Everything lives on this device. No account, no cloud, no ads.
-          </span>
+          <ActionRow
+            icon="trash"
+            tint="#C2453D"
+            title="Erase everything"
+            sub="Delete all of Taily's data on this phone and start over"
+            danger
+            onClick={() => setEraseOpen(true)}
+          />
         </div>
+
+        {(PRO_FOR_SALE || SELF_UPDATE) && (
+          <>
+            <h2 className="settings-head">Taily</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {PRO_FOR_SALE && (
+                <ActionRow
+                  icon="star"
+                  tint="#C9952B"
+                  title={pro.owned ? 'Taily Pro' : 'Get Taily Pro'}
+                  sub={
+                    pro.byCode
+                      ? 'Unlocked on this phone with a code'
+                      : pro.owned
+                        ? 'Unlocked. Thank you for backing Taily'
+                        : `Statement import, encrypted backups, recurring payments and more${pro.price ? ` · ${pro.price} once` : ''}`
+                  }
+                  onClick={openProSheet}
+                />
+              )}
+              {SELF_UPDATE && (
+                <ActionRow
+                  icon={update !== 'idle' && update !== 'checking' && update.status === 'update' ? 'download' : 'refresh'}
+                  tint="#2B5FE3"
+                  title={
+                    update === 'idle'
+                      ? 'Check for updates'
+                      : update === 'checking'
+                        ? 'Checking…'
+                        : update.status === 'update'
+                          ? `Get Taily v${update.info.version}`
+                          : update.status === 'latest'
+                            ? "You're on the latest"
+                            : update.status === 'unavailable'
+                              ? 'Updates'
+                              : 'Check for updates'
+                  }
+                  sub={
+                    update !== 'idle' && update !== 'checking' && update.status === 'update'
+                      ? 'Tap to download the new version'
+                      : `You have v${APP_VERSION} · checks daily on its own`
+                  }
+                  onClick={() => {
+                    if (update !== 'idle' && update !== 'checking' && update.status === 'update') {
+                      window.open(update.info.url, '_blank')
+                    } else if (update !== 'checking') {
+                      void runUpdateCheck()
+                    }
+                  }}
+                />
+              )}
+            </div>
+          </>
+        )}
 
         <input
           ref={importFile}
@@ -803,6 +831,16 @@ export function SettingsSheet({
         <AccountManager open={accountsOpen} currency={settings.currency} onClose={() => setAccountsOpen(false)} />
         <ProfilesSheet open={profilesOpen} onClose={() => setProfilesOpen(false)} />
         <BackupSheet open={backupOpen} onClose={() => setBackupOpen(false)} />
+        <EraseSheet
+          open={eraseOpen}
+          canStartProfile={!locked}
+          onClose={() => setEraseOpen(false)}
+          onExport={() => void exportCsv()}
+          onStartProfile={() => {
+            setEraseOpen(false)
+            setProfilesOpen(true)
+          }}
+        />
 
         {importPlan && (
           <Sheet open onClose={() => !importBusy && setImportPlan(null)} label="Import CSV" style={{ gap: 12 }}>

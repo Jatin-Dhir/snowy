@@ -242,11 +242,14 @@ export function TabBar({
           <Icon name="plus" size={24} strokeWidth={2.2} />
           {/* a special theme turns the + into Taily's head (global.css, [data-special]). After the +, so the
               + stays the button's first icon */}
-          <svg className="fab-ears" viewBox="0 0 58 18" aria-hidden="true">
-            <path className="ear" d="M7 17 L9 3 L21 11 Z" />
-            <path className="ear" d="M51 17 L49 3 L37 11 Z" />
-            <path className="ear-in" d="M10.5 13.5 L11.5 7 L17 10.5 Z" />
-            <path className="ear-in" d="M47.5 13.5 L46.5 7 L41 10.5 Z" />
+          {/* In this box the button is a circle about (29, 43), r 29. Each ear sits 38° off the top and leans
+              out 18°; its base is sunk 5px into the circle, so no gap shows where ear meets head, and its
+              pink inside ends at the head's edge */}
+          <svg className="fab-ears" viewBox="0 0 58 26" aria-hidden="true">
+            <path className="ear" d="M6.7 29.9 L6.2 4.9 L21.7 18.2 Z" />
+            <path className="ear" d="M51.3 29.9 L51.8 4.9 L36.3 18.2 Z" />
+            <path className="ear-in" d="M6.6 22.9 L8.2 9.7 L17.4 14.5 Z" />
+            <path className="ear-in" d="M51.4 22.9 L49.8 9.7 L40.6 14.5 Z" />
           </svg>
         </button>
         {TABS.slice(2).map(item)}
