@@ -90,6 +90,22 @@ export function LoansSheet({
     .slice(0, 12)
   const people = [...new Set([...loans].sort((a, b) => b.createdAt - a.createdAt).map((l) => l.person))].slice(0, 5)
 
+  // a row says "overdue" from its reminder's moment, as Home's reminder card comes then (Home.tsx reminderDue): while
+  // the sheet is open, its rows are drawn again at the next one, whichever screen opened it, not only when something
+  // else changes. A later day's is looked at again when the day changes
+  const [reminderDue, setReminderDue] = useState(0)
+  const today = todayISO()
+  useEffect(() => {
+    if (!open) return
+    const now = Date.now()
+    const next = Math.min(
+      ...loans.filter((l) => !l.settledISO).map((l) => loanReminderAt(l)?.getTime() ?? 0).filter((t) => t > now)
+    )
+    if (!Number.isFinite(next) || next - now > 86400000) return
+    const timer = window.setTimeout(() => setReminderDue((n) => n + 1), next - now + 250)
+    return () => window.clearTimeout(timer)
+  }, [open, loans, today, reminderDue])
+
   const canSave = person.trim().length > 0 && amt.minor > 0
 
   function startAdding() {
