@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
 import { txnsBetween } from '../db/repo'
-import { byCategory, fixedOf, incomeSum, isRealSpend, pace, projectMonth, stillDue, sum } from '../db/stats'
+import { byCategory, fixedOf, incomeSum, isRealSpend, isRecurring, pace, projectMonth, stillDue, sum } from '../db/stats'
 import { formatCompact, formatMinor } from '../lib/money'
 import { adviceFor, smartNotes } from '../lib/smart'
 import { LoansSheet } from '../components/LoansSheet'
@@ -162,8 +162,8 @@ export function Insights({
       return { ...r, delta: prev > 0 ? Math.round(((r.total - prev) / prev) * 100) : null }
     })
     return {
-      // an average, so whole rupees, like Home's week
-      dailyAvg: Math.round(spent / daysElapsed / 100) * 100,
+      // an average, so whole rupees, like Home's week: its recurring payments stay out of it, paid once each
+      dailyAvg: Math.round(sum(monthTxns.filter((t) => !isRecurring(t))) / daysElapsed / 100) * 100,
       biggestDay,
       noSpendDays: Math.max(0, daysElapsed - byDay.size),
       topTags

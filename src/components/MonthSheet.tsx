@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
 import { txnsForMonth } from '../db/repo'
-import { fixedOf, incomeSum, stillDue, sum } from '../db/stats'
+import { fixedOf, incomeSum, isRecurring, stillDue, sum } from '../db/stats'
 import { formatMinor } from '../lib/money'
 import { addMonths, currentMonthKey, daysInMonth, monthLabel, todayISO } from '../lib/dates'
 import { useBudgetEditor } from './BudgetDialog'
@@ -55,9 +55,10 @@ export function MonthSheet({
   const spent = txns ? sum(txns) : 0
   const received = txns ? incomeSum(txns) : 0
   const count = txns?.length ?? 0
-  // an average, so whole rupees, like Insights' report: over the days so far, or the whole month once it's done
+  // an average, so whole rupees, like Insights' report: over the days so far, or the whole month once it's done. As
+  // Home's week, its recurring payments stay out of it: rent paid on the 1st isn't "₹14,200 a day"
   const days = isCurrent ? parseInt(todayISO().slice(8, 10), 10) : daysInMonth(monthKey)
-  const perDay = Math.round(spent / days / 100) * 100
+  const perDay = Math.round((txns ? sum(txns.filter((t) => !isRecurring(t))) : 0) / days / 100) * 100
   const budgetMinor = overall && overall.amountMinor > 0 ? overall.amountMinor : null
 
   // a button that goes away as it's pressed ("Back to …"), or stops working (› on reaching this month), hands its
