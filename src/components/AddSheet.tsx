@@ -356,9 +356,11 @@ export function AddSheet({
 
   async function logAgain() {
     if (!editTxn || !canSave || !canLogAgain) return
-    // the account it was paid from, unless that one's gone since
+    // the account it was paid from, unless that one's gone since; and its tag, unless that's been hidden since ("old
+    // expenses keep it"): the sheet shows no tag picked, and a new entry isn't an old one
     const from = activeAccounts.some((a) => a.id === account) ? account : (guessAccount(accounts, recent) ?? account)
-    const txn = await addTxn({ amountMinor, currency, categoryId: selectedCat, accountId: from, kind, note: note.trim() })
+    const tag = selectedCat && categories.some((c) => c.id === selectedCat) ? selectedCat : null
+    const txn = await addTxn({ amountMinor, currency, categoryId: tag, accountId: from, kind, note: note.trim() })
     haptic('success')
     showToast(`Logged ${kind === 'in' ? '+' : ''}${formatMinor(amountMinor, currency)} again today`, () => {
       void removeTxnPermanently(txn.id)
