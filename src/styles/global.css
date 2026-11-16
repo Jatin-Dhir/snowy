@@ -2135,6 +2135,56 @@ button.tag-row:active {
   }
 }
 
+/* Under 500px tall, upright (a phone split in two, a small browser): the tag row sat behind the pinned keys, and "Tap a
+   tag to save instantly" was out of reach until the sheet was scrolled. It's pinned with them now, over the keys'
+   179px (four 40px rows, their gaps and the 4px above them) and Save's 58px, and what scrolls is the rest above it:
+   AddSheet opens it scrolled to keep the amount clear. A sum's line is 24px more, so with one the same holds to 524px.
+   Under 400px the amount would have no room above all three: there the tags scroll as before */
+@media (max-height: 500px) and (min-height: 400px) and (max-width: 559px) {
+  .add-sheet:not(:has(input:focus)) {
+    scroll-padding-bottom: calc(358px + env(safe-area-inset-bottom));
+  }
+  .add-sheet:not(:has(input:focus)) > .add-tags {
+    position: sticky;
+    bottom: calc(58px + 179px);
+    z-index: 3;
+    background: var(--sheet-bg);
+  }
+  /* what scrolls up behind them fades as it goes, rather than ending in the cut-off tops of the date and note */
+  .add-sheet:not(:has(input:focus)) > .add-tags::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 14px;
+    background: linear-gradient(to bottom, transparent, var(--sheet-bg));
+    pointer-events: none;
+  }
+}
+
+@media (max-height: 524px) and (min-height: 400px) and (max-width: 559px) {
+  .add-sheet.summing:not(:has(input:focus)) {
+    scroll-padding-bottom: calc(358px + env(safe-area-inset-bottom));
+  }
+  .add-sheet.summing:not(:has(input:focus)) > .add-tags {
+    position: sticky;
+    bottom: calc(58px + 179px);
+    z-index: 3;
+    background: var(--sheet-bg);
+  }
+  .add-sheet.summing:not(:has(input:focus)) > .add-tags::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 14px;
+    background: linear-gradient(to bottom, transparent, var(--sheet-bg));
+    pointer-events: none;
+  }
+}
+
 /* a phone on its side: the keys and Save stand beside the amount and tags rather than under them */
 @media (max-height: 555px) and (min-width: 560px) {
   .sheet.add-sheet,

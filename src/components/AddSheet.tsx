@@ -70,6 +70,7 @@ export function AddSheet({
   const noteRef = useRef<HTMLInputElement>(null)
   const dateRef = useRef<HTMLInputElement>(null)
   const amountRow = useRef<HTMLDivElement>(null)
+  const pillsRow = useRef<HTMLDivElement>(null)
   const amountFigure = useRef<HTMLSpanElement>(null)
   useFitAmount(amountRow, amountFigure)
 
@@ -174,6 +175,34 @@ export function AddSheet({
     if (!sheet || !keys || !cta) return
     const over = keys.getBoundingClientRect().bottom - cta.getBoundingClientRect().top
     if (over > 0) sheet.scrollTop += Math.ceil(over)
+  }, [summing])
+  // Under 500px tall the tags are pinned with the keys and Save (global.css), and what scrolls is above them, fading
+  // into the 14px over them. The sheet opens, and a sum's line comes in, scrolled just enough to bring the date,
+  // account and note out from behind the tags, fade and all, while the top row stays whole (the grab strip, and a
+  // few pixels of the row's own padding, may go); when that can't be, the amount, which has to be seen as it's typed
+  const clearOfPinned = (): boolean => {
+    const sheet = head.current?.closest<HTMLElement>('.sheet')
+    const tags = sheet?.querySelector<HTMLElement>(':scope > .add-tags')
+    if (!sheet || !tags || !head.current || !amountRow.current) return false
+    if (getComputedStyle(tags).position !== 'sticky') return true
+    const pinnedTop = tags.getBoundingClientRect().top
+    const headroom = head.current.getBoundingClientRect().top - sheet.getBoundingClientRect().top - sheet.clientTop + 6
+    const fields = (pillsRow.current?.firstElementChild?.getBoundingClientRect().bottom ?? 0) + 14 - pinnedTop
+    // the amount's own box ends below its figures: the fade can lie over that part
+    const amount = amountRow.current.getBoundingClientRect().bottom - pinnedTop
+    const by = fields <= headroom ? fields : amount
+    if (by > 0) sheet.scrollTop += Math.ceil(by)
+    return true
+  }
+  // the sheet's content comes a render after `open` (Sheet.tsx): once per opening, as soon as it's there
+  const clearedOnOpen = useRef(false)
+  useLayoutEffect(() => {
+    if (!open) clearedOnOpen.current = false
+    else if (!clearedOnOpen.current) clearedOnOpen.current = clearOfPinned()
+  })
+  useLayoutEffect(() => {
+    if (open && summing) clearOfPinned()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [summing])
   // before any amount is typed, the tag row (no use yet) offers those instead: one tap logs it again
   const showRepeats = !isEdit && !canSave && repeats.length > 0
@@ -521,7 +550,7 @@ export function AddSheet({
                 </button>
               )}
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '6px 0 12px', flexWrap: 'wrap' }}>
+              <div ref={pillsRow} style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '6px 0 12px', flexWrap: 'wrap' }}>
                 <button
                   className="pill"
                   onClick={() => {
