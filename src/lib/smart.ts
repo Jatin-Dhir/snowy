@@ -1,7 +1,7 @@
 // On-device intelligence: note-memory categorization, anomaly detection,
 // and generated insight notes. Deterministic, instant, fully offline.
 import type { Account, Category, Txn } from '../db/db'
-import { isOut, isRealSpend, projectMonth, sum, type DueBill } from '../db/stats'
+import { isOut, isRealSpend, isRecurring, projectMonth, sum, type DueBill } from '../db/stats'
 import { addDaysISO, daysInMonth, fromISO, todayISO, weekDaysOf } from './dates'
 import { formatMinor } from './money'
 
@@ -96,8 +96,9 @@ export function weeklyAnomalies(txns: Txn[], categories: Category[], today = tod
 
   for (const cat of categories) {
     if (cat.archived || cat.id === 'savings') continue
-    // a trip is the opposite of your usual pace: its spends count everywhere but here
-    const catTx = txns.filter((t) => isOut(t) && t.categoryId === cat.id && !t.tripEntryId)
+    // a trip is the opposite of your usual pace: its spends count everywhere but here. So is a recurring payment
+    // (an EMI, a yearly renewal): logged by its rule on its day, it's a fixed cost, not a spike
+    const catTx = txns.filter((t) => isOut(t) && t.categoryId === cat.id && !t.tripEntryId && !isRecurring(t))
     const thisWeek = sum(catTx.filter((t) => t.dateISO >= weekStart && t.dateISO <= today))
     if (thisWeek < least) continue // ignore small numbers (under ₹500, $10, ¥1,000)
     let prior = 0
@@ -142,15 +143,19 @@ export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonth
   // a big tuck-away shouldn't win "top category" or read as a spending leak
   const realOuts = outs.filter(isRealSpend)
   const realSpend = sum(realOuts)
+  // nor recurring payments: rent paid on a Sunday isn't a weekend habit, and an EMI isn't a tag to cap. They stay in
+  // what's spent wherever the money itself is counted (where the month lands, what was kept)
+  const habits = realOuts.filter((t) => !isRecurring(t))
+  const habitSpend = sum(habits)
 
   const totals = new Map<string, number>()
-  for (const t of realOuts) {
+  for (const t of habits) {
     if (t.categoryId) totals.set(t.categoryId, (totals.get(t.categoryId) ?? 0) + t.amountMinor)
   }
   const top = [...totals.entries()].sort((a, b) => b[1] - a[1])[0]
-  if (top && realSpend > 0) {
+  if (top && habitSpend > 0) {
     const cat = categories.find((c) => c.id === top[0])
-    const share = Math.round((top[1] / realSpend) * 100)
+    const share = Math.round((top[1] / habitSpend) * 100)
     if (cat && share >= 35) {
       const hasBudget = budgets.some((b) => b.id === cat.id)
       tips.push(
@@ -186,8 +191,8 @@ export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonth
     tips.push('No monthly budget set — one number in Budgets unlocks safe-to-spend and pace warnings.')
   }
 
-  const weekend = sum(realOuts.filter((t) => [0, 6].includes(fromISO(t.dateISO).getDay())))
-  const weekendPct = realSpend > 0 ? Math.round((weekend / realSpend) * 100) : 0
+  const weekend = sum(habits.filter((t) => [0, 6].includes(fromISO(t.dateISO).getDay())))
+  const weekendPct = habitSpend > 0 ? Math.round((weekend / habitSpend) * 100) : 0
   if (weekendPct >= 45) {
     tips.push(`${weekendPct}% of spending happens on weekends. Deciding a weekend number on Friday beats regretting it on Monday.`)
   }
@@ -199,14 +204,14 @@ export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonth
   }
 
   const smallMax = everydayAmount(20000, currency)
-  const small = realOuts.filter((t) => t.amountMinor <= smallMax)
+  const small = habits.filter((t) => t.amountMinor <= smallMax)
   if (small.length >= 12) {
     tips.push(
       `${small.length} small expenses under ${formatMinor(smallMax, currency)} added up to ${formatMinor(sum(small), currency)}. Little leaks sink the ship — pick one to skip daily.`
     )
   }
 
-  const untagged = realOuts.filter((t) => !t.categoryId).length
+  const untagged = habits.filter((t) => !t.categoryId).length
   if (untagged >= 3) {
     tips.push(`${untagged} expenses are untagged, which blurs every chart here. A quick pass in Activity fixes it.`)
   }
@@ -220,9 +225,12 @@ export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonth
   return tips.slice(0, 5)
 }
 
-/** Short generated observations about a month of spending. */
+/**
+ * Short generated observations about a month of spending: its habits, so never its recurring payments (rent paid
+ * on a Sunday would be its "biggest hit" and make weekends "carry" the month).
+ */
 export function smartNotes(monthTxns: Txn[], categories: Category[], currency: string): string[] {
-  const outs = monthTxns.filter(isRealSpend)
+  const outs = monthTxns.filter((t) => isRealSpend(t) && !isRecurring(t))
   if (outs.length < 3) return []
   const notes: string[] = []
 
