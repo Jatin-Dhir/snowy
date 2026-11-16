@@ -17,6 +17,7 @@ import {
 import { fmtDayHeading, fromISO, shortDate, todayISO } from '../lib/dates'
 import { currencySymbol, formatMinor } from '../lib/money'
 import { shareMessage } from '../lib/saveFile'
+import { quietWhereTapped } from '../lib/sheetFocus'
 import { ME, type Transfer } from '../lib/split'
 import { tripLink, tripMessage, tripPayload } from '../lib/tripLink'
 import { useAnimatedNumber } from '../lib/useAnimatedNumber'
@@ -73,14 +74,21 @@ export function TripSheet({
   const trip = current?.trip ?? null
   const running = overview?.find((o) => !o.trip.endedISO)?.trip ?? null
 
+  // a tap swaps what the sheet shows, under that finger: a double tap's second tap landed on whatever took its
+  // place, the backdrop where the sheet got shorter, or "Add a spend" where Save was
+  function show(next: typeof view) {
+    quietWhereTapped()
+    setView(next)
+  }
+
   return (
     <Sheet open={open} onClose={onClose} label="Trips" style={{ gap: 14 }}>
       {view === 'detail' && current ? (
         <TripDetail
           data={current}
           currency={currency}
-          onBack={() => setView('list')}
-          onEdit={() => setView('edit')}
+          onBack={() => show('list')}
+          onEdit={() => show('edit')}
           onClose={onClose}
           onAddSpend={onAddSpend}
           onEditEntry={onEditEntry}
@@ -91,10 +99,10 @@ export function TripSheet({
           running={running}
           knownNames={[...new Set((overview ?? []).flatMap((o) => o.trip.people.filter((p) => p.id !== ME).map((p) => p.name)))]}
           currency={currency}
-          onBack={() => setView('list')}
+          onBack={() => show('list')}
           onDone={(id) => {
             setTripId(id)
-            setView('detail')
+            show('detail')
           }}
         />
       ) : view === 'edit' && trip ? (
@@ -103,11 +111,11 @@ export function TripSheet({
           running={running}
           knownNames={[]}
           currency={currency}
-          onBack={() => setView('detail')}
-          onDone={() => setView('detail')}
+          onBack={() => show('detail')}
+          onDone={() => show('detail')}
           onDeleted={() => {
             setTripId(null)
-            setView('list')
+            show('list')
           }}
         />
       ) : (
@@ -118,7 +126,7 @@ export function TripSheet({
               <Icon name="x" size={14} strokeWidth={2.2} />
             </button>
           </div>
-          <button className="btn" onClick={() => setView('new')}>
+          <button className="btn" onClick={() => show('new')}>
             <Icon name="plus" size={17} strokeWidth={2.4} /> Start a trip
           </button>
           {overview?.length === 0 && (
@@ -135,7 +143,7 @@ export function TripSheet({
                   className="txn-row"
                   onClick={() => {
                     setTripId(t.id)
-                    setView('detail')
+                    show('detail')
                   }}
                 >
                   <span
@@ -246,6 +254,8 @@ function TripDetail({
   }
 
   async function finish() {
+    // "Back to trip mode" comes up in its place
+    quietWhereTapped()
     await endTrip(trip.id)
     haptic('success')
     showToast('Trip ended. New spends are just yours again', () => {
@@ -478,6 +488,8 @@ function TripDetail({
         <button
           className="btn ghost"
           onClick={() => {
+            // "Add a spend" comes up in its place
+            quietWhereTapped()
             void resumeTrip(trip.id)
             haptic('selection')
             showToast(`Trip mode is back on for ${trip.name}`)
@@ -650,6 +662,8 @@ function TripForm({
       document.getElementById(missing)?.focus()
       return
     }
+    // from the tap, not once the trip is written: a second tap meanwhile would start it twice
+    quietWhereTapped()
     const going = typed ? [...others, { id: crypto.randomUUID(), name: typed }] : others
     if (trip) {
       await updateTrip(trip, { name, people: [{ id: ME, name: myName }, ...going], budgetMinor })
@@ -666,6 +680,7 @@ function TripForm({
 
   async function remove() {
     if (!trip) return
+    quietWhereTapped()
     const deleted = await deleteTrip(trip.id)
     haptic('medium')
     onDeleted?.()
