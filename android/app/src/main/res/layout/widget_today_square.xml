@@ -86,6 +86,81 @@
                 android:text="@string/widget_title"
                 android:textColor="@color/voice_muted"
                 android:textSize="12sp" />
+
+            <!-- The month under today, as the four-by-two's month row and Home's month strip: "₹39,386 of ₹50,000"
+                 over a bar of the budget spent. Only with a budget, on a widget tall enough for it (VoiceWidget's
+                 SQUARE_TALL); as wide as Speak and Add below it, wider only for a long figure. Part of the figure's
+                 tap, which opens Taily. The bar's fill is the share spent: its row's weightSum is 1 / that share. -->
+            <LinearLayout
+                android:id="@+id/widget_month"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:minWidth="102dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/widget_month_spent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:importantForAccessibility="no"
+                        android:includeFontPadding="false"
+                        android:maxLines="1"
+                        android:textColor="@color/voice_ink"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/widget_month_of"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:ellipsize="end"
+                        android:importantForAccessibility="no"
+                        android:includeFontPadding="false"
+                        android:maxLines="1"
+                        android:textColor="@color/voice_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="5dp"
+                    android:layout_marginTop="6dp">
+
+                    <ImageView
+                        android:id="@+id/widget_month_track"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:importantForAccessibility="no"
+                        android:scaleType="fitXY"
+                        android:src="@drawable/widget_capsule" />
+
+                    <LinearLayout
+                        android:id="@+id/widget_month_bar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal"
+                        android:weightSum="1">
+
+                        <ImageView
+                            android:id="@+id/widget_month_fill"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:importantForAccessibility="no"
+                            android:scaleType="fitXY"
+                            android:src="@drawable/widget_capsule" />
+                    </LinearLayout>
+                </FrameLayout>
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout

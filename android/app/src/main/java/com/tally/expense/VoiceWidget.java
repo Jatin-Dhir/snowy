@@ -48,6 +48,12 @@ public class VoiceWidget extends AppWidgetProvider {
     WIDE(250, 40, 44, 26),
     /** Two by two: the ring above the figure, the buttons below. */
     SQUARE(100, 170, 64, 30),
+    /**
+     * The same, tall enough for the month under today without crowding it: the figures and a bar, as TALL has them.
+     * Measured on a phone at the standard text size, the ring, the figure, its label, the month and the buttons take
+     * 227 dp with the padding; 230 leaves them a little air. Shorter, the two by two stays as it was.
+     */
+    SQUARE_TALL(100, 230, 64, 30),
     /** Three or four by two: Home's today card. */
     LARGE(220, 150, 86, 42),
     /** The same, with room under today for the month, as Home's month strip under its today card. */
@@ -62,6 +68,14 @@ public class VoiceWidget extends AppWidgetProvider {
       this.height = height;
       this.ringDp = ringDp;
       this.numberDp = numberDp;
+    }
+
+    /**
+     * The least height at the phone's text size. The tall two-by-two's label and month line (about 14 dp each at the
+     * standard size) grow with the text; the ring, the figure and the buttons don't.
+     */
+    float heightAt(float fontScale) {
+      return this == SQUARE_TALL ? height + Math.max(0f, fontScale - 1f) * 28f : height;
     }
   }
 
@@ -111,18 +125,19 @@ public class VoiceWidget extends AppWidgetProvider {
 
   static RemoteViews views(Context context, Bundle options) {
     WidgetData data = WidgetData.load(context);
+    float fontScale = context.getResources().getConfiguration().fontScale;
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
       // the launcher picks the closest of these that fits, re-picks as the widget is resized, and swaps
       // light and dark by itself when the phone changes theme
       Map<SizeF, RemoteViews> sizes = new ArrayMap<>();
-      for (Kind kind : Kind.values()) sizes.put(new SizeF(kind.width, kind.height), build(context, data, kind, true));
+      for (Kind kind : Kind.values()) sizes.put(new SizeF(kind.width, kind.heightAt(fontScale)), build(context, data, kind, true));
       return new RemoteViews(sizes);
     }
-    return build(context, data, pick(context, options), false);
+    return build(context, data, pick(context, options, fontScale), false);
   }
 
   /** Before Android 12, one layout for the size the launcher reports. */
-  private static Kind pick(Context context, Bundle options) {
+  private static Kind pick(Context context, Bundle options, float fontScale) {
     if (options == null) return Kind.LARGE;
     boolean portrait = context.getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE;
     int w = options.getInt(portrait ? AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH : AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0);
@@ -130,7 +145,7 @@ public class VoiceWidget extends AppWidgetProvider {
     if (w == 0 || h == 0) return Kind.LARGE;
     Kind best = Kind.MIC;
     for (Kind kind : Kind.values()) {
-      if (kind.width <= w && kind.height <= h && kind.width * kind.height >= best.width * best.height) best = kind;
+      if (kind.width <= w && kind.heightAt(fontScale) <= h && kind.width * kind.height >= best.width * best.height) best = kind;
     }
     return best;
   }
@@ -140,7 +155,9 @@ public class VoiceWidget extends AppWidgetProvider {
     boolean large = kind == Kind.LARGE || kind == Kind.TALL;
     int layout = kind == Kind.MIC
         ? R.layout.widget_voice_mic
-        : kind == Kind.SQUARE ? R.layout.widget_today_square : large ? R.layout.widget_today_large : R.layout.widget_today_row;
+        : kind == Kind.SQUARE || kind == Kind.SQUARE_TALL
+            ? R.layout.widget_today_square
+            : large ? R.layout.widget_today_large : R.layout.widget_today_row;
     RemoteViews v = new RemoteViews(context.getPackageName(), layout);
     // Android 12+ gets both palettes and follows the phone; before it, the one that applies now
     WidgetData.Palette day = dual ? data.day() : data.current(context);
@@ -248,17 +265,22 @@ public class VoiceWidget extends AppWidgetProvider {
     art(v, context, kind, data, day, night, dual, money.hasBudget ? money : null);
 
     // the month under today, as Home's month strip under its card. Without a budget the caption already says the
-    // month, so this needs one; and room, which only the tall four-by-two has
+    // month, so this needs one; and room, which the tall four-by-two and the tall two-by-two have
     String said = label + ": " + amount + ", " + caption;
-    if (kind == Kind.TALL && money.hasBudget) {
+    boolean square = kind == Kind.SQUARE_TALL;
+    if ((kind == Kind.TALL || square) && money.hasBudget) {
       boolean monthOver = money.monthOver();
       String monthName = monthName(money.day);
       String spentText = data.money(money.month);
       String budgetText = data.money(money.budget);
-      v.setTextViewText(R.id.widget_month_name, monthName);
-      v.setTextViewText(R.id.widget_month_spent, spentText);
-      v.setTextViewText(R.id.widget_month_of, res.getString(R.string.widget_month_of, budgetText));
-      textColor(v, R.id.widget_month_name, day.muted, night.muted, dual);
+      if (!square) {
+        v.setTextViewText(R.id.widget_month_name, monthName);
+        textColor(v, R.id.widget_month_name, day.muted, night.muted, dual);
+      }
+      // the two-by-two has room for the figures only, in whole rupees: "₹16,096.01 of ₹50,000" runs past a 2-cell
+      // widget, "₹16,096 of ₹50,000" fits. What it says aloud keeps the paise
+      v.setTextViewText(R.id.widget_month_spent, square ? data.money(wholeUnits(money.month)) : spentText);
+      v.setTextViewText(R.id.widget_month_of, res.getString(R.string.widget_month_of, square ? data.money(wholeUnits(money.budget)) : budgetText));
       textColor(v, R.id.widget_month_spent, monthOver ? day.over : day.ink, monthOver ? night.over : night.ink, dual);
       textColor(v, R.id.widget_month_of, day.muted, night.muted, dual);
       tint(v, R.id.widget_month_track, monthOver ? day.overTrack : day.track, monthOver ? night.overTrack : night.track, dual);
@@ -276,9 +298,12 @@ public class VoiceWidget extends AppWidgetProvider {
       }
       v.setViewVisibility(R.id.widget_month_bar, View.VISIBLE);
       v.setViewVisibility(R.id.widget_month, View.VISIBLE);
-      v.setOnClickPendingIntent(R.id.widget_month, VoiceLaunch.pending(context, 4, VoiceLaunch.homeIntent(context, "widget")));
       String monthSaid = res.getString(R.string.widget_month_said, monthName, spentText, budgetText);
-      v.setContentDescription(R.id.widget_month, res.getString(R.string.widget_open, monthSaid));
+      // a tap of its own on the four-by-two; on the two-by-two it sits inside the figure's tap, which opens Taily too
+      if (!square) {
+        v.setOnClickPendingIntent(R.id.widget_month, VoiceLaunch.pending(context, 4, VoiceLaunch.homeIntent(context, "widget")));
+        v.setContentDescription(R.id.widget_month, res.getString(R.string.widget_open, monthSaid));
+      }
       said += ". " + monthSaid;
     }
 
@@ -305,6 +330,11 @@ public class VoiceWidget extends AppWidgetProvider {
       v.setImageViewBitmap(R.id.widget_ring, light);
     }
     v.setViewVisibility(R.id.widget_ring, View.VISIBLE);
+  }
+
+  /** An amount in minor units to the nearest whole rupee (or dollar), still in minor units: 1609601 is 1609600. */
+  static long wholeUnits(long minor) {
+    return Math.round(minor / 100.0) * 100;
   }
 
   /** "November" for "2026-11-16": the month's name in English, like the rest of Taily's words. */
