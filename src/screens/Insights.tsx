@@ -20,6 +20,7 @@ import {
 } from '../lib/dates'
 import { Icon } from '../components/Icon'
 import { TagEntriesSheet, type TagPick } from '../components/TagEntriesSheet'
+import { haptic } from '../state/ui'
 
 /** ₹850 · ₹2.1k · ₹1.4L — tight labels that fit on top of chart bars. */
 function fmtCompact(minor: number, currency: string): string {
@@ -48,6 +49,9 @@ export function Insights({
 }) {
   const nowKey = currentMonthKey()
   const [monthKey, setMonthKey] = useState(nowKey)
+  // the six months the chart shows, ending here. A month picked in it stays where it is, so the chart can be used to
+  // pick; a month the arrows reach outside it slides it along by as little as it takes
+  const [chartEnd, setChartEnd] = useState(nowKey)
   const [reportOpen, setReportOpen] = useState(false)
   const [showRest, setShowRest] = useState(false)
   // a "Where it went" row, opened to show what's in it
@@ -60,13 +64,24 @@ export function Insights({
     setOpenTag(null)
   }, [monthKey])
 
+  function show(key: string) {
+    setMonthKey(key)
+    setChartEnd((end) => {
+      if (key > end) return key
+      if (key >= addMonths(end, -5)) return end
+      const fromKey = addMonths(key, 5)
+      return fromKey > nowKey ? nowKey : fromKey
+    })
+  }
+
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
   const budgets = useLiveQuery(() => db.budgets.toArray(), []) ?? []
   const overallBudget = useLiveQuery(() => db.budgets.get('overall'), [])
 
-  const windowFrom = monthRange(addMonths(monthKey, -5)).from
-  const windowTo = monthRange(monthKey).to
+  // the chart's six months, and the one before them: the month before the one shown, for "vs Oct"
+  const windowFrom = monthRange(addMonths(chartEnd, -6)).from
+  const windowTo = monthRange(chartEnd).to
   // undefined until the first read: the empty state waits for it rather than flashing on every visit
   const windowLoaded = useLiveQuery(() => txnsBetween(windowFrom, windowTo), [windowFrom, windowTo])
   const windowTxns = windowLoaded ?? []
@@ -102,12 +117,12 @@ export function Insights({
   }, [monthTxns, categories])
 
   const sixMonths = useMemo(() => {
-    const keys = Array.from({ length: 6 }, (_, i) => addMonths(monthKey, i - 5))
+    const keys = Array.from({ length: 6 }, (_, i) => addMonths(chartEnd, i - 5))
     return keys.map((key) => ({
       key,
       total: sum(windowTxns.filter((t) => monthKeyOf(t.dateISO) === key))
     }))
-  }, [windowTxns, monthKey])
+  }, [windowTxns, chartEnd])
 
   const budgetCtx = useMemo(() => {
     if (!overallBudget || overallBudget.amountMinor <= 0) return null
@@ -209,7 +224,7 @@ export function Insights({
       <div className="row-between" style={{ flexWrap: 'wrap', rowGap: 8 }}>
         <h1 className="screen-title">Insights</h1>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-          <button className="icon-btn" onClick={() => setMonthKey(addMonths(monthKey, -1))} aria-label="Previous month">
+          <button className="icon-btn" onClick={() => show(addMonths(monthKey, -1))} aria-label="Previous month">
             <Icon name="chevronLeft" size={16} />
           </button>
           {/* just words: the arrows either side are what change it */}
@@ -218,7 +233,7 @@ export function Insights({
           </span>
           <button
             className="icon-btn"
-            onClick={() => setMonthKey(addMonths(monthKey, 1))}
+            onClick={() => show(addMonths(monthKey, 1))}
             disabled={isCurrent}
             style={isCurrent ? { opacity: 0.35 } : undefined}
             aria-label="Next month"
@@ -244,8 +259,9 @@ export function Insights({
               Add an expense
             </button>
           ) : (
-            <button className="btn ghost" style={{ width: 'auto', padding: '10px 22px' }} onClick={() => setMonthKey(nowKey)}>
-              Jump to this month
+            // the same words as the month read back in Activity, for the same way home
+            <button className="btn ghost" style={{ width: 'auto', padding: '10px 22px' }} onClick={() => show(nowKey)}>
+              Back to {monthLabel(nowKey)}
             </button>
           )}
         </div>
@@ -417,56 +433,80 @@ export function Insights({
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '13px 20px' }}>
             <div className="row-between">
               <h2 className="label">Six months</h2>
+              {/* the bars look like a chart, not buttons: this says they are */}
+              <span className="caption" style={{ fontSize: 11.5 }}>
+                Tap a month to see it
+              </span>
             </div>
             <div style={{ overflowX: 'auto' }}>
-              <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }}>
-                <line x1="0" y1={base + 0.5} x2={W} y2={base + 0.5} stroke="var(--line)" strokeWidth="1" />
-                {sixMonths.map((m, i) => {
-                  const isLast = i === 5
-                  const solidH = h(m.total)
-                  return (
-                    <g key={m.key}>
-                      {solidH > 0 && (
-                        <rect
-                          x={x(i)}
-                          y={base - solidH}
-                          width={barW}
-                          height={solidH}
-                          rx="6"
-                          fill={isLast ? 'var(--pos)' : 'var(--bar-idle)'}
-                        />
-                      )}
-                      {m.total >= 50 && (
+              <div className="six-chart" style={{ width: W, height: H }}>
+                <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', maxWidth: '100%' }} aria-hidden="true">
+                  <line x1="0" y1={base + 0.5} x2={W} y2={base + 0.5} stroke="var(--line)" strokeWidth="1" />
+                  {sixMonths.map((m, i) => {
+                    // the month the screen shows, wherever it sits in the six
+                    const shown = m.key === monthKey
+                    const solidH = h(m.total)
+                    return (
+                      <g key={m.key}>
+                        {solidH > 0 && (
+                          <rect
+                            x={x(i)}
+                            y={base - solidH}
+                            width={barW}
+                            height={solidH}
+                            rx="6"
+                            style={{ fill: shown ? 'var(--pos)' : 'var(--bar-idle)', transition: 'fill 180ms ease' }}
+                          />
+                        )}
+                        {m.total >= 50 && (
+                          <text
+                            x={x(i) + barW / 2}
+                            y={base - solidH - 5}
+                            textAnchor="middle"
+                            fontFamily="Space Grotesk, Plus Jakarta Sans, sans-serif"
+                            fontWeight="600"
+                            fontSize="12"
+                            fill={shown ? 'var(--ink)' : 'var(--faint)'}
+                          >
+                            {fmtCompact(m.total, currency)}
+                          </text>
+                        )}
                         <text
                           x={x(i) + barW / 2}
-                          y={base - solidH - 5}
+                          y={H - 4}
                           textAnchor="middle"
-                          fontFamily="Space Grotesk, Plus Jakarta Sans, sans-serif"
-                          fontWeight="600"
-                          fontSize="12"
-                          fill={isLast ? 'var(--ink)' : 'var(--faint)'}
+                          fontFamily="Plus Jakarta Sans, Segoe UI, sans-serif"
+                          fontSize="12.5"
+                          fill={shown ? 'var(--accent-text)' : 'var(--faint)'}
                         >
-                          {fmtCompact(m.total, currency)}
+                          {monthShort(m.key)}
                         </text>
-                      )}
-                      <text
-                        x={x(i) + barW / 2}
-                        y={H - 4}
-                        textAnchor="middle"
-                        fontFamily="Plus Jakarta Sans, Segoe UI, sans-serif"
-                        fontSize="12.5"
-                        fill={isLast ? 'var(--accent-text)' : 'var(--faint)'}
-                      >
-                        {monthShort(m.key)}
-                      </text>
-                    </g>
-                  )
-                })}
-              </svg>
+                      </g>
+                    )
+                  })}
+                </svg>
+                {/* each month's column is a button laid over the chart: a tap shows that month and the chart stays put,
+                    so the next tap can pick another. A month with nothing spent has nothing to show */}
+                {sixMonths.map((m, i) => (
+                  <button
+                    key={m.key}
+                    className="six-hit"
+                    style={{ left: `${((x(i) - gap / 2) / W) * 100}%`, width: `${((barW + gap) / W) * 100}%` }}
+                    disabled={m.total <= 0}
+                    aria-pressed={m.key === monthKey}
+                    aria-label={`${monthLabel(m.key)}: ${formatMinor(m.total, currency)}`}
+                    onClick={() => {
+                      if (m.key === monthKey) return
+                      haptic('selection')
+                      show(m.key)
+                    }}
+                  />
+                ))}
+              </div>
             </div>
-            <span className="caption" style={{ fontSize: 11.5, textAlign: 'center' }}>
-              {isCurrent
-                ? `Total spent each month — ${monthLabel(monthKey)} is still counting`
+            <span className="caption" style={{ fontSize: 11.5, textAlign: 'center', textWrap: 'balance' }}>
+              {sixMonths.some((m) => m.key === nowKey)
+                ? `Total spent each month — ${monthLabel(nowKey)} is still counting`
                 : 'Total spent each month'}
             </span>
           </div>

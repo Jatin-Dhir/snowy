@@ -1305,6 +1305,36 @@ button.tag-row:active {
   transition-duration: 0ms, 0ms;
 }
 
+/* Insights' six months: the chart, and over each month's column a button that shows that month */
+.six-chart {
+  position: relative;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.six-hit {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 10px;
+  transition: background 120ms ease;
+}
+
+/* held: the column darkens a shade, as a press does elsewhere */
+.six-hit:active:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  transition-duration: 0ms;
+}
+
+.six-hit:disabled {
+  cursor: default;
+}
+
+/* drawn inside the column: the chart's scroll box would cut a ring drawn outside it */
+.six-hit:focus-visible {
+  outline-offset: -2px;
+}
+
 .txn-new {
   animation: row-in 380ms var(--ease-soft);
 }
