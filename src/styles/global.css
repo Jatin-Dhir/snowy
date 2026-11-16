@@ -96,7 +96,9 @@
   /* small error text sits on cards too: 4.5:1 on the top of --raised-bg */
   --red: #d9736a;
   --bar-idle: #272e36;
-  --bar-empty: #1b2026;
+  /* the week's days to come. A dark card's light falls from the top left, so a solid stub vanished into it on the
+     left: a veil of white shows the same (about 1.1:1, as light's) wherever it lies, and stays under a past day's bar */
+  --bar-empty: rgba(255, 255, 255, 0.04);
   --faint-future: #414954;
   --scrim: rgba(0, 0, 0, 0.6);
   --nm-hi: rgba(255, 255, 255, 0.05);
@@ -191,7 +193,7 @@
   --line-soft: #241e13;
   --line-strong: #40372a;
   --bar-idle: #2b2418;
-  --bar-empty: #211b11;
+  --bar-empty: rgba(255, 255, 255, 0.04);
   --faint-future: #4a4130;
   --nm-hi: rgba(255, 255, 255, 0.06);
   --nm-lo: rgba(0, 0, 0, 0.72);
@@ -269,7 +271,7 @@
   --amber-text: #f0a868;
   --red: #ff8d95;
   --bar-idle: #3a2533;
-  --bar-empty: #2a1a25;
+  --bar-empty: rgba(255, 255, 255, 0.04);
   --faint-future: #5a3d4d;
   --nm-hi: rgba(255, 255, 255, 0.06);
   --nm-lo: rgba(0, 0, 0, 0.72);
@@ -346,7 +348,7 @@
   --amber-text: #e3a462;
   --red: #f08a7e;
   --bar-idle: #283222;
-  --bar-empty: #1c2318;
+  --bar-empty: rgba(255, 255, 255, 0.04);
   --faint-future: #3f4b37;
   --nm-hi: rgba(255, 255, 255, 0.06);
   --nm-lo: rgba(0, 0, 0, 0.72);
@@ -423,7 +425,7 @@
   --amber-text: #f0b06e;
   --red: #ff8f95;
   --bar-idle: #262a4d;
-  --bar-empty: #1a1d38;
+  --bar-empty: rgba(255, 255, 255, 0.04);
   --faint-future: #3d4170;
   --nm-hi: rgba(255, 255, 255, 0.06);
   --nm-lo: rgba(0, 0, 0, 0.72);
