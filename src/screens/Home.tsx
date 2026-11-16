@@ -26,6 +26,8 @@ import { currentMonthKey, daysInMonth, monthLabel, todayISO, weekDaysOf, weekday
 import { TransactionRow } from '../components/TransactionRow'
 import { InstallHint } from '../components/InstallHint'
 import { Icon } from '../components/Icon'
+import { MonthSheet } from '../components/MonthSheet'
+import { useBudgetEditor } from '../components/BudgetDialog'
 import { Progress } from '../components/Progress'
 import { RoomRing } from '../components/RoomRing'
 import { Sheet } from '../components/Sheet'
@@ -53,6 +55,9 @@ export function Home({
   const [dismissedNudge, setDismissedNudge] = useState(() => localStorage.getItem('tally.nudge.dismissed') ?? '')
   const [heroPop, setHeroPop] = useState(0)
   const [dayOpen, setDayOpen] = useState<string | null>(null)
+  // the month strip opens the month day by day; without a budget, its last line sets one
+  const [monthOpen, setMonthOpen] = useState(false)
+  const budgetEditor = useBudgetEditor()
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   // undefined until the first read: "nothing logged" waits for it rather than flashing on every visit
@@ -287,6 +292,12 @@ export function Home({
         : 'On pace'
   const paceColor = !monthPace ? '' : monthPace.state === 'over' ? 'var(--over-fill)' : monthPace.state === 'warn' ? 'var(--amber)' : 'var(--pos)'
   const paceText = !monthPace ? '' : monthPace.state === 'over' ? 'var(--over-text)' : monthPace.state === 'warn' ? 'var(--amber-text)' : 'var(--pos-text)'
+  // the month opens its days: the quiet chevron Insights' rows and Budgets' cards have, close after the name
+  const opensMonth = (
+    <span className="month-go" aria-hidden="true">
+      <Icon name="chevronRight" size={13} />
+    </span>
+  )
 
   // the week, against the budget's even daily share. The line only joins the bars when some day came near
   // it: drawn far above them it would squash the week to stubs, and "all under" says the same thing in words
@@ -370,11 +381,14 @@ export function Home({
         {monthPace ? (
           <button
             className="month-strip"
-            onClick={onOpenBudgets}
-            aria-label={`${monthName}: ${formatMinor(monthSpent, currency)} of ${formatMinor(budgetMinor, currency)}, ${paceWords}. Open Budgets`}
+            onClick={() => setMonthOpen(true)}
+            aria-label={`${monthName}: ${formatMinor(monthSpent, currency)} of ${formatMinor(budgetMinor, currency)}, ${paceWords}. Show ${monthName} day by day`}
           >
             <span className="row-between">
-              <span className="month-name">{monthName}</span>
+              <span className="month-name">
+                {monthName}
+                {opensMonth}
+              </span>
               <span className="mono month-figures">
                 {formatMinor(monthSpent, currency)}
                 <span className="muted"> of {formatMinor(budgetMinor, currency)}</span>
@@ -391,13 +405,23 @@ export function Home({
             </span>
           </button>
         ) : (
-          <button className="month-strip" onClick={onOpenBudgets}>
-            <span className="row-between">
-              <span className="month-name">{monthName}</span>
+          // no budget yet: the month opens its days, and the line under it sets the budget right here
+          <div className="month-strip month-strip-split">
+            <button className="month-strip-head" onClick={() => setMonthOpen(true)}>
+              <span className="month-name">
+                {monthName}
+                {opensMonth}
+              </span>
               <span className="mono month-figures">{formatMinor(monthSpent, currency)}</span>
-            </span>
-            <span className="caption month-cta">Set a monthly budget to see what's safe to spend each day</span>
-          </button>
+              <span className="sr-only">. Show {monthName} day by day</span>
+            </button>
+            <button
+              className="caption month-cta"
+              onClick={() => budgetEditor.edit({ id: 'overall', title: 'Monthly budget', amount: null })}
+            >
+              Set a monthly budget to see what's safe to spend each day
+            </button>
+          </div>
         )}
       </section>
 
@@ -651,6 +675,9 @@ export function Home({
       </div>
 
       <LoansSheet open={loansOpen} currency={currency} onClose={() => setLoansOpen(false)} />
+
+      {monthOpen && <MonthSheet currency={currency} onEdit={onEdit} onClose={() => setMonthOpen(false)} />}
+      {budgetEditor.dialog}
 
       {balanceOpen && (
         <Sheet open onClose={() => setBalanceOpen(false)} label="Balance" style={{ gap: 10 }}>

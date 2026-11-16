@@ -19,6 +19,7 @@ import {
   todayISO
 } from '../lib/dates'
 import { Icon } from '../components/Icon'
+import { MonthSheet } from '../components/MonthSheet'
 import { TagEntriesSheet, type TagPick } from '../components/TagEntriesSheet'
 import { haptic } from '../state/ui'
 
@@ -53,6 +54,8 @@ export function Insights({
   // pick; a month the arrows reach outside it slides it along by as little as it takes
   const [chartEnd, setChartEnd] = useState(nowKey)
   const [reportOpen, setReportOpen] = useState(false)
+  // the month this screen shows, read back day by day: from the "Spent" card
+  const [monthOpen, setMonthOpen] = useState(false)
   const [showRest, setShowRest] = useState(false)
   // a "Where it went" row, opened to show what's in it
   const [openTag, setOpenTag] = useState<TagPick | null>(null)
@@ -267,9 +270,17 @@ export function Insights({
         </div>
       ) : (
         <>
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '13px 20px' }}>
-            <span className="label">{isCurrent ? 'Spent so far' : 'Spent'}</span>
-            <div className="row-between">
+          {/* the month's figures open the month itself, day by day, on the month this screen shows */}
+          <button
+            className="card"
+            style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '13px 20px', textAlign: 'left' }}
+            onClick={() => setMonthOpen(true)}
+          >
+            <span className="label" style={{ display: 'inline-flex', alignItems: 'center' }}>
+              {isCurrent ? 'Spent so far' : 'Spent'}
+              {opens}
+            </span>
+            <span className="row-between" style={{ width: '100%' }}>
               <span className="mono" style={{ fontWeight: 600, fontSize: 32, letterSpacing: '-0.02em' }}>
                 {formatMinor(spent, currency)}
               </span>
@@ -282,7 +293,7 @@ export function Insights({
                   {Math.abs(vsPrev)}% vs {monthLabel(prevKey).slice(0, 3)}
                 </span>
               )}
-            </div>
+            </span>
             {budgetCtx && (
               <span className="caption">
                 {budgetCtx.pct}% of your {budgetCtx.budgetLabel} budget{budgetCtx.paceLabel ? ` · ${budgetCtx.paceLabel}` : ''}
@@ -293,10 +304,12 @@ export function Insights({
             )}
             {received > 0 && (
               <span className="caption" style={{ color: 'var(--pos-text)', fontWeight: 600 }}>
-                Received +{formatMinor(received, currency)} this month
+                Received +{formatMinor(received, currency)} {isCurrent ? 'this month' : `in ${monthLabel(monthKey)}`}
               </span>
             )}
-          </div>
+            {/* everything on the card is its name, with where it leads after it */}
+            <span className="sr-only">Show {monthLabel(monthKey)} day by day</span>
+          </button>
 
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 13, padding: '15px 20px' }}>
             <h2 className="label">Where it went</h2>
@@ -607,6 +620,10 @@ export function Insights({
       )}
 
       <LoansSheet open={loansOpen} currency={currency} onClose={() => setLoansOpen(false)} />
+
+      {monthOpen && (
+        <MonthSheet currency={currency} initialMonth={monthKey} onEdit={onEdit} onClose={() => setMonthOpen(false)} />
+      )}
 
       {openTag && (
         <TagEntriesSheet

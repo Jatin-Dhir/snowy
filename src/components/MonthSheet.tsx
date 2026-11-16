@@ -5,6 +5,7 @@ import { txnsForMonth } from '../db/repo'
 import { incomeSum, sum } from '../db/stats'
 import { formatMinor } from '../lib/money'
 import { addMonths, currentMonthKey, daysInMonth, monthLabel, todayISO } from '../lib/dates'
+import { useBudgetEditor } from './BudgetDialog'
 import { BudgetLine } from './BudgetLine'
 import { DayList } from './DayList'
 import { Icon } from './Icon'
@@ -19,23 +20,25 @@ const NBSP = String.fromCharCode(160)
 /**
  * One month read back, day by day: what went out and in, each day's spend under its heading, and the month's total.
  * The arrows step through the months; "Back to November" comes back to now from any of them, and so does closing
- * it. A tap on an entry opens it to change it, and this stays open underneath. Opened from Activity's header, and
- * from the monthly budget's card in Budgets, where its budget line also has "Change".
+ * it. A tap on an entry opens it to change it, and this stays open underneath; so does the budget line's "Change".
+ * Opened from Activity's header, Home's month, Insights' "Spent" (on the month Insights shows) and the monthly
+ * budget's card in Budgets.
  */
 export function MonthSheet({
   currency,
+  initialMonth,
   onEdit,
-  onEditBudget,
   onClose
 }: {
   currency: string
+  /** the month it opens on, "2026-09"; this month without one */
+  initialMonth?: string
   onEdit: (t: Txn) => void
-  /** change the monthly budget: Budgets, where the budgets are set */
-  onEditBudget?: () => void
   onClose: () => void
 }) {
   const nowKey = currentMonthKey()
-  const [monthKey, setMonthKey] = useState(nowKey)
+  const [monthKey, setMonthKey] = useState(() => (initialMonth && initialMonth < nowKey ? initialMonth : nowKey))
+  const budgetEditor = useBudgetEditor()
   const isCurrent = monthKey === nowKey
   const label = monthLabel(monthKey)
 
@@ -137,7 +140,7 @@ export function MonthSheet({
           color="var(--pos)"
           owner="your"
           currency={currency}
-          onChange={onEditBudget}
+          onChange={() => budgetEditor.edit({ id: 'overall', title: 'Monthly budget', amount: budgetMinor })}
           changeLabel="Change the monthly budget"
         />
       )}
@@ -145,6 +148,8 @@ export function MonthSheet({
       {txns && count > 0 && (
         <DayList key={monthKey} txns={txns} categories={categories} currency={currency} onEdit={onEdit} pageSize={PAGE} />
       )}
+
+      {budgetEditor.dialog}
     </Sheet>
   )
 }

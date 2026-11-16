@@ -913,9 +913,52 @@ button.pill:active {
   box-shadow: var(--inset-sm);
 }
 
+/* held: the well darkens a shade, as a chart column does */
+button.month-strip:active {
+  background: color-mix(in srgb, var(--ink) 5%, var(--sunken));
+}
+
+/* no budget yet: the strip is two buttons, the month (its days) and the line that sets a budget. Each reaches the
+   well's edges, so no part of it is dead, and they meet where the 8px between them was */
+.month-strip-split {
+  gap: 0;
+  padding: 0;
+}
+
+.month-strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px 4px;
+  border-radius: var(--r-sm) var(--r-sm) 8px 8px;
+  text-align: left;
+}
+
+.month-strip-split .month-cta {
+  padding: 4px 14px 11px;
+  border-radius: 8px 8px var(--r-sm) var(--r-sm);
+  text-align: left;
+}
+
+.month-strip-head:active,
+.month-strip-split .month-cta:active {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
 .month-name {
+  display: inline-flex;
+  align-items: center;
   font-weight: 700;
   font-size: 14px;
+}
+
+/* the month opens its days: a quiet chevron after its name */
+.month-go {
+  display: inline-flex;
+  margin-left: 3px;
+  color: var(--faint);
 }
 
 .month-figures {
@@ -930,7 +973,8 @@ button.pill:active {
    or "Ahead of pace" beside it in Budgets, and they ran out of the card. Each drops onto a line of its own there.
    From 360px they fit beside it as before */
 @media (max-width: 340px) {
-  .month-strip > .row-between:first-child {
+  .month-strip > .row-between:first-child,
+  .month-strip-head {
     flex-wrap: wrap;
     row-gap: 2px;
   }

@@ -15,58 +15,8 @@ import { TagManager } from '../components/TagManager'
 import { RecurringManager } from '../components/RecurringManager'
 import { TagEntriesSheet, type TagPick } from '../components/TagEntriesSheet'
 import { MonthSheet } from '../components/MonthSheet'
+import { useBudgetEditor } from '../components/BudgetDialog'
 import { haptic, useUi } from '../state/ui'
-
-function BudgetDialog({
-  title,
-  initialAmount,
-  onSave,
-  onDelete,
-  onClose
-}: {
-  title: string
-  initialAmount: number | null
-  onSave: (minor: number) => void
-  onDelete?: () => void
-  onClose: () => void
-}) {
-  const shown = initialAmount ? String(Math.round(initialAmount / 100)) : ''
-  const [value, setValue] = useState(shown)
-  // the field holds whole units: left as it opened, it stands for the exact amount (paise from a currency switch)
-  const minor = initialAmount && value === shown ? initialAmount : (parseInt(value, 10) || 0) * 100
-  return (
-    <Sheet open onClose={onClose} label={title} style={{ gap: 14 }}>
-        <div className="row-between">
-          <span className="label" style={{ letterSpacing: '0.14em' }}>{title}</span>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">
-            <Icon name="x" size={14} strokeWidth={2.2} />
-          </button>
-        </div>
-        <input aria-label="Amount per month"
-          className="field mono"
-          type="number"
-          inputMode="numeric"
-          placeholder="Amount per month"
-          value={value}
-          autoFocus
-          min={0}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && minor > 0) onSave(minor)
-          }}
-          style={{ fontSize: 22, fontWeight: 600, padding: '14px 16px' }}
-        />
-        <button className="btn" disabled={minor <= 0} onClick={() => onSave(minor)}>
-          Save budget
-        </button>
-        {onDelete && (
-          <button className="btn danger" onClick={onDelete}>
-            Remove this budget
-          </button>
-        )}
-    </Sheet>
-  )
-}
 
 /** Create or manage one savings goal: rename, retarget, add or take out money. */
 function GoalDialog({
@@ -222,10 +172,9 @@ export function Budgets({
   onEdit: (t: Txn) => void
   onOpenSettings: () => void
 }) {
-  const { showToast } = useUi()
   const monthKey = currentMonthKey()
   const today = todayISO()
-  const [dialog, setDialog] = useState<{ id: string; title: string; amount: number | null } | null>(null)
+  const budgetEditor = useBudgetEditor()
   const [pickingCategory, setPickingCategory] = useState(false)
   const [manageTags, setManageTags] = useState(false)
   const [goalDialog, setGoalDialog] = useState<{ goal: Goal | null } | null>(null)
@@ -247,23 +196,6 @@ export function Budgets({
   const projected = projectMonth(monthTxns, monthKey, today)
   const bills = upcomingRules(rules, 14)
   const budgetless = categories.filter((c) => !c.archived && !catBudgets.some((b) => b.id === c.id))
-
-  async function saveBudget(id: string, minor: number) {
-    // the same amount saved again keeps its original from before a currency switch
-    const was = await db.budgets.get(id)
-    if (was?.amountMinor !== minor) await db.budgets.put({ id, amountMinor: minor })
-    setDialog(null)
-    showToast('Budget saved')
-  }
-
-  async function removeBudget(id: string) {
-    const was = await db.budgets.get(id)
-    await db.budgets.delete(id)
-    setDialog(null)
-    showToast('Budget removed', () => {
-      if (was) void db.budgets.put(was)
-    })
-  }
 
   function stateColor(state: 'ok' | 'warn' | 'over', fallback: string): string {
     return state === 'over' ? 'var(--over-fill)' : state === 'warn' ? 'var(--amber)' : fallback
@@ -348,7 +280,7 @@ export function Budgets({
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <span style={{ fontWeight: 600, fontSize: 15 }}>Set a monthly budget</span>
           <span className="caption">One number unlocks safe-to-spend on Home and the pace line here.</span>
-          <button className="btn" onClick={() => setDialog({ id: 'overall', title: 'Monthly budget', amount: null })}>
+          <button className="btn" onClick={() => budgetEditor.edit({ id: 'overall', title: 'Monthly budget', amount: null })}>
             Set monthly budget
           </button>
         </div>
@@ -473,14 +405,8 @@ export function Budgets({
         </div>
       )}
 
-      {monthOpen && (
-        <MonthSheet
-          currency={currency}
-          onEdit={onEdit}
-          onEditBudget={() => overall && setDialog({ id: 'overall', title: 'Monthly budget', amount: overall.amountMinor })}
-          onClose={() => setMonthOpen(false)}
-        />
-      )}
+      {/* its budget line's "Change" opens the budget dialog over it */}
+      {monthOpen && <MonthSheet currency={currency} onEdit={onEdit} onClose={() => setMonthOpen(false)} />}
 
       {openTag && (
         <TagEntriesSheet
@@ -495,22 +421,14 @@ export function Budgets({
           onEdit={onEdit}
           onEditBudget={() => {
             const amount = catBudgets.find((b) => b.id === openTag.id)?.amountMinor ?? null
-            setDialog({ id: openTag.id ?? '', title: `${openTag.name} budget`, amount })
+            budgetEditor.edit({ id: openTag.id ?? '', title: `${openTag.name} budget`, amount })
           }}
           onClose={() => setOpenTag(null)}
         />
       )}
 
-      {/* "Change" in either sheet above opens this over it: a sheet that opens later lies on top */}
-      {dialog && (
-        <BudgetDialog
-          title={dialog.title}
-          initialAmount={dialog.amount}
-          onSave={(minor) => void saveBudget(dialog.id, minor)}
-          onDelete={dialog.amount !== null ? () => void removeBudget(dialog.id) : undefined}
-          onClose={() => setDialog(null)}
-        />
-      )}
+      {/* "Change" in the tag's sheet above opens this over it: a sheet that opens later lies on top */}
+      {budgetEditor.dialog}
 
       {pickingCategory && (
         <Sheet open onClose={() => setPickingCategory(false)} label="Pick a tag" style={{ gap: 10 }}>
@@ -522,7 +440,7 @@ export function Budgets({
                   className="chip"
                   onClick={() => {
                     setPickingCategory(false)
-                    setDialog({ id: c.id, title: `${c.name} budget`, amount: null })
+                    budgetEditor.edit({ id: c.id, title: `${c.name} budget`, amount: null })
                   }}
                 >
                   <span className="dot" style={{ background: c.color }} />
