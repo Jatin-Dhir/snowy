@@ -207,13 +207,14 @@ function parseAmount(raw: string): number | null {
 
 /**
  * An amount, and the currency written into it if there is one: "USD 15.00", "15.00 USD", "₹450". Taken off before the
- * number is read, or "Rs. 1,260.00" became ₹0.13 (its dot read as the decimal point).
+ * number is read, or "Rs. 1,260.00" became ₹0.13 (its dot read as the decimal point). Money out often has its minus
+ * in front of the currency, "-USD 15.00" or "-Rs. 1,260.00": the minus stays with the number.
  */
 function readAmount(raw: string): { minor: number | null; cur: string | null } {
   const v = raw.trim()
-  const lead = /^(US\$|S\$|Rs\.?|[₹€£]|[A-Za-z]{3}(?![A-Za-z]))/i.exec(v)
-  const leadCur = lead && currencyCode(lead[1])
-  if (leadCur && lead) return { minor: parseAmount(v.slice(lead[0].length)), cur: leadCur }
+  const lead = /^([-−]?) ?(US\$|S\$|Rs\.?|[₹€£]|[A-Za-z]{3}(?![A-Za-z]))/i.exec(v)
+  const leadCur = lead && currencyCode(lead[2])
+  if (leadCur && lead) return { minor: parseAmount((lead[1] ? '-' : '') + v.slice(lead[0].length)), cur: leadCur }
   const trail = /(?:^|[^A-Za-z])(Rs\.?|[A-Za-z]{3})$/i.exec(v)
   const trailCur = trail && currencyCode(trail[1])
   if (trailCur && trail) return { minor: parseAmount(v.slice(0, v.length - trail[1].length)), cur: trailCur }
