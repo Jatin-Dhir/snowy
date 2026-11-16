@@ -597,8 +597,8 @@ select {
 .month-pick {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 6px 4px 6px 5px;
+  gap: 1px;
+  padding: 6px 3px 6px 4px;
   margin: -6px 0;
   border-radius: 10px;
   font-weight: 700;
@@ -675,9 +675,29 @@ select {
   text-overflow: ellipsis;
 }
 
-/* this month, as the week chart marks today */
+/* this month, as the week chart marks today: its name in the accent, and a dot in the key's corner, so it doesn't
+   rest on the colour alone */
+.pick-key.now {
+  position: relative;
+}
+
 .pick-key.now .pick-key-name {
   color: var(--accent-text);
+}
+
+.pick-key.now::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-text);
+}
+
+.pick-key.now.on::after {
+  background: var(--on-accent);
 }
 
 .pick-key.on {
@@ -709,11 +729,12 @@ select {
   padding: 2px 0 4px;
 }
 
+/* Home's hero size: the same big number, a time instead of money */
 .time-readout-num {
   font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  font-size: 46px;
+  font-size: 44px;
   letter-spacing: -0.02em;
   line-height: 1;
 }
@@ -1964,6 +1985,16 @@ button.tag-row:active {
 
 .amount-sum-live {
   color: var(--ink);
+}
+
+/* a digit turned away for taking the sum below zero: said on the line, in the colour of going past a limit, until
+   the next key. Last on the line, so it's the part that stays in sight */
+.amount-sum-note {
+  align-self: center;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--over-text);
 }
 
 @keyframes sum-in {

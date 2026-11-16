@@ -79,7 +79,7 @@ export function MonthSheet({
             <button className="month-pick" aria-haspopup="dialog" onClick={() => setPicking(true)}>
               {label}
               <span className="month-pick-chev" aria-hidden="true">
-                <Icon name="chevronDown" size={12} strokeWidth={2.2} />
+                <Icon name="chevronDown" size={11} strokeWidth={2.4} />
               </span>
             </button>
           </h2>

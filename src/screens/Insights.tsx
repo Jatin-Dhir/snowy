@@ -215,7 +215,7 @@ export function Insights({
       {/* wraps on the narrowest phones rather than pushing Settings off the screen */}
       <div className="row-between" style={{ flexWrap: 'wrap', rowGap: 8 }}>
         <h1 className="screen-title">Insights</h1>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 3, marginLeft: 'auto' }}>
           <button className="icon-btn" onClick={() => show(addMonths(monthKey, -1))} aria-label="Previous month">
             <Icon name="chevronLeft" size={16} />
           </button>
@@ -224,7 +224,7 @@ export function Insights({
             <button className="month-pick" aria-haspopup="dialog" onClick={() => setPicking(true)}>
               {monthLabel(monthKey)}
               <span className="month-pick-chev" aria-hidden="true">
-                <Icon name="chevronDown" size={12} strokeWidth={2.2} />
+                <Icon name="chevronDown" size={11} strokeWidth={2.4} />
               </span>
             </button>
           </span>

@@ -146,12 +146,15 @@ export function AddSheet({
   const [sumSaid, setSumSaid] = useState('')
   const sumLine = useRef<HTMLDivElement>(null)
 
-  // a digit turned away for taking the sum below zero: the sum shakes its head, as a wrong PIN does, and says why
+  // a digit turned away for taking the sum below zero: the sum shakes its head, as a wrong PIN does, and says why, on
+  // the line itself until the next key (with motion reduced, that's all there is) and to a screen reader
+  const [belowZero, setBelowZero] = useState(false)
   const refusedSeen = useRef(amt.refused)
   useEffect(() => {
     if (amt.refused === refusedSeen.current) return
     refusedSeen.current = amt.refused
     if (amt.refused === 0) return
+    setBelowZero(true)
     setSumSaid("A sum can't go below zero")
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     sumLine.current?.animate(
@@ -159,6 +162,7 @@ export function AddSheet({
       { duration: 320, easing: 'ease-out' }
     )
   }, [amt.refused])
+  useEffect(() => setBelowZero(false), [amt.terms, amt.entry])
 
   // The sum's line takes a little height. On a short phone the fields box has none left to give, and the keys would
   // slide under Save, where a tap meant for 0 saves: the sheet scrolls up just enough to keep them clear
@@ -454,6 +458,7 @@ export function AddSheet({
               {(amt.entry.r !== '' || amt.entry.p !== null) && (
                 <span className="amount-sum-live">{formatEntry(amt.entry.r, amt.entry.p, currency)}</span>
               )}
+              {belowZero && <span className="amount-sum-note">can't go below zero</span>}
             </span>
           </div>
         )}
