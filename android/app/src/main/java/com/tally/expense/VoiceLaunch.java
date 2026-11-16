@@ -30,6 +30,13 @@ final class VoiceLaunch {
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
   }
 
+  /** Taily at Home, where the widget's figure comes from. */
+  static Intent homeIntent(Context context, String source) {
+    return new Intent(Intent.ACTION_VIEW, Uri.parse("taily://home?from=" + source))
+        .setClass(context, MainActivity.class)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+  }
+
   static PendingIntent pending(Context context, int requestCode, Intent intent) {
     return PendingIntent.getActivity(
         context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);

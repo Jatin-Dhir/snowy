@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Three or four by two: Home's today card on the home screen. The words and the figure on the left,
+     the ring with Taily's cat on the right, and Speak and Add underneath. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_card"
+    android:clipToOutline="true">
+
+    <ImageView
+        android:id="@+id/widget_fill"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_card" />
+
+    <ImageView
+        android:id="@+id/widget_edge"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_card_edge" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <LinearLayout
+            android:id="@+id/widget_info"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:baselineAligned="false"
+            android:foreground="@drawable/widget_ripple"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="4dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/widget_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:fontFamily="sans-serif-medium"
+                    android:importantForAccessibility="no"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="@string/widget_title"
+                    android:textColor="@color/voice_muted"
+                    android:textSize="12.5sp" />
+
+                <ImageView
+                    android:id="@+id/widget_number"
+                    android:layout_width="wrap_content"
+                    android:layout_height="42dp"
+                    android:layout_marginTop="6dp"
+                    android:adjustViewBounds="true"
+                    android:importantForAccessibility="no"
+                    android:scaleType="fitStart"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/widget_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:ellipsize="end"
+                    android:fontFamily="sans-serif-medium"
+                    android:importantForAccessibility="no"
+                    android:includeFontPadding="false"
+                    android:maxLines="2"
+                    android:text="@string/widget_setup"
+                    android:textColor="@color/voice_ink"
+                    android:textSize="17sp" />
+
+                <TextView
+                    android:id="@+id/widget_caption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:ellipsize="end"
+                    android:importantForAccessibility="no"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:textColor="@color/voice_muted"
+                    android:textSize="12.5sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/widget_ring"
+                android:layout_width="86dp"
+                android:layout_height="86dp"
+                android:layout_marginStart="8dp"
+                android:importantForAccessibility="no"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="10dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/widget_voice"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:contentDescription="@string/widget_voice_action"
+                android:foreground="@drawable/widget_ripple_pill">
+
+                <ImageView
+                    android:id="@+id/widget_mic_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:importantForAccessibility="no"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/widget_pill_accent" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/widget_mic_glyph"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_widget_mic" />
+
+                    <TextView
+                        android:id="@+id/widget_voice_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:importantForAccessibility="no"
+                        android:includeFontPadding="false"
+                        android:maxLines="1"
+                        android:text="@string/widget_voice_short"
+                        android:textColor="@color/voice_on_accent"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/widget_add"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:contentDescription="@string/widget_add_action"
+                android:foreground="@drawable/widget_ripple_pill">
+
+                <ImageView
+                    android:id="@+id/widget_add_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:importantForAccessibility="no"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/widget_pill_button" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/widget_add_glyph"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_widget_plus" />
+
+                    <TextView
+                        android:id="@+id/widget_add_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:importantForAccessibility="no"
+                        android:includeFontPadding="false"
+                        android:maxLines="1"
+                        android:text="@string/widget_add_short"
+                        android:textColor="@color/voice_ink"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

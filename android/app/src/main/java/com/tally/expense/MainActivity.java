@@ -13,6 +13,7 @@ public class MainActivity extends BridgeActivity {
   protected void onCreate(Bundle savedInstanceState) {
     registerPlugin(PrivacyScreenPlugin.class);
     registerPlugin(VoicePlugin.class);
+    registerPlugin(WidgetPlugin.class);
     registerPlugins(FlavorPlugins.all());
     // a recreated activity still carries the intent it was first opened with
     VoicePlugin.restoring = savedInstanceState != null;

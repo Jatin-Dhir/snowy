@@ -12,7 +12,7 @@ import { syncPrivacyScreen } from './lib/privacyScreen'
 import { initPro } from './lib/pro'
 import { ProSheet } from './components/ProSheet'
 import { onVoiceLaunch, setVoicePrefs, takeVoiceLaunch, type VoiceLaunch } from './lib/voice'
-import { applyCustomAccent, clearCustomAccent, PRESET_HUES, SPECIAL_THEMES, widgetAccent } from './lib/theme'
+import { applyCustomAccent, clearCustomAccent, PRESET_HUES, SPECIAL_THEMES } from './lib/theme'
 import { syncStatusBar } from './lib/statusbar'
 import { LockScreen } from './components/LockScreen'
 import { TabBar, type Tab } from './components/TabBar'
@@ -21,6 +21,7 @@ import { AddSheet } from './components/AddSheet'
 import { TripSheet } from './components/TripSheet'
 import { VoiceOverlay, type VoiceDraft, type VoiceRequest } from './components/VoiceOverlay'
 import { UpdateGate } from './components/UpdateGate'
+import { WidgetSync } from './components/WidgetSync'
 import { Home } from './screens/Home'
 import { Activity } from './screens/Activity'
 import { Budgets } from './screens/Budgets'
@@ -206,6 +207,11 @@ export default function App() {
         if (launch?.url?.includes('add')) setPendingAdd(true)
         sub = await CapApp.addListener('appUrlOpen', (e) => {
           if (e.url.includes('add')) setPendingAdd(true)
+          // the widget's figure: Home is where it comes from
+          else if (e.url.startsWith('taily://home')) {
+            setSlideDir('')
+            setTab('home')
+          }
         })
       } catch {
         /* not native */
@@ -288,16 +294,16 @@ export default function App() {
   }, [voiceLaunch, ready, locked, settings.initialized])
 
   // what a launch from outside the app needs: listen at once only without app lock
-  // (with a PIN, it listens after unlocking), haptics, and the accent the widget wears
+  // (with a PIN, it listens after unlocking), haptics and the language. The widget's
+  // figures and look go separately (WidgetSync)
   useEffect(() => {
     if (settingsRow === undefined) return
     void setVoicePrefs({
       instant: !settings.pinHash,
       haptics: settings.haptics,
-      language: settings.voiceLanguage,
-      appearance: widgetAccent(settings.accent, settings.accentHue)
+      language: settings.voiceLanguage
     })
-  }, [settingsRow, settings.pinHash, settings.haptics, settings.voiceLanguage, settings.accent, settings.accentHue])
+  }, [settingsRow, settings.pinHash, settings.haptics, settings.voiceLanguage])
 
   useEffect(() => {
     if (!settings.pinHash) return
@@ -391,18 +397,29 @@ export default function App() {
 
   if (!settingsLoaded || !ready) return null
 
+  // the home-screen widget follows whatever Taily shows, set up or not
+  const widgetSync = <WidgetSync settings={settings} today={day} />
+
   if (forceUpdate) {
-    return <UpdateGate info={forceUpdate} onRecheck={setForceUpdate} />
+    return (
+      <>
+        {widgetSync}
+        <UpdateGate info={forceUpdate} onRecheck={setForceUpdate} />
+      </>
+    )
   }
 
   if (!settings.initialized) {
     return (
-      <Welcome
-        onDone={() => {
-          setTab('home')
-          setAddOpen(true)
-        }}
-      />
+      <>
+        {widgetSync}
+        <Welcome
+          onDone={() => {
+            setTab('home')
+            setAddOpen(true)
+          }}
+        />
+      </>
     )
   }
 
@@ -444,6 +461,7 @@ export default function App() {
 
   return (
     <div className="app">
+      {widgetSync}
       <main key={tab} className={`tab-host ${slideDir}`}>
         {tab === 'home' && (
           <Home

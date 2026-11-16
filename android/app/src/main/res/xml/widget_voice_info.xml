@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Four cells wide by default, like a search bar; shrinks to the mic alone. No timed updates:
-     it only changes when the app sends a new accent. -->
+<!-- Four by two by default, like Home's today card; resizes down to the mic alone and up as far as the
+     launcher allows. No timed updates: it changes when the app sends a new summary, and at midnight
+     (VoiceWidget schedules that itself, without waking the phone). minWidth and minHeight are the
+     default size for launchers older than Android 12, which don't read the cell counts. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_voice_description"
-    android:initialLayout="@layout/widget_voice"
+    android:initialLayout="@layout/widget_today_large"
     android:minWidth="250dp"
-    android:minHeight="40dp"
+    android:minHeight="110dp"
     android:minResizeWidth="40dp"
     android:minResizeHeight="40dp"
-    android:previewLayout="@layout/widget_voice"
-    android:resizeMode="horizontal"
+    android:previewImage="@drawable/widget_preview_ring"
+    android:previewLayout="@layout/widget_today_preview"
+    android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
-    android:targetCellHeight="1"
+    android:targetCellHeight="2"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen" />

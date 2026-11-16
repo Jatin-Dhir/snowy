@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The ring as the widget picker shows it: a happy cat with most of the day left (WidgetArt draws the real one) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="78dp"
+    android:height="78dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <group android:translateY="-3">
+        <path
+            android:pathData="M50,23a33,33 0,1 1,0 66a33,33 0,1 1,0 -66z"
+            android:strokeWidth="9"
+            android:strokeColor="@color/voice_track" />
+        <path
+            android:pathData="M50,23A33,33 0,1 1,27.41 80.06"
+            android:strokeWidth="9"
+            android:strokeColor="@color/voice_arc"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M37,54Q41,49 45,54M55,54Q59,49 63,54M44,61.5Q47,65 50,61.5Q53,65 56,61.5"
+            android:strokeWidth="2.6"
+            android:strokeColor="@color/voice_ink"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>

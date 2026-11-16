@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget's corners. Android 12 and later say how round a widget is (values-v31), so Taily's
+     matches the launcher's others; before that, Taily's own card radius. -->
+<resources>
+    <dimen name="widget_radius">22dp</dimen>
+    <dimen name="widget_inner_radius">16dp</dimen>
+</resources>

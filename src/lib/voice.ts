@@ -96,13 +96,6 @@ interface NativeSnapshot {
 
 type MicState = 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'
 
-export interface WidgetAppearance {
-  accent: string
-  onAccent: string
-  accentNight: string
-  onAccentNight: string
-}
-
 interface VoicePlugin {
   available(): Promise<{ available: boolean }>
   checkPermissions(): Promise<{ microphone: MicState }>
@@ -111,7 +104,7 @@ interface VoicePlugin {
   stop(options: { session: number }): Promise<void>
   cancel(options: { session: number }): Promise<void>
   takeLaunch(): Promise<{ launched: boolean; source?: string; snapshot?: NativeSnapshot }>
-  setPrefs(options: { instant?: boolean; haptics?: boolean; language?: string; appearance?: WidgetAppearance }): Promise<void>
+  setPrefs(options: { instant?: boolean; haptics?: boolean; language?: string }): Promise<void>
   openSettings(): Promise<void>
   shortcuts(): Promise<{ widget: boolean; tile: boolean }>
   pinWidget(): Promise<{ shown: boolean }>

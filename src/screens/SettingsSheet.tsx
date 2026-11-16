@@ -133,7 +133,7 @@ export function SettingsSheet({
 
   async function addWidget() {
     haptic('selection')
-    if (!(await pinVoiceWidget())) showToast('Long-press your home screen, tap Widgets, then Taily voice')
+    if (!(await pinVoiceWidget())) showToast('Long-press your home screen, tap Widgets, then Taily')
   }
 
   async function addTile() {
@@ -686,13 +686,13 @@ export function SettingsSheet({
 
         {voiceExtras && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <h3 className="label" style={{ fontSize: 10.5 }}>Voice from anywhere</h3>
+            <h3 className="label" style={{ fontSize: 10.5 }}>Outside the app</h3>
             {voiceExtras.widget && (
               <ActionRow
-                icon="mic"
+                icon="home"
                 tint="#E0784F"
                 title="Add the home-screen widget"
-                sub="Tap its mic and say it, like “250 lunch”"
+                sub="What's safe to spend today, with a mic and a + to log in a tap"
                 onClick={() => void addWidget()}
               />
             )}
@@ -707,8 +707,8 @@ export function SettingsSheet({
             )}
             {!voiceExtras.widget && !voiceExtras.tile && (
               <span className="caption" style={{ fontSize: 11.5 }}>
-                Long-press your home screen, tap Widgets, and drag Taily voice in. Or long-press the Taily icon and
-                pick Speak expense.
+                Long-press your home screen, tap Widgets, and drag Taily's Today widget in. Or long-press the Taily
+                icon and pick Speak expense.
               </span>
             )}
           </div>

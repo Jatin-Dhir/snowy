@@ -104,23 +104,106 @@ function readableTone(h: number, s: number, from: number, step: 1 | -1, grounds:
   return step < 0 ? '#000000' : '#ffffff'
 }
 
-/**
- * The accent the home-screen widget wears, for both themes: the widget follows
- * the phone's dark theme, not the app's. Same formulas and values as above
- * and as global.css's mono and cream blocks.
- */
-export function widgetAccent(accent: string, hue: number) {
-  if (accent === 'mono') return { accent: '#222a35', onAccent: '#f4f6f9', accentNight: '#e8ebf0', onAccentNight: '#14171b' }
-  if (accent === 'cream') return { accent: '#a16529', onAccent: '#fdf9f1', accentNight: '#e0a458', onAccentNight: '#1a140b' }
-  const special = SPECIAL_THEMES[accent]
-  if (special) {
-    return { accent: special.light.accent, onAccent: special.light.onAccent, accentNight: special.dark.accent, onAccentNight: special.dark.onAccent }
+/** One theme's colours for the home-screen widget (WidgetData.Palette on Android). */
+export interface WidgetColors {
+  bg: string
+  edge: string
+  ink: string
+  muted: string
+  /** the figure once today is over: --over-text, red, or a special theme's own accent */
+  over: string
+  /** the ring's track, and its tint once today is over */
+  track: string
+  overTrack: string
+  /** the ring's arc: --pos */
+  arc: string
+  accent: string
+  onAccent: string
+  /** the + button's disc */
+  button: string
+  earIn?: string
+  blush?: string
+}
+
+type Ground = Pick<WidgetColors, 'bg' | 'ink' | 'muted' | 'track'> & { red: string }
+type Paint = Pick<WidgetColors, 'arc' | 'accent' | 'onAccent' | 'earIn' | 'blush'>
+
+// Each colour world's ground and words from global.css, light then dark. The widget is a sheet on the home
+// screen, so it takes --sheet-bg (dark themes lift it off the page); the track is --bar-idle
+const CLASSIC: [Ground, Ground] = [
+  { bg: '#edf0f5', ink: '#1a212b', muted: '#56616d', red: '#b3453d', track: '#d9dfe8' },
+  { bg: '#1b2127', ink: '#e8ebf0', muted: '#9aa3ae', red: '#d9736a', track: '#272e36' }
+]
+const CREAM: [Ground & Paint, Ground & Paint] = [
+  { bg: '#f7f1e6', ink: '#2b2317', muted: '#6e6150', red: '#b1443c', track: '#e6dcc6', arc: '#c58539', accent: '#a16529', onAccent: '#fdf9f1' },
+  { bg: '#1f1912', ink: '#f0e9dd', muted: '#a99c88', red: '#d9736a', track: '#2b2418', arc: '#efb56a', accent: '#e0a458', onAccent: '#1a140b' }
+]
+const MONO: [Paint, Paint] = [
+  { arc: '#465363', accent: '#222a35', onAccent: '#f4f6f9' },
+  { arc: '#c6cdd6', accent: '#e8ebf0', onAccent: '#14171b' }
+]
+// a special theme stays in its own colour when the day is over (global.css's [data-special] --over-text): the
+// figure in its --accent-text, and no red at all
+type Special = Ground & Omit<Paint, 'accent' | 'onAccent'> & { accentText: string }
+const SPECIAL_WIDGET: Record<string, [Special, Special]> = {
+  strawberry: [
+    { bg: '#fbf0f3', ink: '#3b2430', muted: '#74505f', red: '#b5222e', track: '#f1d6df', arc: '#ee86ab', earIn: '#ffd3e1', blush: '#f7a3bf', accentText: '#a93465' },
+    { bg: '#2a1a25', ink: '#fbe9f0', muted: '#c9a3b4', red: '#ff8d95', track: '#3a2533', arc: '#f7a9c6', earIn: '#7d3a5a', blush: '#e57ca3', accentText: '#f7a9c6' }
+  ],
+  matcha: [
+    { bg: '#f1f0e4', ink: '#263120', muted: '#56624c', red: '#ad3732', track: '#dfe0cb', arc: '#86b86c', earIn: '#f4d6c8', blush: '#f0b39b', accentText: '#3d6829' },
+    { bg: '#1c2318', ink: '#ecf1e3', muted: '#aab59d', red: '#f08a7e', track: '#283222', arc: '#b2da9b', earIn: '#6b4a3d', blush: '#c98a74', accentText: '#b2da9b' }
+  ],
+  blueberry: [
+    { bg: '#eef0fb', ink: '#20233f', muted: '#52577c', red: '#b2343d', track: '#dadff6', arc: '#8e9cf2', earIn: '#ffd6e0', blush: '#f6aec3', accentText: '#4150c2' },
+    { bg: '#1a1d38', ink: '#e9eafc', muted: '#a7abd8', red: '#ff8f95', track: '#262a4d', arc: '#bcc5ff', earIn: '#5a4a8a', blush: '#c99bd8', accentText: '#bcc5ff' }
+  ]
+}
+
+/** `t` of b mixed into a, like color-mix(in srgb, b t, a). */
+function mix(a: string, b: string, t: number): string {
+  const ch = (hex: string, i: number) => parseInt(hex.slice(i, i + 2), 16)
+  return `#${[1, 3, 5].map((i) => Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t).toString(16).padStart(2, '0')).join('')}`
+}
+
+function widgetColors(g: Ground, p: Paint, accentText?: string): WidgetColors {
+  return {
+    bg: g.bg,
+    ink: g.ink,
+    muted: g.muted,
+    track: g.track,
+    ...p,
+    // the hairline and the + button's disc: the ground, a step toward the ink
+    edge: mix(g.bg, g.ink, 0.08),
+    button: mix(g.bg, g.ink, 0.11),
+    // over today: red and a 28% red track (mixed solid: a see-through one shows the ears), or, in a special
+    // theme, its own accent text and its accent mixed 60% into the card, as global.css does
+    over: accentText ?? g.red,
+    overTrack: accentText ? mix(g.bg, p.accent, 0.6) : mix(g.bg, g.red, 0.28)
   }
+}
+
+/**
+ * Everything the home-screen widget wears, light and dark: it follows the phone's dark theme when Taily's
+ * theme is System. Same values and formulas as global.css and applyCustomAccent above.
+ */
+export function widgetLook(accent: string, hue: number): { special: boolean; light: WidgetColors; dark: WidgetColors } {
+  const special = SPECIAL_WIDGET[accent]
+  if (special) {
+    const t = SPECIAL_THEMES[accent]
+    const [l, d] = special
+    return {
+      special: true,
+      light: widgetColors(l, { arc: l.arc, earIn: l.earIn, blush: l.blush, accent: t.light.accent, onAccent: t.light.onAccent }, l.accentText),
+      dark: widgetColors(d, { arc: d.arc, earIn: d.earIn, blush: d.blush, accent: t.dark.accent, onAccent: t.dark.onAccent }, d.accentText)
+    }
+  }
+  if (accent === 'cream') return { special: false, light: widgetColors(CREAM[0], CREAM[0]), dark: widgetColors(CREAM[1], CREAM[1]) }
+  if (accent === 'mono') return { special: false, light: widgetColors(CLASSIC[0], MONO[0]), dark: widgetColors(CLASSIC[1], MONO[1]) }
   const h = accent === 'custom' ? hue : (PRESET_HUES[accent] ?? 210)
   return {
-    accent: hslHex(h, 60, 73),
-    onAccent: hslHex(h, 40, 22),
-    accentNight: hslHex(h, 55, 68),
-    onAccentNight: hslHex(h, 50, 12)
+    special: false,
+    light: widgetColors(CLASSIC[0], { arc: hslHex(h, 56, 56), accent: hslHex(h, 60, 73), onAccent: hslHex(h, 40, 22) }),
+    dark: widgetColors(CLASSIC[1], { arc: hslHex(h, 62, 74), accent: hslHex(h, 55, 68), onAccent: hslHex(h, 50, 12) })
   }
 }

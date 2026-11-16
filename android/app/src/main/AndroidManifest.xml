@@ -54,14 +54,20 @@
 
         </activity>
 
-        <!-- Voice from anywhere: the home-screen widget and the Quick Settings tile.
-             Both open MainActivity with taily://voice, where VoicePlugin starts listening. -->
+        <!-- The home-screen widget (today's room, speak, add) and the Quick Settings tile.
+             Their mics open MainActivity with taily://voice, where VoicePlugin starts listening.
+             A changed clock, time zone or language redraws the widget's day and figures. -->
         <receiver
             android:name=".VoiceWidget"
             android:exported="false"
             android:label="@string/widget_voice_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

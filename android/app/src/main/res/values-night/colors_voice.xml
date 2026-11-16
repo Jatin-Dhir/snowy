@@ -4,8 +4,11 @@
     <color name="voice_surface">#1B2127</color>
     <color name="voice_edge">#2C333C</color>
     <color name="voice_ink">#E8EBF0</color>
+    <color name="voice_muted">#9AA3AE</color>
     <color name="voice_button">#262E37</color>
     <color name="voice_press">#24E8EBF0</color>
     <color name="voice_accent">#81ADDA</color>
     <color name="voice_on_accent">#0F1F2E</color>
+    <color name="voice_track">#272E36</color>
+    <color name="voice_arc">#94BDE6</color>
 </resources>

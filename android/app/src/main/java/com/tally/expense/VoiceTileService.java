@@ -8,7 +8,9 @@ import android.service.quicksettings.TileService;
 
 /**
  * The Quick Settings tile: pull down from any app, tap Taily, say it. It opens
- * Taily already listening (see VoicePlugin), so this only launches.
+ * Taily already listening (see VoicePlugin), so this only launches. Under its
+ * name it shows what's left to spend today, from the widget's summary, unless
+ * the phone is locked or Taily's app lock is on.
  */
 public class VoiceTileService extends TileService {
 
@@ -19,8 +21,23 @@ public class VoiceTileService extends TileService {
     if (tile == null) return;
     tile.setState(Tile.STATE_INACTIVE);
     tile.setLabel(getString(R.string.tile_voice_label));
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) tile.setSubtitle(getString(R.string.tile_voice_subtitle));
+    String action = getString(R.string.tile_voice_subtitle);
+    String[] today = isLocked() ? null : today();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) tile.setSubtitle(today != null ? today[0] : action);
+    // the subtitle no longer says what a tap does, so the spoken description does
+    tile.setContentDescription(getString(R.string.tile_voice_label) + ". " + action + (today != null ? ". " + today[1] : ""));
     tile.updateTile();
+  }
+
+  /** "₹740 left" for the tile and "₹740 left to spend today" for TalkBack, or null when there's nothing to show. */
+  private String[] today() {
+    WidgetData data = WidgetData.load(this);
+    if (data.state != WidgetData.State.READY || data.money == null) return null;
+    TodayMoney money = data.money;
+    String amount = data.money(money.figure());
+    if (money.over()) return new String[] { getString(R.string.tile_over, amount), getString(R.string.tile_over_long, amount) };
+    if (money.hasBudget) return new String[] { getString(R.string.tile_room, amount), getString(R.string.tile_room_long, amount) };
+    return new String[] { getString(R.string.tile_spent, amount), getString(R.string.tile_spent_long, amount) };
   }
 
   @Override

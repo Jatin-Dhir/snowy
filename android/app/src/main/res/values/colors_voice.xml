@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The widget, tile and shortcut icons, in Taily's own tokens (src/styles/global.css):
      the light ground, ink, and the default sky accent (hue 210, as lib/theme.ts makes it).
-     The widget's accent is replaced by the person's own once the app has run. -->
+     The widget wears the person's own theme once the app has sent it (WidgetData); these
+     are what it shows before that, and in the widget picker's preview. -->
 <resources>
     <color name="voice_surface">#EDF0F5</color>
     <color name="voice_edge">#D9DEE6</color>
     <color name="voice_ink">#1A212B</color>
+    <color name="voice_muted">#56616D</color>
     <color name="voice_button">#E1E6EE</color>
     <color name="voice_press">#1F1A212B</color>
     <color name="voice_accent">#91BAE3</color>
     <color name="voice_on_accent">#22384F</color>
+    <color name="voice_track">#D9DFE8</color>
+    <color name="voice_arc">#508FCE</color>
 </resources>

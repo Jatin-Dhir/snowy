@@ -177,8 +177,8 @@ public class VoicePlugin extends Plugin {
 
   /**
    * What a launch from outside the app needs and can't read for itself: whether
-   * to listen at once (not while app lock is on), haptics, the language, and
-   * the accent the widget wears. Nothing from the ledger itself.
+   * to listen at once (not while app lock is on), haptics and the language. The
+   * widget's look and figures come separately (WidgetPlugin).
    */
   @PluginMethod
   public void setPrefs(PluginCall call) {
@@ -189,19 +189,7 @@ public class VoicePlugin extends Plugin {
     if (haptics != null) edit.putBoolean("haptics", haptics);
     String lang = call.getString("language");
     if (lang != null) edit.putString("language", lang);
-    JSObject look = call.getObject("appearance");
-    boolean restyle = false;
-    if (look != null) {
-      for (String key : new String[] { "accent", "onAccent", "accentNight", "onAccentNight" }) {
-        Integer color = parseColor(look.getString(key));
-        if (color != null) {
-          edit.putInt(key, color);
-          restyle = true;
-        }
-      }
-    }
     edit.apply();
-    if (restyle) VoiceWidget.refreshAll(getContext());
     call.resolve();
   }
 
@@ -570,10 +558,5 @@ public class VoicePlugin extends Plugin {
     } else {
       vibrator.vibrate(12);
     }
-  }
-
-  private static Integer parseColor(String hex) {
-    if (hex == null || !hex.matches("#[0-9a-fA-F]{6}")) return null;
-    return 0xFF000000 | Integer.parseInt(hex.substring(1), 16);
   }
 }

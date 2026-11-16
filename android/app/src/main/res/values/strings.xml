@@ -8,11 +8,43 @@
     <string name="shortcut_add_long">Add an expense to Taily</string>
     <string name="shortcut_voice_short">Speak expense</string>
     <string name="shortcut_voice_long">Speak an expense to Taily</string>
-    <string name="widget_voice_name">Taily voice</string>
-    <string name="widget_voice_description">Tap the mic and say it, like “250 lunch”. Taily saves it.</string>
+
+    <!-- The home-screen widget. Its words are Home's today card's own (src/screens/Home.tsx) -->
+    <string name="widget_voice_name">Today</string>
+    <string name="widget_voice_description">What you can still spend today, and a tap to say or add an expense.</string>
     <string name="widget_voice_action">Speak an expense</string>
     <string name="widget_voice_short">Speak</string>
-    <string name="widget_add_action">Type an expense</string>
+    <string name="widget_add_action">Add an expense</string>
+    <string name="widget_add_short">Add</string>
+    <string name="widget_title">Taily</string>
+    <string name="widget_setup">Tap to set up</string>
+    <string name="widget_setup_short">Set up</string>
+    <string name="widget_locked_label">Today</string>
+    <string name="widget_locked">Hidden while app lock is on</string>
+    <string name="widget_label_room">Safe to spend today</string>
+    <string name="widget_label_over">Over today by</string>
+    <string name="widget_label_spent">Spent today</string>
+    <string name="widget_short_room">Left today</string>
+    <string name="widget_short_over">Over by</string>
+    <string name="widget_short_spent">Spent</string>
+    <string name="widget_caption_room">of your %1$s for today</string>
+    <string name="widget_caption_over">past today\'s %1$s</string>
+    <string name="widget_caption_fresh">A fresh day</string>
+    <plurals name="widget_caption_entries">
+        <item quantity="one">%d entry so far today</item>
+        <item quantity="other">%d entries so far today</item>
+    </plurals>
+    <string name="widget_open">%1$s. Opens Taily</string>
+    <string name="widget_preview_figure">₹740</string>
+    <string name="widget_preview_caption">of your ₹1,200 for today</string>
+
     <string name="tile_voice_label">Taily</string>
     <string name="tile_voice_subtitle">Speak an expense</string>
+    <!-- under the tile's name there's room for a few words; TalkBack hears the long ones -->
+    <string name="tile_room">%1$s left</string>
+    <string name="tile_over">%1$s over</string>
+    <string name="tile_spent">%1$s spent</string>
+    <string name="tile_room_long">%1$s left to spend today</string>
+    <string name="tile_over_long">%1$s over today\'s budget</string>
+    <string name="tile_spent_long">%1$s spent today</string>
 </resources>
