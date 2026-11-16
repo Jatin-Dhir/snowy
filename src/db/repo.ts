@@ -36,8 +36,11 @@ export async function addTxn(input: NewTxn): Promise<Txn> {
 
 export async function updateTxn(id: string, patch: Partial<Txn>): Promise<void> {
   // a hand-edited amount is a new fact in the current currency — the stored
-  // pre-conversion original no longer describes it
-  const clearBase = patch.amountMinor !== undefined ? { baseMinor: null, baseCurrency: null } : {}
+  // pre-conversion original no longer describes it. The edit sheet sends the
+  // amount back with every save, so only a different one counts
+  const was = await db.txns.get(id)
+  const changed = patch.amountMinor !== undefined && patch.amountMinor !== was?.amountMinor
+  const clearBase = changed ? { baseMinor: null, baseCurrency: null } : {}
   await db.txns.update(id, { ...patch, ...clearBase, updatedAt: Date.now() })
 }
 

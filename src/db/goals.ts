@@ -12,7 +12,10 @@ export async function addGoal(name: string, targetMinor: number): Promise<Goal> 
 }
 
 export async function updateGoal(id: string, patch: Partial<Pick<Goal, 'name' | 'targetMinor'>>): Promise<void> {
-  const clearBase = patch.targetMinor !== undefined ? { baseTargetMinor: null, baseCurrency: null } : {}
+  // the goal sheet sends the target back with a rename too: only a different one is a new fact
+  const was = await db.goals.get(id)
+  const changed = patch.targetMinor !== undefined && patch.targetMinor !== was?.targetMinor
+  const clearBase = changed ? { baseTargetMinor: null, baseCurrency: null } : {}
   await db.goals.update(id, { ...patch, ...clearBase, updatedAt: Date.now() })
 }
 

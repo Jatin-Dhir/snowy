@@ -32,7 +32,10 @@ export async function updateLoan(
   id: string,
   patch: Partial<Pick<Loan, 'person' | 'amountMinor' | 'note' | 'direction'>>
 ): Promise<void> {
-  const clearBase = patch.amountMinor !== undefined ? { baseMinor: null, baseCurrency: null } : {}
+  // the edit form sends the amount back with every save: only a different one is a new fact
+  const was = await db.loans.get(id)
+  const changed = patch.amountMinor !== undefined && patch.amountMinor !== was?.amountMinor
+  const clearBase = changed ? { baseMinor: null, baseCurrency: null } : {}
   await db.loans.update(id, { ...patch, ...clearBase, updatedAt: Date.now() })
 }
 

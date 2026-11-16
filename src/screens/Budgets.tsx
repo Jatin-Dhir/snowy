@@ -28,8 +28,10 @@ function BudgetDialog({
   onDelete?: () => void
   onClose: () => void
 }) {
-  const [value, setValue] = useState(initialAmount ? String(Math.round(initialAmount / 100)) : '')
-  const minor = (parseInt(value, 10) || 0) * 100
+  const shown = initialAmount ? String(Math.round(initialAmount / 100)) : ''
+  const [value, setValue] = useState(shown)
+  // the field holds whole units: left as it opened, it stands for the exact amount (paise from a currency switch)
+  const minor = initialAmount && value === shown ? initialAmount : (parseInt(value, 10) || 0) * 100
   return (
     <Sheet open onClose={onClose} label={title} style={{ gap: 14 }}>
         <div className="row-between">
@@ -76,9 +78,11 @@ function GoalDialog({
 }) {
   const { showToast } = useUi()
   const [name, setName] = useState(goal?.name ?? '')
-  const [target, setTarget] = useState(goal ? String(Math.round(goal.targetMinor / 100)) : '')
+  const shownTarget = goal ? String(Math.round(goal.targetMinor / 100)) : ''
+  const [target, setTarget] = useState(shownTarget)
   const [amount, setAmount] = useState('')
-  const targetMinor = (parseInt(target, 10) || 0) * 100
+  // the field holds whole units: left as it opened (a rename), it stands for the goal's exact target
+  const targetMinor = goal && target === shownTarget ? goal.targetMinor : (parseInt(target, 10) || 0) * 100
   const amountMinor = Math.round(parseFloat(amount) * 100) || 0
   const canSave = name.trim().length > 0 && targetMinor > 0
   const accounts = useLiveQuery(() => db.accounts.toArray(), []) ?? []
@@ -232,7 +236,9 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
   const budgetless = categories.filter((c) => !c.archived && !catBudgets.some((b) => b.id === c.id))
 
   async function saveBudget(id: string, minor: number) {
-    await db.budgets.put({ id, amountMinor: minor })
+    // the same amount saved again keeps its original from before a currency switch
+    const was = await db.budgets.get(id)
+    if (was?.amountMinor !== minor) await db.budgets.put({ id, amountMinor: minor })
     setDialog(null)
     showToast('Budget saved')
   }
