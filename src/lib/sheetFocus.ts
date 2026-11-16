@@ -14,6 +14,38 @@ let closed: { el: HTMLElement; opener: HTMLElement | null }[] = []
 // pointerdown, Safari never focuses buttons), and it's still what opened the sheet
 let pressed: HTMLElement | null = null
 
+// A sheet that a tap closes (a picker's row, its own button, the backdrop) is gone at once, and a double tap's
+// second tap lands on whatever it uncovered: the add sheet's keypad, whose keys type on the way down, so ₹250
+// became ₹2,505, or a tag that saves on the spot. So for a moment after a tap closes a sheet, presses where that
+// finger was are swallowed before anything sees them, and so is the click each one ends in. A press anywhere
+// else goes through, and so does the +, which has its own (components/TabBar).
+const ECHO_MS = 500
+const ECHO_PX = 32
+/** where and when a finger last lifted */
+let lift: { x: number; y: number; t: number } | null = null
+/** the spot a closing sheet leaves quiet, and until when */
+let quiet: { x: number; y: number; until: number } | null = null
+/** until when the click of a swallowed press is swallowed too */
+let eatClick = 0
+
+function swallowEcho(e: MouseEvent) {
+  const now = performance.now()
+  if (e.type === 'click') {
+    if (now < eatClick) {
+      eatClick = 0
+      e.preventDefault()
+      e.stopImmediatePropagation()
+    }
+    return
+  }
+  eatClick = 0
+  if (!quiet || now > quiet.until || Math.hypot(e.clientX - quiet.x, e.clientY - quiet.y) > ECHO_PX) return
+  if (e.target instanceof Element && e.target.closest('[data-voice-anchor]')) return
+  e.preventDefault()
+  e.stopImmediatePropagation()
+  eatClick = now + 1000
+}
+
 function syncInert() {
   document.getElementById('root')?.toggleAttribute('inert', sheets.length > 0)
   sheets.forEach((el, i) => el.toggleAttribute('inert', i < sheets.length - 1))
@@ -94,6 +126,8 @@ export function holdFocus(el: HTMLElement, opener: HTMLElement | null): () => vo
     // still on screen for its exit animation, but it takes no more input
     el.setAttribute('inert', '')
     syncInert()
+    // a tap just closed it: what it uncovers doesn't take a second one there
+    if (lift && performance.now() - lift.t < 300) quiet = { x: lift.x, y: lift.y, until: lift.t + ECHO_MS }
     if (!closed.length) queueMicrotask(returnFocus)
     closed.push({ el, opener })
   }
@@ -101,6 +135,16 @@ export function holdFocus(el: HTMLElement, opener: HTMLElement | null): () => vo
 
 /** Once, at startup. */
 export function armSheetFocus(): void {
+  // first, so a press it swallows reaches nothing else
+  window.addEventListener('pointerdown', swallowEcho, true)
+  window.addEventListener('click', swallowEcho, true)
+  window.addEventListener(
+    'pointerup',
+    (e) => {
+      lift = { x: e.clientX, y: e.clientY, t: performance.now() }
+    },
+    { capture: true, passive: true }
+  )
   window.addEventListener(
     'pointerdown',
     (e) => {
