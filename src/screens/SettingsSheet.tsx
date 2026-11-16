@@ -244,9 +244,13 @@ export function SettingsSheet({
   }
 
   // a statement shared in from another app lands here already open (App.tsx
-  // opens Settings for us) — process it once, same as a picked file would be
+  // opens Settings for us) — process it once, same as a picked file would be.
+  // Only once Settings is open: behind the app lock it would be read with
+  // Settings shut, and its preview would wait for whenever Settings opened next
+  const takenImport = useRef<SharedFile | null>(null)
   useEffect(() => {
-    if (!pendingImport) return
+    if (!pendingImport || !open || takenImport.current === pendingImport) return
+    takenImport.current = pendingImport
     // without Pro, the Pro sheet explains instead; once bought, share the statement again
     if (!hasPro('import')) {
       onPendingImportHandled?.()
@@ -255,7 +259,7 @@ export function SettingsSheet({
     const task = pendingImport.kind === 'pdf' ? processImportPdf(pendingImport.bytes) : processImportText(pendingImport.text)
     void task.catch(() => showToast("Couldn't read that file")).finally(() => onPendingImportHandled?.())
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingImport])
+  }, [pendingImport, open])
 
   async function applyImport(plan: ImportPlan) {
     setImportBusy(true)
