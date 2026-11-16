@@ -95,9 +95,11 @@ export function Home({
   const byAccountBalance = useMemo(() => balanceByAccount(allTxns, accounts), [allTxns, accounts])
   const [saveHidden, setSaveHidden] = useState(() => localStorage.getItem('taily.save.hidden') === todayISO())
 
+  // the month's recurring payments still to come: set aside from today on, and expected on their days in the pace
+  const due = useMemo(() => stillDue(rules, monthKey), [rules, monthKey])
   const sts = useMemo(
-    () => safeToSpend(monthTxns, overallBudget?.amountMinor ?? null, today),
-    [monthTxns, overallBudget, today]
+    () => safeToSpend(monthTxns, overallBudget?.amountMinor ?? null, today, due),
+    [monthTxns, overallBudget, today, due]
   )
   const bars = useMemo(() => weekBars(weekTxns, today), [weekTxns, today])
   const weekTotal = sum(weekTxns.filter((t) => t.dateISO <= today))
@@ -293,7 +295,7 @@ export function Home({
   const dayOfMonth = parseInt(today.slice(8, 10), 10)
   const budgetMinor = overallBudget && overallBudget.amountMinor > 0 ? overallBudget.amountMinor : 0
   // the month's recurring payments: rent paid on the 1st is expected on the 1st, a bill due later is set aside
-  const monthPace = budgetMinor ? pace(monthSpent, budgetMinor, today, fixedOf(monthTxns, stillDue(rules, monthKey))) : null
+  const monthPace = budgetMinor ? pace(monthSpent, budgetMinor, today, fixedOf(monthTxns, due)) : null
   const paceWords = !monthPace
     ? ''
     : monthPace.state === 'over'

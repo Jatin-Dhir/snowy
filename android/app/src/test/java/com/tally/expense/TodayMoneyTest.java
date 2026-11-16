@@ -4,8 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import org.junit.Test;
 
 /** The widget's figures, as Home works them out (safeToSpend in src/db/stats.ts), on the day and after it. */
@@ -222,6 +225,153 @@ public class TodayMoneyTest {
     TodayMoney m = TodayMoney.compute(3_000_000, 2_900_000, days("2026-11-30", 50_000), counts(), "2026-11-30", "2026-12-01");
     assertEquals(0f, m.monthFraction(), 0f);
     assertEquals("2026-12-01", m.day);
+  }
+
+  // ---- recurring payments (rent, EMIs, subscriptions): set aside from the month, never today's spend
+
+  /** Rules as day, amount, next run: rules(1, 1_400_000, "2026-12-01", ...) */
+  private static List<TodayMoney.Rule> rules(Object... triples) {
+    List<TodayMoney.Rule> list = new ArrayList<>();
+    for (int i = 0; i < triples.length; i += 3) {
+      list.add(new TodayMoney.Rule(((Number) triples[i]).intValue(), ((Number) triples[i + 1]).longValue(), (String) triples[i + 2]));
+    }
+    return list;
+  }
+
+  @Test
+  public void rentDayIsNotOverToday() {
+    // ₹50,000 for November, ₹14,000 of rent logged by its rule this morning and ₹200 of chai: (50000 - 14000) / 30
+    // days = ₹1,200 for today, ₹1,000 of it left. Before, it read "over today by ₹12,534" with the sad cat
+    TodayMoney m = TodayMoney.compute(5_000_000, 0, days("2026-11-01", 1_420_000), counts("2026-11-01", 2),
+        days("2026-11-01", 1_400_000), rules(1, 1_400_000, "2026-12-01"), "2026-11-01", "2026-11-01");
+    assertEquals(120_000, m.allowance);
+    assertEquals(100_000, m.remaining);
+    assertFalse(m.over());
+    assertEquals(TodayMoney.Mood.HAPPY, m.mood());
+    assertEquals(TodayMoney.Caption.ROOM, m.caption());
+    // what was spent today is still all of it, as the Today list adds it up
+    assertEquals(1_420_000, m.spent);
+    assertEquals(1_420_000, m.month);
+  }
+
+  @Test
+  public void aBillStillDueIsSetAsideFromToday() {
+    // the demo month on the 16th: ₹38,760 spent before today, ₹626 today, rent and Netflix logged earlier and a ₹1,500
+    // EMI due on the 25th: (50000 - 38760 - 1500) / 15 days = 649.33, so ₹649, ₹23 of it left. Home says the same
+    // (scratchpad money5/t3-safe.mjs)
+    TodayMoney m = TodayMoney.compute(5_000_000, 3_876_000, days("2026-11-16", 62_600), counts("2026-11-16", 4), days(),
+        rules(1, 1_400_000, "2026-12-01", 14, 19_900, "2026-12-14", 25, 150_000, "2026-11-25"), "2026-11-16", "2026-11-16");
+    assertEquals(64_900, m.allowance);
+    assertEquals(2_300, m.remaining);
+    assertEquals(62_600, m.spent);
+    // not spent yet, so not in the month's figure
+    assertEquals(3_938_600, m.month);
+  }
+
+  @Test
+  public void aBillsDayComingWithoutTailyOpenedCountsAsItWillBeLogged() {
+    // the summary is from the 16th and it's the 25th, the EMI's day, with Taily not opened since. Opened, Taily logs the
+    // EMI today, so: (50000 - 39386 - 1500) / 6 days = 1519, all of it left
+    TodayMoney m = TodayMoney.compute(5_000_000, 3_876_000, days("2026-11-16", 62_600), counts("2026-11-16", 4), days(),
+        rules(25, 150_000, "2026-11-25"), "2026-11-16", "2026-11-25");
+    assertEquals(151_900, m.allowance);
+    assertEquals(151_900, m.remaining);
+    assertEquals(150_000, m.spent);
+    assertEquals(1, m.entries);
+    assertEquals(4_088_600, m.month);
+    // the day after, it was spent before today: (50000 - 39386 - 1500) / 5 days = 1822.8, so ₹1,822
+    TodayMoney next = TodayMoney.compute(5_000_000, 3_876_000, days("2026-11-16", 62_600), counts("2026-11-16", 4), days(),
+        rules(25, 150_000, "2026-11-25"), "2026-11-16", "2026-11-26");
+    assertEquals(182_200, next.allowance);
+    assertEquals(0, next.spent);
+    assertEquals(4_088_600, next.month);
+  }
+
+  @Test
+  public void aNewMonthKnowsItsRentIsDue() {
+    // the summary is from the 30th; the 1st comes at midnight, rent's day, before Taily is opened. Opened, it logs the
+    // rent: (50000 - 14000) / 31 days = 1161.29, so ₹1,161, as the app will say, not 50000 / 31 = ₹1,612
+    TodayMoney m = TodayMoney.compute(5_000_000, 4_000_000, days("2026-11-30", 50_000), counts("2026-11-30", 2), days(),
+        rules(1, 1_400_000, "2026-12-01"), "2026-11-30", "2026-12-01");
+    assertEquals(116_100, m.allowance);
+    assertEquals(116_100, m.remaining);
+    assertFalse(m.over());
+    assertEquals(1_400_000, m.month);
+    assertEquals("2026-12-01", m.day);
+  }
+
+  @Test
+  public void aPaymentLoggedThisMonthIsNotSetAsideAgain() {
+    // rent was logged on the 1st (it's in what was spent before), so its next run is December's
+    TodayMoney with = TodayMoney.compute(5_000_000, 1_400_000, days(), counts(), days(), rules(1, 1_400_000, "2026-12-01"), "2026-11-16", "2026-11-16");
+    TodayMoney without = TodayMoney.compute(5_000_000, 1_400_000, days(), counts(), "2026-11-16", "2026-11-16");
+    assertEquals(without.allowance, with.allowance);
+    assertEquals(without.month, with.month);
+  }
+
+  @Test
+  public void aRuleForThe31stFallsOnAShortMonthsLastDay() {
+    // a rule for the 31st in November is due on the 30th: (10000 - 5000 - 1000) / 1 day = ₹4,000, all of it left
+    TodayMoney m = TodayMoney.compute(1_000_000, 500_000, days(), counts(), days(), rules(31, 100_000, "2026-11-30"), "2026-11-29", "2026-11-30");
+    assertEquals(100_000, m.spent);
+    assertEquals(400_000, m.allowance);
+    assertEquals(400_000, m.remaining);
+  }
+
+  @Test
+  public void withoutABudgetTheRentIsSpentToday() {
+    TodayMoney m = TodayMoney.compute(0, 0, days("2026-11-01", 1_420_000), counts("2026-11-01", 2), days("2026-11-01", 1_400_000),
+        rules(1, 1_400_000, "2026-12-01"), "2026-11-01", "2026-11-01");
+    assertFalse(m.hasBudget);
+    assertEquals(1_420_000, m.figure());
+  }
+
+  /** 2.19.0's allowance and room left, copied as they were, to hold the new code to them. */
+  private static long[] before219(long budget, long before, Map<String, Long> days, String summaryDay, String now) {
+    String day = now;
+    long spentBefore = before;
+    if (now.compareTo(summaryDay) < 0) {
+      day = summaryDay;
+    } else if (!now.substring(0, 7).equals(summaryDay.substring(0, 7))) {
+      spentBefore = 0;
+      days = null;
+    } else if (days != null) {
+      for (Map.Entry<String, Long> e : days.entrySet()) {
+        String d = e.getKey();
+        if (d.compareTo(summaryDay) >= 0 && d.compareTo(now) < 0 && e.getValue() != null) spentBefore += e.getValue();
+      }
+    }
+    Long spentToday = days == null ? null : days.get(day);
+    long spent = spentToday == null ? 0 : spentToday;
+    int daysLeft = TodayMoney.daysInMonth(Integer.parseInt(day.substring(0, 4)), Integer.parseInt(day.substring(5, 7)))
+        - Integer.parseInt(day.substring(8, 10)) + 1;
+    long allowance = Math.max(0, (long) (Math.floor((double) (budget - spentBefore) / daysLeft / 100.0) * 100));
+    return new long[] { allowance, allowance - spent };
+  }
+
+  @Test
+  public void withoutRecurringPaymentsEveryFigureIsAsBefore() {
+    Random random = new Random(219);
+    for (int i = 0; i < 20_000; i++) {
+      int dom = 1 + random.nextInt(30);
+      String summaryDay = String.format("2026-11-%02d", dom);
+      String now = random.nextInt(5) == 0 ? "2026-12-01" : String.format("2026-11-%02d", Math.min(30, dom + random.nextInt(4)));
+      long budget = random.nextInt(4) == 0 ? 0 : 1 + random.nextInt(20_000_000);
+      long before = random.nextInt(25_000_000);
+      Map<String, Long> spends = days(summaryDay, (long) random.nextInt(3_000_000), now, (long) random.nextInt(500_000));
+      // an older app's summary, and a new one with no recurring payments in it: both as 2.19.0 worked them out
+      TodayMoney old = TodayMoney.compute(budget, before, spends, counts(), summaryDay, now);
+      TodayMoney none = TodayMoney.compute(budget, before, spends, counts(), days(), rules(), summaryDay, now);
+      long[] want = before219(budget, before, spends, summaryDay, now);
+      if (budget > 0) {
+        assertEquals(want[0], old.allowance);
+        assertEquals(want[1], old.remaining);
+      }
+      assertEquals(old.allowance, none.allowance);
+      assertEquals(old.remaining, none.remaining);
+      assertEquals(old.spent, none.spent);
+      assertEquals(old.month, none.month);
+    }
   }
 
   @Test

@@ -121,25 +121,38 @@ export function weekBars(txns: Txn[], today = todayISO()): WeekBar[] {
 
 export interface SafeToSpend {
   hasBudget: boolean
-  /** Allowance for today after earlier spending this month. */
+  /** Allowance for today after earlier spending this month, with the month's recurring payments set aside. */
   dayAllowance: number
-  /** Allowance minus today's spend (can go negative). */
+  /** Allowance minus today's spend, its recurring payments aside (can go negative). */
   remainingToday: number
+  /** Everything spent today, a recurring payment too: the Today list's total, and "Spent today" without a budget. */
   spentToday: number
+  /** Recurring payments logged today: set aside with the month's others, never taken from today's share. */
+  fixedToday: number
 }
 
-export function safeToSpend(monthTxns: Txn[], monthlyBudget: number | null, todayIso = todayISO()): SafeToSpend {
-  const spentToday = sum(onDay(monthTxns, todayIso))
+/**
+ * Today's share of what's left of the budget. The month's recurring payments come out of what's left before it's
+ * shared over the days: today's (rent day isn't "over today") and every one still due (a bill on the 25th is put by
+ * from now on, not met all at once on the 25th). Today's spend is then everything else spent today.
+ * `due` is the month's recurring payments still due (stillDue); without recurring payments nothing changes.
+ * WidgetData/TodayMoney.java works the same numbers out for the widget and the tile, to the paisa.
+ */
+export function safeToSpend(monthTxns: Txn[], monthlyBudget: number | null, todayIso = todayISO(), due: DueBill[] = []): SafeToSpend {
+  const todays = onDay(monthTxns, todayIso)
+  const spentToday = sum(todays)
+  const fixedToday = sum(todays.filter(isRecurring))
   if (!monthlyBudget || monthlyBudget <= 0) {
-    return { hasBudget: false, dayAllowance: 0, remainingToday: 0, spentToday }
+    return { hasBudget: false, dayAllowance: 0, remainingToday: 0, spentToday, fixedToday }
   }
   const monthKey = todayIso.slice(0, 7)
   const dim = daysInMonth(monthKey)
   const dayOfMonth = parseInt(todayIso.slice(8, 10), 10)
   const spentBeforeToday = sum(monthTxns.filter((t) => t.dateISO < todayIso))
+  const setAside = fixedToday + due.reduce((a, b) => (b.dateISO.startsWith(monthKey) ? a + b.amountMinor : a), 0)
   const daysLeftInclToday = dim - dayOfMonth + 1
-  const dayAllowance = Math.max(0, Math.floor((monthlyBudget - spentBeforeToday) / daysLeftInclToday / 100) * 100)
-  return { hasBudget: true, dayAllowance, remainingToday: dayAllowance - spentToday, spentToday }
+  const dayAllowance = Math.max(0, Math.floor((monthlyBudget - spentBeforeToday - setAside) / daysLeftInclToday / 100) * 100)
+  return { hasBudget: true, dayAllowance, remainingToday: dayAllowance - (spentToday - fixedToday), spentToday, fixedToday }
 }
 
 export interface PaceInfo {

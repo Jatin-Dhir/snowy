@@ -1,10 +1,11 @@
 // The home-screen widget and the Quick Settings tile can't read Taily's data, so the app leaves them a
-// small summary whenever entries, the budget, the currency or the look change. Android works today's
-// figures out from it (TodayMoney.java), after midnight too, without Taily being opened. Only totals by
-// day leave the ledger: no names, notes, tags or accounts.
+// small summary whenever entries, the budget, the recurring payments, the currency or the look change.
+// Android works today's figures out from it (TodayMoney.java), after midnight too, without Taily being
+// opened. Only totals by day leave the ledger, and each recurring payment's day, amount and next run: no
+// names, notes, tags or accounts.
 
-import { DEFAULT_SETTINGS, type Txn } from '../db/db'
-import { isOut } from '../db/stats'
+import { DEFAULT_SETTINGS, type Rule, type Txn } from '../db/db'
+import { isOut, isRecurring } from '../db/stats'
 import { todayISO } from './dates'
 import { widgetLook, type WidgetColors } from './theme'
 
@@ -27,13 +28,30 @@ export interface WidgetSummary {
   days: Record<string, number>
   /** entries per day, the same days */
   counts: Record<string, number>
+  /**
+   * The part of each day's spend that recurring rules logged, the same days: set aside, not today's spend. Added
+   * later: a summary from an older app has none
+   */
+  fixed?: Record<string, number>
+  /**
+   * The recurring rules that are on (not paused): each one's day of the month, amount and next run, so the widget
+   * sets aside what's still due, in a new month too, as stillDue does. Added with `fixed`
+   */
+  rules?: WidgetRule[]
+}
+
+export interface WidgetRule {
+  day: number
+  amount: number
+  next: string
 }
 
 /** A month's entries as the widget needs them. */
-export function monthFigures(monthTxns: Txn[], today: string): Pick<WidgetSummary, 'before' | 'days' | 'counts'> {
+export function monthFigures(monthTxns: Txn[], today: string): Pick<WidgetSummary, 'before' | 'days' | 'counts' | 'fixed'> {
   let before = 0
   const days: Record<string, number> = {}
   const counts: Record<string, number> = {}
+  const fixed: Record<string, number> = {}
   for (const t of monthTxns) {
     if (t.dateISO < today) {
       if (isOut(t)) before += t.amountMinor
@@ -41,8 +59,14 @@ export function monthFigures(monthTxns: Txn[], today: string): Pick<WidgetSummar
     }
     counts[t.dateISO] = (counts[t.dateISO] ?? 0) + 1
     if (isOut(t)) days[t.dateISO] = (days[t.dateISO] ?? 0) + t.amountMinor
+    if (isOut(t) && isRecurring(t)) fixed[t.dateISO] = (fixed[t.dateISO] ?? 0) + t.amountMinor
   }
-  return { before, days, counts }
+  return { before, days, counts, fixed }
+}
+
+/** The rules as the widget needs them: the ones that are on, by day, amount and next run. */
+export function widgetRules(rules: Rule[]): WidgetRule[] {
+  return rules.filter((r) => !r.paused).map((r) => ({ day: r.dayOfMonth, amount: r.amountMinor, next: r.nextRunISO }))
 }
 
 interface WidgetPlugin {
@@ -82,7 +106,9 @@ export async function forgetWidget(): Promise<void> {
     budget: 0,
     before: 0,
     days: {},
-    counts: {}
+    counts: {},
+    fixed: {},
+    rules: []
   })
 }
 

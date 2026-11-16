@@ -6,17 +6,21 @@ import android.content.res.Configuration;
 import android.icu.text.NumberFormat;
 import android.icu.util.Currency;
 import android.icu.util.ULocale;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
  * What the home-screen widget and the Quick Settings tile know about Taily: the small summary the
- * app leaves whenever entries, the budget, the currency or the look change (WidgetPlugin, from
- * src/lib/widget.ts). Never the ledger itself: a month's totals by day, the budget, and colours.
+ * app leaves whenever entries, the budget, the recurring rules, the currency or the look change
+ * (WidgetPlugin, from src/lib/widget.ts). Never the ledger itself: a month's totals by day, each
+ * recurring rule's day, amount and next run, the budget, and colours.
  */
 final class WidgetData {
 
@@ -125,6 +129,9 @@ final class WidgetData {
           o.optLong("before", 0),
           longs(o.optJSONObject("days")),
           ints(o.optJSONObject("counts")),
+          // both absent from an older app's summary, which then works out as it always did
+          longs(o.optJSONObject("fixed")),
+          rules(o.optJSONArray("rules")),
           o.optString("today", today()),
           today());
       return new WidgetData(State.READY, currency, theme, special, light, dark, money);
@@ -201,6 +208,19 @@ final class WidgetData {
       m.put(k, o.optLong(k, 0));
     }
     return m;
+  }
+
+  private static List<TodayMoney.Rule> rules(JSONArray a) {
+    List<TodayMoney.Rule> list = new ArrayList<>();
+    if (a == null) return list;
+    for (int i = 0; i < a.length(); i++) {
+      JSONObject r = a.optJSONObject(i);
+      if (r == null) continue;
+      String next = r.optString("next", "");
+      if (!next.matches("\\d{4}-\\d{2}-\\d{2}")) continue;
+      list.add(new TodayMoney.Rule(r.optInt("day", 1), r.optLong("amount", 0), next));
+    }
+    return list;
   }
 
   private static Map<String, Integer> ints(JSONObject o) {
