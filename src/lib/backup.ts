@@ -123,11 +123,28 @@ export function describeBackup(c: BackupContents): string {
 }
 
 /**
+ * The currency a restore would mix in, if any. A backup's amounts are numbers in its own currency, and
+ * restoring takes that currency too: into a profile that keeps its money in another one, every figure
+ * already here would change currency without being converted. A profile with no money in it yet just
+ * takes the backup's currency, as on a new phone.
+ */
+export async function restoreConflict(c: BackupContents): Promise<{ backup: string; here: string } | null> {
+  const backup = c.settings?.currency
+  const { currency: here } = await getSettings()
+  if (!backup || backup === here) return null
+  const money = TABLES.filter((t) => t !== 'categories' && t !== 'accounts')
+  const counts = await Promise.all(money.map((t) => db.table(t).count()))
+  const opening = (await db.accounts.toArray()).some((a) => a.openingBalanceMinor)
+  return counts.some((n) => n > 0) || opening ? { backup, here } : null
+}
+
+/**
  * Adds a backup into the profile that's open now. Records are matched by id, so
  * restoring the same backup twice changes nothing, and entries made since the
  * backup stay. The PIN set on this phone stays as it is.
  */
 export async function restoreBackup(c: BackupContents): Promise<void> {
+  if (await restoreConflict(c)) throw new Error('The backup is in another currency than this profile')
   await db.transaction('rw', TABLES.map((t) => db.table(t)), async () => {
     for (const t of TABLES) {
       const rows = c.tables[t]

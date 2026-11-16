@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { Sheet } from './Sheet'
-import { createBackup, describeBackup, isBackupFile, openBackup, restoreBackup, type BackupContents } from '../lib/backup'
+import { createBackup, describeBackup, isBackupFile, openBackup, restoreBackup, restoreConflict, type BackupContents } from '../lib/backup'
 import { saveFile } from '../lib/saveFile'
 import { currentProfile } from '../lib/profiles'
 import { haptic, useUi } from '../state/ui'
@@ -19,7 +19,19 @@ export function BackupSheet({ open, onClose }: { open: boolean; onClose: () => v
   const [fileName, setFileName] = useState('')
   const [wrong, setWrong] = useState(false)
   const [opened, setOpened] = useState<BackupContents | null>(null)
+  // the two currencies, when restoring the backup here would mix them
+  const [conflict, setConflict] = useState<{ backup: string; here: string } | null>(null)
   const picker = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    setConflict(null)
+    if (!opened) return
+    let live = true
+    void restoreConflict(opened).then((c) => live && setConflict(c))
+    return () => {
+      live = false
+    }
+  }, [opened])
 
   // passwords never outlive the sheet
   useEffect(() => {
@@ -233,7 +245,13 @@ export function BackupSheet({ open, onClose }: { open: boolean; onClose: () => v
                 </span>
                 <span className="caption" style={{ fontSize: 12 }}>{describeBackup(opened)}</span>
               </div>
-              <button className="btn" disabled={!!busy} onClick={() => void restore()}>
+              {conflict && (
+                <span className="caption" role="alert" style={{ fontSize: 12.5, color: 'var(--red)', textWrap: 'pretty' }}>
+                  This backup is in {conflict.backup}, but {currentProfile().name} is in {conflict.here}. Switch{' '}
+                  {currentProfile().name} to {conflict.backup} under Currency first, so the two don't mix.
+                </span>
+              )}
+              <button className="btn" disabled={!!busy || !!conflict} onClick={() => void restore()}>
                 {busy ?? `Restore into ${currentProfile().name}`}
               </button>
             </>
