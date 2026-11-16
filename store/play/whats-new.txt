@@ -1,1 +1,1 @@
-New: a home-screen widget that shows what's safe to spend today, with Speak and Add buttons, in your theme. Tap a tag in Insights to see what's in it. Log one of your regular expenses again in one tap from the add screen. An optional daily reminder at 8, 9 or 10 pm, only on days you haven't logged anything. Estimates are now rounded to whole amounts.
+New: add amounts up on the keypad, so 120 + 45 saves 165. Read back any month in Activity, day by day, with its total and budget. Budget cards now open what made them up, and you can tap a month in the Insights chart to see it.
