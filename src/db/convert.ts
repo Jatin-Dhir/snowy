@@ -56,8 +56,12 @@ export async function convertEverything(rate: number, oldCurrency: string, newCu
     const goals = await db.goals.toArray()
     await db.goals.bulkPut(
       goals.map((g) => {
-        const [targetMinor, baseTargetMinor, baseCurrency] = step(g.targetMinor, g.baseTargetMinor, g.baseCurrency, oldCurrency)
-        const [savedMinor, baseSavedMinor] = step(g.savedMinor, g.baseSavedMinor, g.baseCurrency, oldCurrency)
+        // one base currency stands for both figures, so both keep their originals or neither does: money
+        // added after a switch has no original, and read back in the old currency it shrank or grew
+        const whole = g.baseTargetMinor != null && g.baseSavedMinor != null
+        const base = whole ? g.baseCurrency : null
+        const [targetMinor, baseTargetMinor, baseCurrency] = step(g.targetMinor, whole ? g.baseTargetMinor : null, base, oldCurrency)
+        const [savedMinor, baseSavedMinor] = step(g.savedMinor, whole ? g.baseSavedMinor : null, base, oldCurrency)
         return { ...g, targetMinor, savedMinor, baseTargetMinor, baseSavedMinor, baseCurrency }
       })
     )
