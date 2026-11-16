@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
 import { txnsBetween } from '../db/repo'
 import { byCategory, incomeSum, isRealSpend, pace, projectMonth, sum } from '../db/stats'
-import { currencySymbol, formatMinor } from '../lib/money'
+import { formatCompact, formatMinor } from '../lib/money'
 import { adviceFor, smartNotes } from '../lib/smart'
 import { LoansSheet } from '../components/LoansSheet'
 import { Sheet } from '../components/Sheet'
@@ -19,23 +19,10 @@ import {
   todayISO
 } from '../lib/dates'
 import { Icon } from '../components/Icon'
+import { MonthPicker } from '../components/MonthPicker'
 import { MonthSheet } from '../components/MonthSheet'
 import { TagEntriesSheet, type TagPick } from '../components/TagEntriesSheet'
 import { haptic } from '../state/ui'
-
-/** ₹850 · ₹2.1k · ₹1.4L — tight labels that fit on top of chart bars. */
-function fmtCompact(minor: number, currency: string): string {
-  const sym = currencySymbol(currency)
-  const v = minor / 100
-  const big = currency === 'INR' ? { div: 100000, suf: 'L' } : { div: 1000000, suf: 'M' }
-  // round to the tier's precision BEFORE picking the tier, so ₹999.99 says
-  // ₹1k (not ₹1000) and $999,999 says $1M (not $1000k)
-  const scale = (n: number, div: number) => parseFloat((n / div).toFixed(n / div < 10 ? 1 : 0))
-  if (Math.round(v) < 1000) return `${sym}${Math.round(v)}`
-  const k = scale(v, 1000)
-  if (k * 1000 < big.div) return `${sym}${k}k`
-  return `${sym}${scale(v, big.div)}${big.suf}`
-}
 
 export function Insights({
   currency,
@@ -56,6 +43,8 @@ export function Insights({
   const [reportOpen, setReportOpen] = useState(false)
   // the month this screen shows, read back day by day: from the "Spent" card
   const [monthOpen, setMonthOpen] = useState(false)
+  // every month, to jump to one: from the month's name
+  const [picking, setPicking] = useState(false)
   const [showRest, setShowRest] = useState(false)
   // a "Where it went" row, opened to show what's in it
   const [openTag, setOpenTag] = useState<TagPick | null>(null)
@@ -230,9 +219,14 @@ export function Insights({
           <button className="icon-btn" onClick={() => show(addMonths(monthKey, -1))} aria-label="Previous month">
             <Icon name="chevronLeft" size={16} />
           </button>
-          {/* just words: the arrows either side are what change it */}
-          <span className="month-label" aria-live="polite">
-            {monthLabel(monthKey)}
+          {/* the arrows either side step it on; the name itself opens every month to jump to */}
+          <span className="month-title" aria-live="polite">
+            <button className="month-pick" aria-haspopup="dialog" onClick={() => setPicking(true)}>
+              {monthLabel(monthKey)}
+              <span className="month-pick-chev" aria-hidden="true">
+                <Icon name="chevronDown" size={12} strokeWidth={2.2} />
+              </span>
+            </button>
           </span>
           <button
             className="icon-btn"
@@ -481,7 +475,7 @@ export function Insights({
                             fontSize="12"
                             fill={shown ? 'var(--ink)' : 'var(--faint)'}
                           >
-                            {fmtCompact(m.total, currency)}
+                            {formatCompact(m.total, currency)}
                           </text>
                         )}
                         <text
@@ -624,6 +618,7 @@ export function Insights({
       {monthOpen && (
         <MonthSheet currency={currency} initialMonth={monthKey} onEdit={onEdit} onClose={() => setMonthOpen(false)} />
       )}
+      {picking && <MonthPicker value={monthKey} currency={currency} onPick={show} onClose={() => setPicking(false)} />}
 
       {openTag && (
         <TagEntriesSheet

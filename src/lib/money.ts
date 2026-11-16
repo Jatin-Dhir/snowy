@@ -39,6 +39,20 @@ export function formatMinor(minor: number, currency = 'INR'): string {
   return negative ? `−${out}` : out
 }
 
+/** ₹850 · ₹2.1k · ₹1.4L — tight labels for a chart's bars or a month in the month picker. */
+export function formatCompact(minor: number, currency = 'INR'): string {
+  const sym = currencySymbol(currency)
+  const v = minor / 100
+  const big = currency === 'INR' ? { div: 100000, suf: 'L' } : { div: 1000000, suf: 'M' }
+  // round to the tier's precision BEFORE picking the tier, so ₹999.99 says
+  // ₹1k (not ₹1000) and $999,999 says $1M (not $1000k)
+  const scale = (n: number, div: number) => parseFloat((n / div).toFixed(n / div < 10 ? 1 : 0))
+  if (Math.round(v) < 1000) return `${sym}${Math.round(v)}`
+  const k = scale(v, 1000)
+  if (k * 1000 < big.div) return `${sym}${k}k`
+  return `${sym}${scale(v, big.div)}${big.suf}`
+}
+
 /** Groups a raw digit string the Indian way: "128406" → "1,28,406". */
 export function groupIndian(digits: string): string {
   if (digits.length === 0) return '0'

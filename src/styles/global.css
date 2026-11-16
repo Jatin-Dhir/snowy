@@ -585,6 +585,127 @@ select {
   white-space: nowrap;
 }
 
+/* the month the month view and Insights show, between the arrows that step it on. Its name opens every month to
+   jump straight to one (MonthPicker): the chevron says so, and its padding reaches for a finger without making the
+   header any taller */
+.month-title {
+  display: flex;
+  margin: 0;
+  font-size: 14px;
+}
+
+.month-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px 6px 5px;
+  margin: -6px 0;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: background 120ms ease;
+}
+
+.month-pick-chev {
+  display: inline-flex;
+  color: var(--faint);
+}
+
+.month-pick:active {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  transition-duration: 0ms;
+}
+
+/* the months to jump to, a year to a grid: raised like keys, the month showing filled in the accent, and a month
+   with nothing in it (or still to come) flat on the sheet, out of reach */
+.month-year {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.month-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 6px 2px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--edge);
+  background: var(--btn-bg);
+  box-shadow: var(--btn-shadow);
+  color: var(--ink);
+  transition: box-shadow 150ms var(--ease-soft), transform 150ms var(--ease-soft);
+}
+
+.month-cell:active:not(:disabled) {
+  box-shadow: var(--btn-shadow-active);
+  transform: scale(0.96);
+  transition-duration: 0ms, 0ms;
+}
+
+.month-cell-name {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.month-cell-sum {
+  max-width: 100%;
+  min-height: 15px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 15px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* this month, as the week chart marks today */
+.month-cell.now .month-cell-name {
+  color: var(--accent-text);
+}
+
+.month-cell.on {
+  background: var(--accent);
+  box-shadow: var(--raise-sm);
+}
+
+.month-cell.on .month-cell-name,
+.month-cell.on .month-cell-sum {
+  color: var(--on-accent);
+}
+
+/* out of reach, dimmed the way every unavailable control in Taily is: the months that can be picked stand out */
+.month-cell:disabled {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+  opacity: 0.45;
+  cursor: default;
+}
+
+.month-cell:disabled .month-cell-name {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.month-year + .month-year {
+  margin-top: 6px;
+}
+
 /* Activity's total for the month, in its header: a pill, as it opens the month day by day */
 .pill.month-pill {
   gap: 3px;

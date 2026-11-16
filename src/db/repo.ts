@@ -87,6 +87,17 @@ export async function recentTxns(limit = 1500): Promise<Txn[]> {
   return rows.filter((t) => !t.deleted).slice(0, limit)
 }
 
+/** Every month with a live entry in it, and what went out that month: "2026-11" → minor units. */
+export async function spendByMonth(): Promise<Map<string, number>> {
+  const totals = new Map<string, number>()
+  for (const t of await db.txns.toArray()) {
+    if (t.deleted) continue
+    const key = t.dateISO.slice(0, 7)
+    totals.set(key, (totals.get(key) ?? 0) + ((t.kind ?? 'out') === 'out' ? t.amountMinor : 0))
+  }
+  return totals
+}
+
 export async function allLiveTxns(): Promise<Txn[]> {
   const rows = await db.txns.toArray()
   return rows.filter((t) => !t.deleted).sort((a, b) => b.ts - a.ts)

@@ -9,6 +9,7 @@ import { useBudgetEditor } from './BudgetDialog'
 import { BudgetLine } from './BudgetLine'
 import { DayList } from './DayList'
 import { Icon } from './Icon'
+import { MonthPicker } from './MonthPicker'
 import { Sheet } from './Sheet'
 
 /** Rows shown before "Show more": a whole month of a busy ledger at once is a long list to build. */
@@ -19,8 +20,9 @@ const NBSP = String.fromCharCode(160)
 
 /**
  * One month read back, day by day: what went out and in, each day's spend under its heading, and the month's total.
- * The arrows step through the months; "Back to November" comes back to now from any of them, and so does closing
- * it. A tap on an entry opens it to change it, and this stays open underneath; so does the budget line's "Change".
+ * The arrows step through the months, and the month's name opens every month to jump straight to one; "Back to
+ * November" comes back to now from any of them, and so does closing it. A tap on an entry opens it to change it,
+ * and this stays open underneath; so does the budget line's "Change".
  * Opened from Activity's header, Home's month, Insights' "Spent" (on the month Insights shows) and the monthly
  * budget's card in Budgets.
  */
@@ -39,6 +41,7 @@ export function MonthSheet({
   const nowKey = currentMonthKey()
   const [monthKey, setMonthKey] = useState(() => (initialMonth && initialMonth < nowKey ? initialMonth : nowKey))
   const budgetEditor = useBudgetEditor()
+  const [picking, setPicking] = useState(false)
   const isCurrent = monthKey === nowKey
   const label = monthLabel(monthKey)
 
@@ -71,9 +74,14 @@ export function MonthSheet({
           <button ref={prev} className="icon-btn" onClick={() => setMonthKey(addMonths(monthKey, -1))} aria-label="Previous month">
             <Icon name="chevronLeft" size={16} />
           </button>
-          {/* the sheet's heading: its days (h3) sit under it. Just words, as in Insights: the arrows change it */}
-          <h2 className="month-label" aria-live="polite" style={{ margin: 0 }}>
-            {label}
+          {/* the sheet's heading: its days (h3) sit under it. The arrows step it on; its name opens every month */}
+          <h2 className="month-title" aria-live="polite">
+            <button className="month-pick" aria-haspopup="dialog" onClick={() => setPicking(true)}>
+              {label}
+              <span className="month-pick-chev" aria-hidden="true">
+                <Icon name="chevronDown" size={12} strokeWidth={2.2} />
+              </span>
+            </button>
           </h2>
           <button
             className="icon-btn"
@@ -149,6 +157,7 @@ export function MonthSheet({
         <DayList key={monthKey} txns={txns} categories={categories} currency={currency} onEdit={onEdit} pageSize={PAGE} />
       )}
 
+      {picking && <MonthPicker value={monthKey} currency={currency} onPick={setMonthKey} onClose={() => setPicking(false)} />}
       {budgetEditor.dialog}
     </Sheet>
   )

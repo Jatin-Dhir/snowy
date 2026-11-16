@@ -482,6 +482,15 @@ async function walkApp() {
   await record('Activity, nothing found')
   await click('button[aria-label="Clear search"]')
   await sleep(200)
+  // the month day by day, and every month to jump to from its name
+  await open('Month view', record, () => click('button.month-pill'))
+  await open('Month picker', record, async () => {
+    const did = await inTop('button.month-pick')
+    if (did) await browser.waitFor(`!!document.querySelector('.month-cell')`, 5000)
+    return did
+  })
+  await closeTop()
+  await closeTop()
 
   await tab('Budgets')
   await sleep(300)
