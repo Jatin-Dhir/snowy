@@ -1609,6 +1609,30 @@ button.tag-row:active {
   text-overflow: ellipsis;
 }
 
+/* a loan's line: who owes whom, when its reminder comes, what it was for. The reminder is never cut off (where even
+   it can't fit, as with the largest text, it moves to a line of its own whole); the note takes what room is left */
+.loan-sub {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.loan-sub > .loan-when {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.loan-sub > .loan-when > svg {
+  flex-shrink: 0;
+}
+
+.loan-sub > .loan-note {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .txn-amount {
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;

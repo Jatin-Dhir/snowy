@@ -1,5 +1,6 @@
 import { db, type Loan } from './db'
 import { todayISO } from '../lib/dates'
+import { loanReminderSlot } from '../lib/notify'
 
 export async function addLoan(input: {
   direction: 'lent' | 'borrowed'
@@ -18,7 +19,8 @@ export async function addLoan(input: {
     currency: input.currency,
     note: input.note?.trim() || undefined,
     lentISO: todayISO(),
-    remindISO: input.remindISO,
+    // a reminder for today after 10:00 takes the next sensible moment
+    ...loanReminderSlot(input.remindISO),
     settledISO: null,
     createdAt: now,
     updatedAt: now
@@ -47,8 +49,11 @@ export async function unsettleLoan(id: string): Promise<void> {
   await db.loans.update(id, { settledISO: null, updatedAt: Date.now() })
 }
 
-export async function updateLoanReminder(id: string, remindISO: string | null): Promise<void> {
-  await db.loans.update(id, { remindISO, updatedAt: Date.now() })
+/** Returns the reminder as kept: for today after 10:00, a later moment than the day asked for (see loanReminderSlot). */
+export async function updateLoanReminder(id: string, remindISO: string | null): Promise<Pick<Loan, 'remindISO' | 'remindTime'>> {
+  const slot = loanReminderSlot(remindISO)
+  await db.loans.update(id, { ...slot, updatedAt: Date.now() })
+  return slot
 }
 
 /** Returns the record as it was, so the toast's Undo can put it back with restoreLoan. */

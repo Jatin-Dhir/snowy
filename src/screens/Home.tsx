@@ -17,7 +17,7 @@ import { safeToSpend, saveSuggestion, weekBars, sum, onDay, byCategory, totalBal
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
 import { guessAccount, weeklyAnomalies } from '../lib/smart'
-import { notifyAlerts } from '../lib/notify'
+import { loanReminderAt, notifyAlerts } from '../lib/notify'
 import { currentDbName, dbNameFor } from '../lib/profiles'
 import { LoansSheet } from '../components/LoansSheet'
 import { TripCard, TripsRow } from '../components/TripCard'
@@ -233,7 +233,9 @@ export function Home({
       })
     }
     for (const l of loans) {
-      if (l.settledISO || !l.remindISO || l.remindISO > today) continue
+      // from its moment on, as the notification: a reminder set for later today isn't due yet
+      const at = loanReminderAt(l)
+      if (l.settledISO || !at || at.getTime() > Date.now()) continue
       list.push({
         key: `loan|${l.id}|${l.remindISO}`,
         level: 'warn',

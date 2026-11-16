@@ -5,7 +5,8 @@ import { addLoan, settleLoan, unsettleLoan, updateLoan, updateLoanReminder, dele
 import { formatEntry, formatMinor, currencySymbol } from '../lib/money'
 import { useAmountEntry } from '../lib/useAmountEntry'
 import { useFitAmount } from '../lib/useFitAmount'
-import { addDaysISO, shortDate, todayISO } from '../lib/dates'
+import { addDaysISO, fmtClock, shortDate, todayISO } from '../lib/dates'
+import { LOAN_REMINDER_TIME, loanReminderAt, loanReminderSlot } from '../lib/notify'
 import { personColor } from './PersonBadge'
 import { Icon } from './Icon'
 import { NumPad } from './NumPad'
@@ -22,6 +23,18 @@ const REMIND_CHIPS = [
 
 /** A field that opens at the end of a scrolling list, brought into view as it appears. */
 const reveal = (field: HTMLElement | null) => field?.scrollIntoView({ block: 'nearest' })
+
+/** When a loan's reminder goes off: "today, 3:15 pm", "tomorrow, 10 am", "23 Nov, 10 am". */
+function reminderWhen(l: Pick<Loan, 'remindISO' | 'remindTime'>): string {
+  const iso = l.remindISO ?? ''
+  const today = todayISO()
+  const day = iso === today ? 'today' : iso === addDaysISO(today, 1) ? 'tomorrow' : shortDate(iso)
+  return `${day}, ${fmtClock(l.remindTime ?? LOAN_REMINDER_TIME)}`
+}
+
+// " · " in a loan's line, with spaces that never collapse or break: the one before a reminder ends the part ahead of
+// it, so a reminder moved to a line of its own starts with words, not a dot; the one before a note starts the note
+const DOT = '\u00a0·\u00a0'
 
 export function LoansSheet({
   open,
@@ -145,7 +158,8 @@ export function LoansSheet({
   }
 
   const row = (l: Loan) => {
-    const overdue = !l.settledISO && l.remindISO && l.remindISO <= todayISO()
+    // overdue once its moment has gone: a reminder later today is still to come
+    const overdue = !l.settledISO && l.remindISO && (loanReminderAt(l)?.getTime() ?? 0) <= Date.now()
     const color = personColor(l.person)
     return (
       <button
@@ -173,23 +187,29 @@ export function LoansSheet({
         </span>
         <span className="txn-main">
           <span className="txn-title">{l.person}</span>
-          <span className="txn-sub" style={overdue ? { color: 'var(--amber-text)', fontWeight: 600 } : undefined}>
-            {/* the reminder before the note: it's what gets cut off last, and "overdue" says it in words */}
-            {[
-              l.settledISO
+          <span className="txn-sub loan-sub" style={overdue ? { color: 'var(--amber-text)', fontWeight: 600 } : undefined}>
+            <span>
+              {l.settledISO
                 ? `${l.direction === 'lent' ? 'returned' : 'paid back'} · ${shortDate(l.settledISO)}`
                 : l.direction === 'lent'
                   ? 'owes you'
-                  : 'you owe',
-              !l.settledISO && l.remindISO
-                ? overdue
-                  ? `overdue since ${shortDate(l.remindISO)}`
-                  : `remind ${shortDate(l.remindISO)}`
-                : null,
-              l.note
-            ]
-              .filter(Boolean)
-              .join(' · ')}
+                  : 'you owe'}
+              {!l.settledISO && l.remindISO && DOT}
+            </span>
+            {/* the reminder before the note, and never cut off: "overdue" says it in words, a reminder to come
+                says when, the calendar standing for "remind" so it fits beside who owes whom on a 320px phone */}
+            {!l.settledISO &&
+              l.remindISO &&
+              (overdue ? (
+                <span>{`overdue since ${shortDate(l.remindISO)}`}</span>
+              ) : (
+                <span className="loan-when">
+                  <Icon name="calendar" size={11} strokeWidth={2.2} />
+                  <span className="sr-only"> reminder </span>
+                  {reminderWhen(l)}
+                </span>
+              ))}
+            {l.note && <span className="loan-note">{`${DOT}${l.note}`}</span>}
           </span>
         </span>
         <span
@@ -521,13 +541,16 @@ export function LoansSheet({
                       onChange={(e) => {
                         const v = e.target.value || null
                         void updateLoanReminder(active.id, v)
-                        setActive({ ...active, remindISO: v })
+                        // as it's kept: today after 10:00 is a later moment, or tomorrow
+                        setActive({ ...active, ...loanReminderSlot(v) })
                       }}
                     />
                   ) : (
+                    // with its time the old "— change" took the line to two on a phone: a button with a calendar on
+                    // it says that a tap changes it
                     <button className="btn ghost" onClick={() => setEditingReminder(true)}>
                       <Icon name="calendar" size={15} />
-                      {active.remindISO ? `Reminder: ${shortDate(active.remindISO)} — change` : 'Set a reminder'}
+                      {active.remindISO ? `Reminder: ${reminderWhen(active)}` : 'Set a reminder'}
                     </button>
                   )}
                 </>

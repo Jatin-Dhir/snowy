@@ -1,4 +1,5 @@
 import type { Loan } from '../db/db'
+import { addDaysISO, toISO } from './dates'
 import { formatMinor } from './money'
 import { currentDbName } from './profiles'
 
@@ -187,10 +188,34 @@ export async function forgetLoanReminders(dbName: string): Promise<void> {
   }
 }
 
+/** A loan's reminder goes off at 10:00 on its day, unless it keeps a time of its own (see loanReminderSlot). */
+export const LOAN_REMINDER_TIME = '10:00'
+
+/** The moment a loan's reminder goes off, or null for none. */
+export function loanReminderAt(l: Pick<Loan, 'remindISO' | 'remindTime'>): Date | null {
+  return l.remindISO ? new Date(`${l.remindISO}T${l.remindTime ?? LOAN_REMINDER_TIME}:00`) : null
+}
+
+/**
+ * What a reminder asked for on `remindISO` is stored as. A day ahead goes off at 10:00 that day. Today once 10:00 has
+ * gone, that moment never comes, so the reminder takes the next sensible one: an hour from now on the next quarter
+ * hour, as long as that's no later than 21:00; after that, tomorrow at 10:00. Worked out once, as it's set: worked out
+ * again at every sync, "an hour from now" would move each time Taily opened and never arrive.
+ */
+export function loanReminderSlot(remindISO: string | null, now = new Date()): Pick<Loan, 'remindISO' | 'remindTime'> {
+  if (!remindISO || remindISO !== toISO(now) || now.getHours() < 10) return { remindISO, remindTime: null }
+  // to the minute, as the clock on the phone says it: at 20:00 an hour from now is 21:00, whatever the seconds
+  const inAnHour = new Date(now.getTime() + 3600000)
+  const minutes = inAnHour.getHours() * 60 + inAnHour.getMinutes()
+  const at = new Date(inAnHour.getFullYear(), inAnHour.getMonth(), inAnHour.getDate(), 0, Math.ceil(minutes / 15) * 15)
+  if (toISO(at) !== remindISO || at.getHours() * 60 + at.getMinutes() > 21 * 60) return { remindISO: addDaysISO(remindISO, 1), remindTime: null }
+  return { remindISO, remindTime: `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}` }
+}
+
 /**
  * Keeps scheduled loan reminders in sync with the ledger (native app only):
  * every outstanding loan with a future reminder gets a system notification
- * at 10:00 that day; settled or deleted loans get theirs cancelled. Without
+ * at its moment (loanReminderAt); settled or deleted loans get theirs cancelled. Without
  * `ask`, notifications that aren't allowed aren't asked for (Taily coming back
  * to the front isn't a reason to ask).
  */
@@ -201,9 +226,9 @@ export async function syncLoanReminders(loans: Loan[], { ask = true }: { ask?: b
     const { LocalNotifications } = await import('@capacitor/local-notifications')
 
     const wanted = loans
-      .filter((l) => !l.settledISO && l.remindISO)
-      .map((l) => ({ ...l, remindISO: l.remindISO as string }))
-      .filter((l) => new Date(l.remindISO + 'T10:00:00').getTime() > Date.now())
+      .filter((l) => !l.settledISO)
+      .map((l) => ({ ...l, at: loanReminderAt(l) }))
+      .filter((l): l is typeof l & { at: Date } => l.at !== null && l.at.getTime() > Date.now())
 
     if (wanted.length > 0) {
       let perm = await LocalNotifications.checkPermissions()
@@ -237,7 +262,7 @@ export async function syncLoanReminders(loans: Loan[], { ask = true }: { ask?: b
             l.direction === 'lent'
               ? `${l.person} owes you ${formatMinor(l.amountMinor, l.currency)} — time to collect.`
               : `You owe ${l.person} ${formatMinor(l.amountMinor, l.currency)}.`,
-          schedule: { at: new Date(l.remindISO + 'T10:00:00') },
+          schedule: { at: l.at },
           isExactNotification: exact_alarm === 'granted'
         }))
       })

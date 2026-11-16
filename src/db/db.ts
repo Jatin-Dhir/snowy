@@ -84,6 +84,8 @@ export interface Loan {
   note?: string
   lentISO: string
   remindISO: string | null
+  /** "15:15": when on remindISO the reminder goes off. Missing or null is 10:00 (see notify.ts loanReminderSlot) */
+  remindTime?: string | null
   settledISO: string | null
   createdAt: number
   updatedAt: number
