@@ -1,1 +1,1 @@
-New: add amounts up on the keypad, so 120 + 45 saves 165. Read back any month in Activity, day by day, with its total and budget. Budget cards now open what made them up, and you can tap a month in the Insights chart to see it.
+Fixes: a double tap on an entry no longer changes it in the edit screen, Clear all data now clears the home-screen widget at once, very large amounts fit on the add screen, search keeps up with thousands of entries, and trips handle double taps. Tips and alerts use everyday amounts in every currency.
