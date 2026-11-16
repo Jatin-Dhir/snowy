@@ -30,8 +30,11 @@ export function ReminderSync({ settings, today }: { settings: Settings; today: s
   useEffect(() => {
     if (loans) void syncLoanReminders(loans)
   }, [loans])
+  // coming back is said twice on Android (the page and the activity): one sync for both
   useEffect(() => {
-    if (loans && returns > 0) void syncLoanReminders(loans, { ask: false })
+    if (!loans || returns === 0) return
+    const timer = window.setTimeout(() => void syncLoanReminders(loans, { ask: false }), 400)
+    return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [returns])
 
