@@ -108,14 +108,43 @@ export function AddSheet({
     return merged.slice(0, 3)
   }, [recent, categories, kind, note, editTxn, editEntry, draft])
 
+  // What you log again and again exactly the same: the morning chai, the metro. Three or more times in 60 days,
+  // same note, amount and tag; most often first. Not a trip share (it's part of a bill), an automatic payment,
+  // or savings (the goal's own button adds to the goal)
+  const repeats = useMemo(() => {
+    if (editTxn || editEntry || draft) return []
+    const cutoff = Date.now() - 60 * 86400000
+    const seen = new Map<string, { n: number; last: Txn }>()
+    for (const t of recent) {
+      if (t.ts < cutoff || (t.kind ?? 'out') !== kind || t.tripEntryId || t.source === 'recurring') continue
+      if (t.categoryId === 'savings' || (t.categoryId && !categories.some((c) => c.id === t.categoryId))) continue
+      const key = `${t.note.trim().toLowerCase()}|${t.amountMinor}|${t.categoryId ?? ''}`
+      const s = seen.get(key)
+      if (!s) seen.set(key, { n: 1, last: t })
+      else {
+        s.n++
+        if (t.ts > s.last.ts) s.last = t
+      }
+    }
+    return [...seen.values()]
+      .filter((s) => s.n >= 3)
+      .sort((a, b) => b.n - a.n || b.last.ts - a.last.ts)
+      .slice(0, 3)
+      .map((s) => s.last)
+  }, [recent, categories, kind, editTxn, editEntry, draft])
+
   const isEdit = editTxn !== null || editEntry !== null
   const amountMinor = amt.minor
   const canSave = amountMinor > 0
+  // before any amount is typed, the tag row (no use yet) offers those instead: one tap logs it again
+  const showRepeats = !isEdit && !canSave && repeats.length > 0
   const everyone = trip?.people.map((p) => p.id) ?? []
   const splitAmong = among ?? everyone
   // a trip takes spends only: money received is always just yours
   const goesInTrip = trip !== null && inTrip && kind === 'out'
-  const each = amountMinor > 0 && splitAmong.length > 1 ? `${formatMinor(Math.round(amountMinor / splitAmong.length), currency)} each` : null
+  const eachOf = (minor: number) =>
+    minor > 0 && splitAmong.length > 1 ? `${formatMinor(Math.round(minor / splitAmong.length), currency)} each` : null
+  const each = eachOf(amountMinor)
 
   useEffect(() => {
     if (!open) return
@@ -159,45 +188,49 @@ export function AddSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editTxn, editEntry, draft])
 
-  function tripInput(categoryId: string | null, ts: number): EntryInput {
-    return { amountMinor, currency, paidBy, among: splitAmong, categoryId, note: note.trim(), accountId: account, dateISO, ts }
+  function tripInput(
+    categoryId: string | null,
+    ts: number,
+    minor = amountMinor,
+    text = note.trim(),
+    from = account
+  ): EntryInput {
+    return { amountMinor: minor, currency, paidBy, among: splitAmong, categoryId, note: text, accountId: from, dateISO, ts }
   }
 
-  async function saveNew(categoryId: string | null) {
-    if (!canSave) return
+  /** Saves what's in the sheet, or, given `again`, one of the entries logged again and again, on the sheet's day. */
+  async function saveNew(categoryId: string | null, again?: Txn) {
+    const minor = again ? again.amountMinor : amountMinor
+    if (minor <= 0) return
+    const text = again ? again.note.trim() : note.trim()
+    // the account it was paid from, unless that one's gone since
+    const from = again && activeAccounts.some((a) => a.id === again.accountId) ? again.accountId : account
     // no tag picked but the note looks familiar — the app files it itself
     let autoFiled = false
-    if (categoryId === null && note.trim()) {
-      const guess = guessCategory(note, recent)
+    if (!again && categoryId === null && text) {
+      const guess = guessCategory(text, recent)
       if (guess && categories.some((c) => c.id === guess)) {
         categoryId = guess
         autoFiled = true
       }
     }
     const catName = categoryId ? categories.find((c) => c.id === categoryId)?.name : null
+    const ts = dateISO === todayISO() ? Date.now() : new Date(dateISO + 'T12:00:00').getTime()
     if (goesInTrip && trip) {
-      const { entry } = await addTripEntry(trip, tripInput(categoryId, dateISO === todayISO() ? Date.now() : new Date(dateISO + 'T12:00:00').getTime()))
+      const { entry } = await addTripEntry(trip, tripInput(categoryId, ts, minor, text, from))
+      const split = eachOf(minor)
       haptic('success')
-      showToast(`${trip.name}: ${formatMinor(amountMinor, currency)}${each ? ` · ${each}` : ''}`, () => {
+      showToast(`${trip.name}: ${formatMinor(minor, currency)}${split ? ` · ${split}` : ''}`, () => {
         void removeTripEntry(entry)
       })
       onClose()
       return
     }
-    const txn = await addTxn({
-      amountMinor,
-      currency,
-      categoryId,
-      accountId: account,
-      kind,
-      note: note.trim(),
-      dateISO,
-      ts: dateISO === todayISO() ? Date.now() : new Date(dateISO + 'T12:00:00').getTime()
-    })
+    const txn = await addTxn({ amountMinor: minor, currency, categoryId, accountId: from, kind, note: text, dateISO, ts })
     haptic('success')
     const verb = kind === 'in' ? 'Received' : 'Spent'
     const tagPart = catName ? (autoFiled ? ` · filed as ${catName}` : ` · ${catName}`) : ''
-    showToast(`${verb} ${formatMinor(amountMinor, currency)}${tagPart}`, () => {
+    showToast(`${verb} ${formatMinor(minor, currency)}${tagPart}`, () => {
       void removeTxnPermanently(txn.id)
     })
     onClose()
@@ -310,6 +343,25 @@ export function AddSheet({
       >
         <span className="dot" style={{ background: cat.color }} />
         {cat.name}
+      </button>
+    )
+  }
+
+  const againChip = (t: Txn) => {
+    const cat = t.categoryId ? categories.find((c) => c.id === t.categoryId) : null
+    const name = t.note.trim() || cat?.name || (kind === 'in' ? 'Received' : 'Untagged')
+    return (
+      <button
+        key={t.id}
+        className="chip"
+        aria-label={`Log again: ${name}, ${formatMinor(t.amountMinor, currency)}`}
+        onClick={() => void saveNew(t.categoryId, t)}
+      >
+        <span className="dot" style={{ background: cat?.color ?? '#7A8794' }} />
+        {name}
+        <span className="mono" style={{ color: 'var(--ink)', fontWeight: 700 }}>
+          {formatMinor(t.amountMinor, currency)}
+        </span>
       </button>
     )
   }
@@ -471,7 +523,7 @@ export function AddSheet({
                   most phones. On the narrowest it drops under the heading rather than squeeze it */}
               <div className="row-between" style={{ flexWrap: 'wrap', rowGap: 6 }}>
                 <span className="label" style={{ fontSize: 10.5 }}>
-                  {isEdit ? 'Tag' : canSave ? 'Tap a tag to save instantly' : 'Type an amount first'}
+                  {isEdit ? 'Tag' : canSave ? 'Tap a tag to save instantly' : showRepeats ? 'Or log one again' : 'Type an amount first'}
                 </span>
                 <button
                   className="caption"
@@ -495,7 +547,7 @@ export function AddSheet({
                   All tags
                 </button>
               </div>
-              <div className="chip-row">{suggested.map((c) => chip(c))}</div>
+              <div className="chip-row">{showRepeats ? repeats.map(againChip) : suggested.map((c) => chip(c))}</div>
             </div>
 
             <NumPad onDigit={amt.digit} onDot={amt.dot} onBackspace={amt.backspace} />
