@@ -1869,11 +1869,16 @@ button.tag-row:active {
   transition-duration: 0ms, 0ms;
 }
 
-/* the add sheet's corner: the decimal point and a + for sums, two keys in one key's place */
-.key-pair {
+/* the add sheet's corner: the decimal point, and a + and a − for sums, three keys in one key's place. Narrow keys
+   take a smaller corner, or the full one would round them into pills */
+.key-trio {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.key-trio .key {
+  border-radius: 12px;
 }
 
 /* the + before there's an amount to add to: dimmed, and a press doesn't sink it */

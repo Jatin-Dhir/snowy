@@ -14,7 +14,7 @@ import {
   updateTripEntry,
   type EntryInput
 } from '../db/trips'
-import { formatEntry, formatPlain, currencySymbol, formatMinor, entryToMinor } from '../lib/money'
+import { formatEntry, formatPlain, currencySymbol, formatMinor } from '../lib/money'
 import { guessAccount, guessCategory } from '../lib/smart'
 import type { ParsedSpeech } from '../lib/parseSpeech'
 import { useAmountEntry } from '../lib/useAmountEntry'
@@ -138,12 +138,27 @@ export function AddSheet({
   }, [recent, categories, kind, editTxn, editEntry, draft])
 
   const isEdit = editTxn !== null || editEntry !== null
-  // the whole sum when there's a + in it (120 + 45 saves 165)
+  // the whole sum when there's a + or − in it (120 + 45 saves 165, 500 − 50 saves 450)
   const amountMinor = amt.minor
   const canSave = amountMinor > 0
   const summing = amt.terms.length > 0
-  // what a screen reader hears as a + is pressed: the parts are on screen only
+  // what a screen reader hears as a + or − is pressed: the parts are on screen only
   const [sumSaid, setSumSaid] = useState('')
+  const sumLine = useRef<HTMLDivElement>(null)
+
+  // a digit turned away for taking the sum below zero: the sum shakes its head, as a wrong PIN does, and says why
+  const refusedSeen = useRef(amt.refused)
+  useEffect(() => {
+    if (amt.refused === refusedSeen.current) return
+    refusedSeen.current = amt.refused
+    if (amt.refused === 0) return
+    setSumSaid("A sum can't go below zero")
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    sumLine.current?.animate(
+      [0, -7, 6, -4, 3, 0].map((x) => ({ transform: `translateX(${x}px)` })),
+      { duration: 320, easing: 'ease-out' }
+    )
+  }, [amt.refused])
 
   // The sum's line takes a little height. On a short phone the fields box has none left to give, and the keys would
   // slide under Save, where a tap meant for 0 saves: the sheet scrolls up just enough to keep them clear
@@ -420,18 +435,22 @@ export function AddSheet({
           </div>
         </div>
 
-        {/* a sum being typed: its parts above the amount, which is their total. The part being typed is in ink */}
+        {/* a sum being typed: its parts above the amount, which is their total, each after its + or −. The part
+            being typed is in ink; past the last two, the earlier ones fold into "…" */}
         {summing && (
-          <div className="amount-sum" aria-hidden="true">
+          <div ref={sumLine} className="amount-sum" aria-hidden="true">
             <span className="amount-sum-line">
-              {[...(amt.terms.length > 2 ? ['…'] : []), ...amt.terms.slice(-2).map((t) => formatEntry(t.r, t.p, currency))].map(
-                (part, i) => (
-                  <span key={i} className="amount-sum-part">
-                    {part}
-                    <span className="amount-sum-op">+</span>
-                  </span>
-                )
+              {amt.terms.length > 2 && (
+                <span className="amount-sum-part">
+                  …<span className="amount-sum-op">{amt.terms[amt.terms.length - 2].minus ? '−' : '+'}</span>
+                </span>
               )}
+              {amt.terms.slice(-2).map((t, i, shown) => (
+                <span key={amt.terms.length - shown.length + i} className="amount-sum-part">
+                  {formatEntry(t.r, t.p, currency)}
+                  <span className="amount-sum-op">{(shown[i + 1] ?? amt.entry).minus ? '−' : '+'}</span>
+                </span>
+              ))}
               {(amt.entry.r !== '' || amt.entry.p !== null) && (
                 <span className="amount-sum-live">{formatEntry(amt.entry.r, amt.entry.p, currency)}</span>
               )}
@@ -598,11 +617,17 @@ export function AddSheet({
               onDigit={amt.digit}
               onDot={amt.dot}
               onPlus={() => {
-                if (entryToMinor(amt.entry.r, amt.entry.p) <= 0) return
+                if (!amt.plusReady) return
                 amt.plus()
                 setSumSaid(`Plus. ${formatMinor(amountMinor, currency)} so far`)
               }}
-              plusReady={entryToMinor(amt.entry.r, amt.entry.p) > 0}
+              plusReady={amt.plusReady}
+              onMinus={() => {
+                if (!amt.minusReady) return
+                amt.minus()
+                setSumSaid(`Minus. ${formatMinor(amountMinor, currency)} so far`)
+              }}
+              minusReady={amt.minusReady}
               onBackspace={amt.backspace}
             />
 

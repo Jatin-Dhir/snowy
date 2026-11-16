@@ -41,15 +41,20 @@ export function NumPad({
   onDot,
   onPlus,
   plusReady = true,
+  onMinus,
+  minusReady = true,
   onBackspace
 }: {
   onDigit: (d: string) => void
   /** Without it (a PIN) the key's corner of the grid is left empty. */
   onDot?: () => void
-  /** A sum (the add sheet): the decimal point shares its corner with a +, and the keyboard's + adds too. */
+  /** A sum (the add sheet): the decimal point shares its corner with a + and a −, and the keyboard's + and - work too. */
   onPlus?: () => void
-  /** whether there's an amount typed for the + to add yet */
+  /** whether a + would do anything yet: there's an amount typed for it to add */
   plusReady?: boolean
+  onMinus?: () => void
+  /** whether a − would: there's something left to take from */
+  minusReady?: boolean
   onBackspace: () => void
 }) {
   const pad = useRef<HTMLDivElement>(null)
@@ -74,6 +79,7 @@ export function NumPad({
       else if (e.key >= '0' && e.key <= '9') onDigit(e.key)
       else if (e.key === '.') onDot?.()
       else if (e.key === '+') onPlus?.()
+      else if (e.key === '-') onMinus?.()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -86,9 +92,9 @@ export function NumPad({
           {d}
         </Key>
       ))}
-      {onDot && onPlus ? (
-        // the least used key gives up half its room: the point and a + share the corner, and no other key moves
-        <div className="key-pair">
+      {onDot && onPlus && onMinus ? (
+        // the least used keys share one key's room: the point, a + and a − in the corner, and no other key moves
+        <div className="key-trio">
           <Key aria-label="Decimal point" fire={onDot}>
             .
           </Key>
@@ -102,6 +108,15 @@ export function NumPad({
             }}
           >
             <Icon name="plus" size={18} strokeWidth={2.4} />
+          </Key>
+          <Key
+            aria-label="Minus"
+            aria-disabled={!minusReady}
+            fire={() => {
+              if (minusReady) onMinus()
+            }}
+          >
+            <Icon name="minus" size={18} strokeWidth={2.4} />
           </Key>
         </div>
       ) : onDot ? (

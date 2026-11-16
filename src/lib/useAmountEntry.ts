@@ -19,10 +19,12 @@ function leaveField() {
   window.addEventListener('pointercancel', release)
 }
 
-/** An amount as typed: rupee digits, and paise once the point is pressed. */
+/** An amount as typed: rupee digits, and paise once the point is pressed. In a sum, a part can be taken away. */
 export interface Entry {
   r: string
   p: string | null
+  /** taken away from what comes before it (500 − 50). Never the first part */
+  minus?: boolean
 }
 
 const EMPTY: Entry = { r: '', p: null }
@@ -31,19 +33,32 @@ const EMPTY: Entry = { r: '', p: null }
 export const MAX_MINOR = 9_999_999_999
 
 const minorOf = (e: Entry) => entryToMinor(e.r, e.p)
+const signed = (e: Entry) => (e.minus ? -minorOf(e) : minorOf(e))
+const totalOf = (terms: Entry[], live: Entry) => terms.reduce((a, t) => a + signed(t), 0) + signed(live)
 
 function fromMinor(minor: number): Entry {
   const e = minorToEntry(minor)
   return { r: e.rupees === '0' ? '' : e.rupees, p: e.paise }
 }
 
+interface Sum {
+  /** the parts already added or taken away */
+  terms: Entry[]
+  /** the part being typed */
+  live: Entry
+  /** how many digits were turned away for taking the sum below zero: each one is a "no" on screen */
+  refused: number
+}
+
 /**
- * Shared numpad amount state: rupee digits + optional paise, functional updates. With `plus` it's a sum
- * (120 + 45): the parts already added sit in `terms`, `entry` is the one being typed, and `minor` is the total.
- * Backspace walks back through it, into the part before once the one being typed is empty.
+ * Shared numpad amount state: rupee digits + optional paise, functional updates. With + and − it's a sum (120 + 45,
+ * 500 − 50): the parts already in sit in `terms`, `entry` is the one being typed, and `minor` is the total. A sum
+ * never goes below zero: a digit that would take it there is turned away. Pressed with nothing typed after it, + or −
+ * swaps the sign the next part will have, so a wrong one is one tap to fix. Backspace walks back through it, into the
+ * part before once the one being typed is empty.
  */
 export function useAmountEntry() {
-  const [sum, setSum] = useState<{ terms: Entry[]; live: Entry }>({ terms: [], live: EMPTY })
+  const [sum, setSum] = useState<Sum>({ terms: [], live: EMPTY, refused: 0 })
 
   function digit(d: string) {
     leaveField()
@@ -56,27 +71,34 @@ export function useAmountEntry() {
         next = { ...e, p: e.p + d }
       } else {
         if (e.r.length >= 8) return s
-        next = { r: e.r === '' && d === '0' ? '' : e.r + d, p: null }
+        next = { ...e, r: e.r === '' && d === '0' ? '' : e.r + d }
       }
-      const total = s.terms.reduce((a, t) => a + minorOf(t), 0) + minorOf(next)
-      return total > MAX_MINOR ? s : { terms: s.terms, live: next }
+      const total = totalOf(s.terms, next)
+      if (total > MAX_MINOR) return s
+      if (total < 0) return { ...s, refused: s.refused + 1 }
+      return { ...s, live: next }
     })
   }
 
   function dot() {
     leaveField()
     keyFeedback('key')
-    setSum((s) => (s.live.p === null ? { terms: s.terms, live: { ...s.live, p: '' } } : s))
+    setSum((s) => (s.live.p === null ? { ...s, live: { ...s.live, p: '' } } : s))
   }
 
-  /** Adds what's typed to the sum, and starts the next part. Nothing typed yet: nothing to add. */
-  function plus() {
+  /**
+   * + or −: what's typed goes into the sum, and the next part will be added or taken away. With nothing typed since
+   * the last one, it changes that one instead. Nothing typed at all: nothing to add to or take from.
+   */
+  function op(minus: boolean) {
     leaveField()
     keyFeedback('key')
     setSum((s) => {
       const part = minorOf(s.live)
       // as it reads in full: "45." or "45.5" goes in as 45 or 45.50
-      return part > 0 ? { terms: [...s.terms, fromMinor(part)], live: EMPTY } : s
+      if (part > 0) return { ...s, terms: [...s.terms, { ...fromMinor(part), minus: s.live.minus }], live: { ...EMPTY, minus } }
+      if (s.terms.length > 0 && !!s.live.minus !== minus) return { ...s, live: { ...s.live, minus } }
+      return s
     })
   }
 
@@ -85,22 +107,40 @@ export function useAmountEntry() {
     keyFeedback('delete')
     setSum((s) => {
       const e = s.live
-      if (e.p !== null) return { terms: s.terms, live: e.p.length > 0 ? { ...e, p: e.p.slice(0, -1) } : { ...e, p: null } }
-      if (e.r !== '') return { terms: s.terms, live: { ...e, r: e.r.slice(0, -1) } }
-      // nothing left in this part: the + goes, and the part before is the one being typed again
-      if (s.terms.length > 0) return { terms: s.terms.slice(0, -1), live: s.terms[s.terms.length - 1] }
+      if (e.p !== null) return { ...s, live: e.p.length > 0 ? { ...e, p: e.p.slice(0, -1) } : { ...e, p: null } }
+      if (e.r !== '') return { ...s, live: { ...e, r: e.r.slice(0, -1) } }
+      // nothing left in this part: its + or − goes, and the part before is the one being typed again
+      if (s.terms.length > 0) return { ...s, terms: s.terms.slice(0, -1), live: s.terms[s.terms.length - 1] }
       return s
     })
   }
 
   function reset() {
-    setSum({ terms: [], live: EMPTY })
+    setSum({ terms: [], live: EMPTY, refused: 0 })
   }
 
   function setFromMinor(minor: number) {
-    setSum({ terms: [], live: fromMinor(minor) })
+    setSum({ terms: [], live: fromMinor(minor), refused: 0 })
   }
 
-  const minor = sum.terms.reduce((a, t) => a + minorOf(t), 0) + minorOf(sum.live)
-  return { entry: sum.live, terms: sum.terms, digit, dot, plus, backspace, reset, setFromMinor, minor }
+  const minor = Math.max(0, totalOf(sum.terms, sum.live))
+  const typed = minorOf(sum.live) > 0
+  const pending = sum.terms.length > 0 && !typed
+  return {
+    entry: sum.live,
+    terms: sum.terms,
+    digit,
+    dot,
+    plus: () => op(false),
+    minus: () => op(true),
+    backspace,
+    reset,
+    setFromMinor,
+    minor,
+    /** a + would do something: add what's typed, or turn a waiting − into a + */
+    plusReady: typed || (pending && !!sum.live.minus),
+    /** a − would: there's something to take from, and either a part to take it after or a waiting + to turn */
+    minusReady: minor > 0 && (typed || (pending && !sum.live.minus)),
+    refused: sum.refused
+  }
 }
