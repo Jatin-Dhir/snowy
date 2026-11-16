@@ -9,6 +9,7 @@ import { personColor } from './PersonBadge'
 import { Icon } from './Icon'
 import { NumPad } from './NumPad'
 import { Sheet } from './Sheet'
+import { quietWhereTapped } from '../lib/sheetFocus'
 import { haptic, useUi } from '../state/ui'
 
 const REMIND_CHIPS = [
@@ -101,6 +102,8 @@ export function LoansSheet({
         : `Noted — you owe ${person.trim()} ${formatMinor(amt.minor, currency)}`
     )
     stopAdding()
+    // the list comes back where the form was: a double tap's second tap would open whoever is under it now
+    quietWhereTapped()
   }
 
   function startLoanEdit(l: Loan) {

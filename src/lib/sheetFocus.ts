@@ -115,6 +115,14 @@ export function findOpener(): HTMLElement | null {
   return active instanceof HTMLElement && active !== document.body ? active : null
 }
 
+/**
+ * What was under the finger that just tapped is gone: a sheet closed, or a form gave way to a list. For a moment a
+ * second tap there, a double tap's, is swallowed rather than land on whatever took its place.
+ */
+export function quietWhereTapped(): void {
+  if (lift && performance.now() - lift.t < 300) quiet = { x: lift.x, y: lift.y, until: lift.t + ECHO_MS }
+}
+
 const openListeners = new Set<() => void>()
 
 /** Hears each sheet as it comes up, until the returned function is called. */
@@ -136,7 +144,7 @@ export function holdFocus(el: HTMLElement, opener: HTMLElement | null): () => vo
     el.setAttribute('inert', '')
     syncInert()
     // a tap just closed it: what it uncovers doesn't take a second one there
-    if (lift && performance.now() - lift.t < 300) quiet = { x: lift.x, y: lift.y, until: lift.t + ECHO_MS }
+    quietWhereTapped()
     if (!closed.length) queueMicrotask(returnFocus)
     closed.push({ el, opener })
   }
