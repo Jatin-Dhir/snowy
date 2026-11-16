@@ -1148,6 +1148,18 @@ button.month-strip:active {
   margin-left: auto;
 }
 
+/* "Day 16 of 30" is one thing: on a 320px phone it broke into "Day 16 of" and "30" beside the pace. It's never broken
+   now, and where it can't sit beside the pace it goes under it, whole and to the right, as the figures above do */
+.month-strip > .row-between:last-child {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+.month-day {
+  white-space: nowrap;
+  margin-left: auto;
+}
+
 /* The narrowest phones (320px): a month like "₹98,765.43 of ₹1,20,000" doesn't fit beside the month's name on Home,
    or "Ahead of pace" beside it in Budgets, and they ran out of the card. Each drops onto a line of its own there.
    From 360px they fit beside it as before */

@@ -398,7 +398,7 @@ export function Home({
               <span className="caption" style={{ color: paceText, fontWeight: 700 }}>
                 {paceWords}
               </span>
-              <span className="caption">
+              <span className="caption month-day">
                 Day {dayOfMonth} of {dim}
               </span>
             </span>
