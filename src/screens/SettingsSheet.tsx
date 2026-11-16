@@ -652,6 +652,9 @@ export function SettingsSheet({
           </div>
         </div>
 
+        {/* a reminder isn't part of the look: its own group, on Android only */}
+        {native && <h2 className="settings-head">Reminders</h2>}
+
         {native && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <h3 className="label" style={{ fontSize: 10.5 }} id="daily-reminder">
