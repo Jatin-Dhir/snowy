@@ -123,15 +123,16 @@ const MONTH_NAMES = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'se
 /** A statement's two-digit year is this century's: "26" is 2026. */
 const fullYear = (y: string) => (y.length === 2 ? 2000 + Number(y) : Number(y))
 
-function parseDate(raw: string): string | null {
+/** `monthFirst`: the file's numbers-only dates are a US bank's, 08/23/2026 (see planImportFromGrid). */
+function parseDate(raw: string, monthFirst = false): string | null {
   const v = raw.trim()
   let y: number, mo: number, d: number
   let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(v)
   if (m) {
     ;[y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])]
   } else if ((m = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4}|\d{2})(?!\d)/.exec(v))) {
-    // Indian/European day-first: 23/08/2026, 23-08-2026, or HDFC's 23/08/26
-    ;[d, mo, y] = [Number(m[1]), Number(m[2]), fullYear(m[3])]
+    // Indian/European day-first: 23/08/2026, 23-08-2026, or HDFC's 23/08/26; a US bank's month-first 08/23/2026
+    ;[d, mo, y] = monthFirst ? [Number(m[2]), Number(m[1]), fullYear(m[3])] : [Number(m[1]), Number(m[2]), fullYear(m[3])]
   } else if ((m = /^(\d{1,2})[\s/-]*([A-Za-z]{3,})\.?[\s/,-]*(\d{4}|\d{2})(?!\d)/.exec(v))) {
     // the month in words, as SBI and most card statements write it: 1 Nov 2026, 01-Nov-26
     ;[d, mo, y] = [Number(m[1]), MONTH_NAMES.indexOf(m[2].slice(0, 3).toLowerCase()) + 1, fullYear(m[3])]
@@ -240,12 +241,25 @@ export function planImportFromGrid(
     kindCol < 0 &&
     body.some((r) => parseFloat((r[col('amount')] ?? '').replace(/[^0-9.\-]/g, '')) < 0)
 
+  // Numbers-only dates are read day first (23/08/2026). A US bank writes the month first (08/23/2026): read that
+  // way, its 5 November came in as 11 May and every day past the 12th was "unreadable". A file shows which it is
+  // as soon as one date has a second number over 12 and none has a first one over 12
+  let firstOver12 = false
+  let secondOver12 = false
+  for (const r of body) {
+    const m = /^(\d{1,2})[/-](\d{1,2})[/-](?:\d{4}|\d{2})(?!\d)/.exec((r[col('date')] ?? '').trim())
+    if (!m) continue
+    if (Number(m[1]) > 12) firstOver12 = true
+    if (Number(m[2]) > 12) secondOver12 = true
+  }
+  const monthFirst = secondOver12 && !firstOver12
+
   for (const r of body) {
     const cell = (name: string) => {
       const i = col(name)
       return i >= 0 ? (r[i] ?? '').trim() : ''
     }
-    const dateISO = parseDate(cell('date'))
+    const dateISO = parseDate(cell('date'), monthFirst)
 
     let amountRaw: number | null
     let kind: 'out' | 'in' = 'out'
