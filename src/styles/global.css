@@ -904,6 +904,23 @@ button.pill:active {
   font-weight: 700;
   font-size: 14px;
   white-space: nowrap;
+  /* on a line of their own they keep to the right */
+  margin-left: auto;
+}
+
+/* The narrowest phones (320px): a month like "₹98,765.43 of ₹1,20,000" doesn't fit beside the month's name on Home,
+   or "Ahead of pace" beside it in Budgets, and they ran out of the card. Each drops onto a line of its own there.
+   From 360px they fit beside it as before */
+@media (max-width: 340px) {
+  .month-strip > .row-between:first-child {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .budget-month-head {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
 }
 
 .month-cta {

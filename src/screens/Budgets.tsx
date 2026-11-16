@@ -285,7 +285,7 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
           style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left' }}
           onClick={() => setDialog({ id: 'overall', title: 'Monthly budget', amount: overall.amountMinor })}
         >
-          <div className="row-between">
+          <div className="row-between budget-month-head">
             <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <span className="mono" style={{ fontWeight: 600, fontSize: 24 }}>
                 {formatMinor(spent, currency)}
@@ -299,6 +299,7 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
               style={{
                 fontWeight: 600,
                 fontSize: 12,
+                marginLeft: 'auto',
                 color: stateText(overallPace.state, 'var(--pos-text)')
               }}
             >
