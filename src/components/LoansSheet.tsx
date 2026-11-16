@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Loan } from '../db/db'
 import { addLoan, settleLoan, unsettleLoan, updateLoan, updateLoanReminder, deleteLoan, restoreLoan } from '../db/loans'
 import { formatEntry, formatMinor, currencySymbol } from '../lib/money'
 import { useAmountEntry } from '../lib/useAmountEntry'
+import { useFitAmount } from '../lib/useFitAmount'
 import { addDaysISO, shortDate, todayISO } from '../lib/dates'
 import { personColor } from './PersonBadge'
 import { Icon } from './Icon'
@@ -33,6 +34,9 @@ export function LoansSheet({
 }) {
   const { showToast, dismissToast } = useUi()
   const amt = useAmountEntry()
+  const amountRow = useRef<HTMLDivElement>(null)
+  const amountFigure = useRef<HTMLSpanElement>(null)
+  useFitAmount(amountRow, amountFigure)
   const [adding, setAdding] = useState(false)
   const [direction, setDirection] = useState<'lent' | 'borrowed'>('lent')
   const [person, setPerson] = useState('')
@@ -360,9 +364,10 @@ export function LoansSheet({
 
       {adding && (
         <div>
-          <div className="amount-display" style={{ padding: 0 }}>
+          <div ref={amountRow} className="amount-display" style={{ padding: 0 }}>
             <span className="amount-cur" style={{ fontSize: 20 }}>{currencySymbol(currency)}</span>
             <span
+              ref={amountFigure}
               key={`${amt.entry.r}.${amt.entry.p ?? ''}`}
               className={`amount-num amount-pop${amt.minor > 0 ? '' : ' zero'}`}
               style={{ fontSize: 36 }}

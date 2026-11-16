@@ -1614,6 +1614,13 @@ button.tag-row:active {
   justify-content: center;
   gap: 4px;
   padding: 14px 0 2px;
+  white-space: nowrap;
+}
+
+/* one line, at full width: squeezed, a received amount's "+₹" broke in two and the caret thinned out. A figure too
+   long for the row gets a smaller font instead (lib/useFitAmount) */
+.amount-display > * {
+  flex-shrink: 0;
 }
 
 .amount-cur {

@@ -18,6 +18,7 @@ import { formatEntry, formatPlain, currencySymbol, formatMinor, entryToMinor } f
 import { guessAccount, guessCategory } from '../lib/smart'
 import type { ParsedSpeech } from '../lib/parseSpeech'
 import { useAmountEntry } from '../lib/useAmountEntry'
+import { useFitAmount } from '../lib/useFitAmount'
 import { todayISO, addDaysISO, shortDate } from '../lib/dates'
 import { ME } from '../lib/split'
 import { Icon } from './Icon'
@@ -68,6 +69,9 @@ export function AddSheet({
   const head = useRef<HTMLDivElement>(null)
   const noteRef = useRef<HTMLInputElement>(null)
   const dateRef = useRef<HTMLInputElement>(null)
+  const amountRow = useRef<HTMLDivElement>(null)
+  const amountFigure = useRef<HTMLSpanElement>(null)
+  useFitAmount(amountRow, amountFigure)
 
   const allCategories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const categories = useMemo(() => allCategories.filter((c) => !c.archived), [allCategories])
@@ -438,11 +442,12 @@ export function AddSheet({
           {summing ? sumSaid : ''}
         </span>
 
-        <div className="amount-display">
+        <div ref={amountRow} className="amount-display">
           <span className="amount-cur" style={kind === 'in' ? { color: 'var(--pos-text)' } : undefined}>
             {kind === 'in' ? '+' : ''}{currencySymbol(currency)}
           </span>
           <span
+            ref={amountFigure}
             key={summing ? `sum ${amountMinor}` : `${amt.entry.r}.${amt.entry.p ?? ''}`}
             className={`amount-num amount-pop${canSave ? '' : ' zero'}`}
           >
