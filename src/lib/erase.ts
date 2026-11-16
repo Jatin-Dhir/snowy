@@ -26,6 +26,15 @@ export async function eraseEverything(): Promise<void> {
     /* no notifications on this platform */
   }
 
+  // the home-screen widget and the Quick Settings tile keep this month's totals beside the app. They go now, not when
+  // Taily next starts at its welcome screen: closed before that, they'd go on showing the erased money
+  try {
+    const { forgetWidget } = await import('./widget')
+    await forgetWidget()
+  } catch {
+    /* no widget on this platform */
+  }
+
   // IndexedDB won't delete a database while a connection to it is open, and ours is
   const { db } = await import('../db/db')
   db.close()

@@ -3,9 +3,10 @@
 // figures out from it (TodayMoney.java), after midnight too, without Taily being opened. Only totals by
 // day leave the ledger: no names, notes, tags or accounts.
 
-import type { Txn } from '../db/db'
+import { DEFAULT_SETTINGS, type Txn } from '../db/db'
 import { isOut } from '../db/stats'
-import type { WidgetColors } from './theme'
+import { todayISO } from './dates'
+import { widgetLook, type WidgetColors } from './theme'
 
 export interface WidgetSummary {
   /** 'setup' until Taily is set up, and again after Erase everything */
@@ -64,6 +65,26 @@ function native(): Promise<{ api: WidgetPlugin } | null> {
 }
 
 let lastSent = ''
+
+/**
+ * Clear all data: the widget and the tile go back to "set up Taily" at once, keeping nothing of the figures they had,
+ * in the look a fresh start sends too.
+ */
+export async function forgetWidget(): Promise<void> {
+  const { currency, theme, accent, accentHue } = DEFAULT_SETTINGS
+  await syncWidget({
+    state: 'setup',
+    locked: false,
+    currency,
+    theme,
+    look: widgetLook(accent, accentHue),
+    today: todayISO(),
+    budget: 0,
+    before: 0,
+    days: {},
+    counts: {}
+  })
+}
 
 /** Hands the summary to the widget, unless it's the one already there. */
 export async function syncWidget(summary: WidgetSummary): Promise<void> {
