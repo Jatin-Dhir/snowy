@@ -38,14 +38,20 @@ final class TodayMoney {
   final int entries;
   /** Spent this month, as Home's month strip counts it: every day of it, a day dated later in it too. */
   final long month;
+  /** The month's overall budget; 0 without one. */
+  final long budget;
+  /** The day these figures are for, "YYYY-MM-DD": today, or the summary's own day if the clock went back. */
+  final String day;
 
-  private TodayMoney(boolean hasBudget, long allowance, long remaining, long spent, int entries, long month) {
+  private TodayMoney(boolean hasBudget, long allowance, long remaining, long spent, int entries, long month, long budget, String day) {
     this.hasBudget = hasBudget;
     this.allowance = allowance;
     this.remaining = remaining;
     this.spent = spent;
     this.entries = entries;
     this.month = month;
+    this.budget = budget;
+    this.day = day;
   }
 
   boolean over() {
@@ -56,6 +62,20 @@ final class TodayMoney {
   float left() {
     if (allowance <= 0 || over()) return 0f;
     return Math.max(0f, Math.min(1f, (float) Math.max(0, remaining) / allowance));
+  }
+
+  /** The month past its budget: the big widget's month line turns to the over colour, as Home's month strip does. */
+  boolean monthOver() {
+    return hasBudget && month > budget;
+  }
+
+  /**
+   * How much of the month's budget is spent, 0 to 1: the big widget's month bar. A sliver at the least once anything
+   * is spent, so a bar that has started never looks empty.
+   */
+  float monthFraction() {
+    if (!hasBudget || budget <= 0 || month <= 0) return 0f;
+    return Math.max(0.025f, Math.min(1f, (float) month / budget));
   }
 
   Mood mood() {
@@ -117,14 +137,14 @@ final class TodayMoney {
     Integer entriesToday = counts == null ? null : counts.get(day);
     long spent = spentToday == null ? 0 : spentToday;
     int entries = entriesToday == null ? 0 : entriesToday;
-    if (budget <= 0) return new TodayMoney(false, 0, 0, spent, entries, monthSpent);
+    if (budget <= 0) return new TodayMoney(false, 0, 0, spent, entries, monthSpent, 0, day);
     int year = Integer.parseInt(day.substring(0, 4));
     int month = Integer.parseInt(day.substring(5, 7));
     int dayOfMonth = Integer.parseInt(day.substring(8, 10));
     int daysLeft = daysInMonth(year, month) - dayOfMonth + 1;
     // the same floating-point steps as stats.ts, so the two always agree to the paisa
     long allowance = Math.max(0, (long) (Math.floor((double) (budget - spentBefore) / daysLeft / 100.0) * 100));
-    return new TodayMoney(true, allowance, allowance - spent, spent, entries, monthSpent);
+    return new TodayMoney(true, allowance, allowance - spent, spent, entries, monthSpent, budget, day);
   }
 
   static int daysInMonth(int year, int month) {

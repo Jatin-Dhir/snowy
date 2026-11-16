@@ -32,6 +32,9 @@
     <string name="widget_caption_fresh">A fresh day</string>
     <!-- no budget: the month so far, under today's spend -->
     <string name="widget_caption_month">%1$s this month</string>
+    <!-- the big widget's month line, as Home's month strip: "November  ₹39,386 of ₹50,000" -->
+    <string name="widget_month_of">of %1$s</string>
+    <string name="widget_month_said">%1$s: %2$s of %3$s</string>
     <plurals name="widget_caption_entries">
         <item quantity="one">%d entry so far today</item>
         <item quantity="other">%d entries so far today</item>

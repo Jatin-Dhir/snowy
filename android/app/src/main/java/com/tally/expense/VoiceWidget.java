@@ -17,7 +17,9 @@ import android.util.ArrayMap;
 import android.util.SizeF;
 import android.view.View;
 import android.widget.RemoteViews;
+import java.text.DateFormatSymbols;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -47,7 +49,9 @@ public class VoiceWidget extends AppWidgetProvider {
     /** Two by two: the ring above the figure, the buttons below. */
     SQUARE(100, 170, 64, 30),
     /** Three or four by two: Home's today card. */
-    LARGE(220, 150, 86, 42);
+    LARGE(220, 150, 86, 42),
+    /** The same, with room under today for the month, as Home's month strip under its today card. */
+    TALL(220, 200, 86, 42);
 
     /** The least room (dp) this layout needs; Android 12+ shows the closest one that fits. */
     final float width, height;
@@ -132,9 +136,11 @@ public class VoiceWidget extends AppWidgetProvider {
   }
 
   private static RemoteViews build(Context context, WidgetData data, Kind kind, boolean dual) {
+    // the four-by-two, with the month under today when it's tall enough
+    boolean large = kind == Kind.LARGE || kind == Kind.TALL;
     int layout = kind == Kind.MIC
         ? R.layout.widget_voice_mic
-        : kind == Kind.SQUARE ? R.layout.widget_today_square : kind == Kind.LARGE ? R.layout.widget_today_large : R.layout.widget_today_row;
+        : kind == Kind.SQUARE ? R.layout.widget_today_square : large ? R.layout.widget_today_large : R.layout.widget_today_row;
     RemoteViews v = new RemoteViews(context.getPackageName(), layout);
     // Android 12+ gets both palettes and follows the phone; before it, the one that applies now
     WidgetData.Palette day = dual ? data.day() : data.current(context);
@@ -151,7 +157,7 @@ public class VoiceWidget extends AppWidgetProvider {
     tint(v, R.id.widget_add_glyph, day.ink, night.ink, dual);
     textColor(v, R.id.widget_label, day.muted, night.muted, dual);
     textColor(v, R.id.widget_status, day.ink, night.ink, dual);
-    if (kind == Kind.LARGE) {
+    if (large) {
       textColor(v, R.id.widget_caption, day.muted, night.muted, dual);
       textColor(v, R.id.widget_voice_text, day.onAccent, night.onAccent, dual);
       textColor(v, R.id.widget_add_text, day.ink, night.ink, dual);
@@ -174,7 +180,7 @@ public class VoiceWidget extends AppWidgetProvider {
       v.setImageViewBitmap(R.id.widget_number, WidgetArt.number(context, masked, Math.round(kind.numberDp * density), 0, data.special));
       v.setViewVisibility(R.id.widget_number, View.VISIBLE);
       tint(v, R.id.widget_number, day.ink, night.ink, dual);
-      if (kind == Kind.LARGE) {
+      if (large) {
         v.setTextViewText(R.id.widget_caption, why);
         v.setViewVisibility(R.id.widget_caption, View.VISIBLE);
       }
@@ -190,7 +196,7 @@ public class VoiceWidget extends AppWidgetProvider {
       v.setViewVisibility(R.id.widget_status, View.VISIBLE);
       v.setViewVisibility(R.id.widget_number, View.GONE);
       art(v, context, kind, data, day, night, dual, null);
-      if (kind == Kind.LARGE) v.setViewVisibility(R.id.widget_caption, View.GONE);
+      if (large) v.setViewVisibility(R.id.widget_caption, View.GONE);
       v.setContentDescription(R.id.widget_info, res.getString(R.string.widget_open, label + ". " + res.getString(R.string.widget_setup)));
       return v;
     }
@@ -233,7 +239,7 @@ public class VoiceWidget extends AppWidgetProvider {
     v.setImageViewBitmap(R.id.widget_number, number);
     v.setViewVisibility(R.id.widget_number, View.VISIBLE);
     tint(v, R.id.widget_number, over ? day.over : day.ink, over ? night.over : night.ink, dual);
-    if (kind == Kind.LARGE) {
+    if (large) {
       v.setTextViewText(R.id.widget_caption, caption);
       v.setViewVisibility(R.id.widget_caption, View.VISIBLE);
     }
@@ -241,7 +247,42 @@ public class VoiceWidget extends AppWidgetProvider {
     // as on Home, the ring needs a budget: without one there's no room to measure, so the cat sits on its badge
     art(v, context, kind, data, day, night, dual, money.hasBudget ? money : null);
 
-    v.setContentDescription(R.id.widget_info, res.getString(R.string.widget_open, label + ": " + amount + ", " + caption));
+    // the month under today, as Home's month strip under its card. Without a budget the caption already says the
+    // month, so this needs one; and room, which only the tall four-by-two has
+    String said = label + ": " + amount + ", " + caption;
+    if (kind == Kind.TALL && money.hasBudget) {
+      boolean monthOver = money.monthOver();
+      String monthName = monthName(money.day);
+      String spentText = data.money(money.month);
+      String budgetText = data.money(money.budget);
+      v.setTextViewText(R.id.widget_month_name, monthName);
+      v.setTextViewText(R.id.widget_month_spent, spentText);
+      v.setTextViewText(R.id.widget_month_of, res.getString(R.string.widget_month_of, budgetText));
+      textColor(v, R.id.widget_month_name, day.muted, night.muted, dual);
+      textColor(v, R.id.widget_month_spent, monthOver ? day.over : day.ink, monthOver ? night.over : night.ink, dual);
+      textColor(v, R.id.widget_month_of, day.muted, night.muted, dual);
+      tint(v, R.id.widget_month_track, monthOver ? day.overTrack : day.track, monthOver ? night.overTrack : night.track, dual);
+      tint(v, R.id.widget_month_fill, monthOver ? day.over : day.arc, monthOver ? night.over : night.arc, dual);
+      float share = money.monthFraction();
+      // the launcher reapplies an update to the widget it already shows, and a new weight sum alone doesn't make the
+      // row measure itself again: it goes and comes back around the new sum, which does
+      v.setViewVisibility(R.id.widget_month_bar, View.GONE);
+      if (share > 0) {
+        // the row's one child weighs 1: a weight sum of 1 / share leaves it that share of the width
+        v.setFloat(R.id.widget_month_bar, "setWeightSum", 1f / share);
+        v.setViewVisibility(R.id.widget_month_fill, View.VISIBLE);
+      } else {
+        v.setViewVisibility(R.id.widget_month_fill, View.INVISIBLE);
+      }
+      v.setViewVisibility(R.id.widget_month_bar, View.VISIBLE);
+      v.setViewVisibility(R.id.widget_month, View.VISIBLE);
+      v.setOnClickPendingIntent(R.id.widget_month, VoiceLaunch.pending(context, 4, VoiceLaunch.homeIntent(context, "widget")));
+      String monthSaid = res.getString(R.string.widget_month_said, monthName, spentText, budgetText);
+      v.setContentDescription(R.id.widget_month, res.getString(R.string.widget_open, monthSaid));
+      said += ". " + monthSaid;
+    }
+
+    v.setContentDescription(R.id.widget_info, res.getString(R.string.widget_open, said));
     return v;
   }
 
@@ -264,6 +305,12 @@ public class VoiceWidget extends AppWidgetProvider {
       v.setImageViewBitmap(R.id.widget_ring, light);
     }
     v.setViewVisibility(R.id.widget_ring, View.VISIBLE);
+  }
+
+  /** "November" for "2026-11-16": the month's name in English, like the rest of Taily's words. */
+  static String monthName(String day) {
+    int month = Integer.parseInt(day.substring(5, 7));
+    return new DateFormatSymbols(Locale.ENGLISH).getMonths()[month - 1];
   }
 
   private static void tint(RemoteViews v, int id, int day, int night, boolean dual) {

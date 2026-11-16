@@ -184,6 +184,47 @@ public class TodayMoneyTest {
   }
 
   @Test
+  public void theBigWidgetsMonthLineIsHomesMonthStrip() {
+    // ₹12,000 before today and ₹450 today of a ₹30,000 month: 41.5% of the bar
+    TodayMoney m = TodayMoney.compute(3_000_000, 1_200_000, days("2026-11-16", 45_000), counts(), "2026-11-16", "2026-11-16");
+    assertEquals(3_000_000, m.budget);
+    assertEquals(1_245_000, m.month);
+    assertEquals(0.415f, m.monthFraction(), 0.0001f);
+    assertFalse(m.monthOver());
+    assertEquals("2026-11-16", m.day);
+  }
+
+  @Test
+  public void aMonthPastItsBudgetFillsTheBarInTheOverColour() {
+    TodayMoney m = TodayMoney.compute(1_000_000, 1_100_000, days("2026-11-16", 5_000), counts(), "2026-11-16", "2026-11-16");
+    assertTrue(m.monthOver());
+    assertEquals(1f, m.monthFraction(), 0f);
+  }
+
+  @Test
+  public void aBarThatHasStartedNeverLooksEmpty() {
+    TodayMoney m = TodayMoney.compute(10_000_000, 0, days("2026-11-01", 3_000), counts(), "2026-11-01", "2026-11-01");
+    assertEquals(0.025f, m.monthFraction(), 0f);
+    TodayMoney none = TodayMoney.compute(10_000_000, 0, days(), counts(), "2026-11-01", "2026-11-01");
+    assertEquals(0f, none.monthFraction(), 0f);
+  }
+
+  @Test
+  public void withoutABudgetThereIsNoMonthBar() {
+    TodayMoney m = TodayMoney.compute(0, 500_000, days("2026-11-16", 32_000), counts(), "2026-11-16", "2026-11-16");
+    assertEquals(0, m.budget);
+    assertEquals(0f, m.monthFraction(), 0f);
+    assertFalse(m.monthOver());
+  }
+
+  @Test
+  public void aNewMonthsBarStartsEmpty() {
+    TodayMoney m = TodayMoney.compute(3_000_000, 2_900_000, days("2026-11-30", 50_000), counts(), "2026-11-30", "2026-12-01");
+    assertEquals(0f, m.monthFraction(), 0f);
+    assertEquals("2026-12-01", m.day);
+  }
+
+  @Test
   public void februaryKnowsLeapYears() {
     assertEquals(29, TodayMoney.daysInMonth(2028, 2));
     assertEquals(28, TodayMoney.daysInMonth(2026, 2));
