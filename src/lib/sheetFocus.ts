@@ -115,10 +115,19 @@ export function findOpener(): HTMLElement | null {
   return active instanceof HTMLElement && active !== document.body ? active : null
 }
 
+const openListeners = new Set<() => void>()
+
+/** Hears each sheet as it comes up, until the returned function is called. */
+export function onSheetOpen(listener: () => void): () => void {
+  openListeners.add(listener)
+  return () => void openListeners.delete(listener)
+}
+
 /** A sheet is open and on the page; call the returned function as it closes. */
 export function holdFocus(el: HTMLElement, opener: HTMLElement | null): () => void {
   sheets.push(el)
   syncInert()
+  for (const listener of [...openListeners]) listener()
   // a field that focused itself on opening keeps it
   if (!el.contains(document.activeElement)) el.focus({ preventScroll: true })
   return () => {

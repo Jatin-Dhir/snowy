@@ -12,7 +12,7 @@ import { guessAccount } from '../lib/smart'
 import { addDaysISO, fmtShortDate, todayISO } from '../lib/dates'
 import { DISTRIBUTION } from '../lib/distribution'
 import { onBack } from '../lib/backButton'
-import { focusFallback } from '../lib/sheetFocus'
+import { focusFallback, onSheetOpen } from '../lib/sheetFocus'
 import {
   microphone,
   openAppSettings,
@@ -399,6 +399,15 @@ export function VoiceOverlay({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
+  }, [kind])
+
+  // the saved card leaves the app usable, and it sits above everything for its Undo. A sheet that opens now (the
+  // add sheet from the +, an entry from Today) would come up under it, with keys under its Undo and Edit, so a
+  // tap meant for a 5 could take back what was just said. The person has moved on: the card goes
+  useEffect(() => {
+    if (kind !== 'saved') return
+    return onSheetOpen(() => close())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind])
 
   // Android's back button and Escape cancel (lib/backButton: one listener for the app, last opened goes first)
