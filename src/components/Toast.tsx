@@ -12,14 +12,14 @@ export function Toast() {
         {toast && !toast.leaving ? toast.message : ''}
       </span>
       {toast && (
-        <div className={`toast${toast.leaving ? ' toast-out' : ''}`} onClick={dismissToast} onPointerDown={(e) => e.preventDefault()}>
+        <div className={`toast${toast.leaving ? ' toast-out' : ''}`} onClick={() => dismissToast(true)} onPointerDown={(e) => e.preventDefault()}>
           <span>{toast.message}</span>
           {toast.undo && (
             <button
               className="toast-undo"
               onClick={() => {
                 toast.undo?.()
-                dismissToast()
+                dismissToast(true)
               }}
             >
               Undo

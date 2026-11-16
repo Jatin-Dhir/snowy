@@ -10,7 +10,9 @@ interface ToastState {
 interface UiContextValue {
   toast: ToastState | null
   showToast: (message: string, undo?: () => void) => void
-  dismissToast: () => void
+  /** Clears the toast, and any message waiting for it, before a sheet or the voice screen opens. `showNext` is for
+   * the toast's own taps: the person closed it, so a message that waited for it shows now. */
+  dismissToast: (showNext?: boolean) => void
 }
 
 const UiContext = createContext<UiContextValue | null>(null)
@@ -85,25 +87,51 @@ function once(run: () => void): () => void {
 export function UiProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastState | null>(null)
   const timers = useRef<number[]>([])
+  // An Undo on screen gives way only to a newer Undo. A plain message that comes meanwhile waits here (the newest
+  // one, as a newer message replaces an older one) and shows once the Undo has gone, so the Undo isn't lost early
+  const undoUp = useRef(false)
+  const waiting = useRef<string | null>(null)
 
   const clearTimers = () => {
     for (const t of timers.current) window.clearTimeout(t)
     timers.current = []
   }
 
-  const dismissToast = useCallback(() => {
+  // the toast slides away; once it's gone, a message that waited for it shows
+  const leave = (ms: number) => {
     clearTimers()
+    undoUp.current = false
     setToast((t) => (t ? { ...t, leaving: true } : null))
-    timers.current.push(window.setTimeout(() => setToast(null), 240))
+    timers.current.push(
+      window.setTimeout(() => {
+        const next = waiting.current
+        waiting.current = null
+        if (next === null) setToast(null)
+        else put(next)
+      }, ms)
+    )
+  }
+
+  const put = (message: string, undo?: () => void) => {
+    clearTimers()
+    undoUp.current = !!undo
+    setToast({ message, undo: undo && once(undo), leaving: false })
+    // a deleted thing stays one tap from coming back long enough to read, think, and reach for it
+    timers.current.push(window.setTimeout(() => leave(260), undo ? 6000 : 3000))
+  }
+
+  const dismissToast = useCallback((showNext = false) => {
+    if (!showNext) waiting.current = null
+    leave(240)
   }, [])
 
   const showToast = useCallback((message: string, undo?: () => void) => {
-    clearTimers()
-    setToast({ message, undo: undo && once(undo), leaving: false })
-    // a deleted thing stays one tap from coming back long enough to read, think, and reach for it
-    const shown = undo ? 6000 : 3000
-    timers.current.push(window.setTimeout(() => setToast((t) => (t ? { ...t, leaving: true } : null)), shown))
-    timers.current.push(window.setTimeout(() => setToast(null), shown + 260))
+    if (!undo && undoUp.current) {
+      waiting.current = message
+      return
+    }
+    if (!undo) waiting.current = null
+    put(message, undo)
   }, [])
 
   return <UiContext.Provider value={{ toast, showToast, dismissToast }}>{children}</UiContext.Provider>
