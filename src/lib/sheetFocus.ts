@@ -39,7 +39,12 @@ function swallowEcho(e: MouseEvent) {
     return
   }
   eatClick = 0
-  if (!quiet || now > quiet.until || Math.hypot(e.clientX - quiet.x, e.clientY - quiet.y) > ECHO_PX) return
+  if (!quiet || now > quiet.until) return
+  if (Math.hypot(e.clientX - quiet.x, e.clientY - quiet.y) > ECHO_PX) {
+    // a press somewhere else: the finger has moved on, so a press back on that spot is meant (Save sits where the + was)
+    quiet = null
+    return
+  }
   if (e.target instanceof Element && e.target.closest('[data-voice-anchor]')) return
   e.preventDefault()
   e.stopImmediatePropagation()
@@ -135,6 +140,9 @@ export function onSheetOpen(listener: () => void): () => void {
 export function holdFocus(el: HTMLElement, opener: HTMLElement | null): () => void {
   sheets.push(el)
   syncInert()
+  // a tap just opened it, over the spot that tap was on: a double tap's second tap would land in it (on the edit
+  // sheet's keypad, a digit added to the amount; on a tag, the entry re-tagged) or on its backdrop, which shuts it
+  quietWhereTapped()
   for (const listener of [...openListeners]) listener()
   // a field that focused itself on opening keeps it
   if (!el.contains(document.activeElement)) el.focus({ preventScroll: true })
