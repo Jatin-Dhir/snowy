@@ -593,9 +593,10 @@ select {
   white-space: nowrap;
 }
 
-/* a month read back (MonthSheet): the way to this month, beside the total. Its padding reaches for a finger
-   without making the line any taller */
-.link-btn.month-now {
+/* a link in a line of small words: the way back to this month beside a month's total (MonthSheet), "Change" beside
+   a budget (BudgetLine). Its padding reaches for a finger without making the line any taller */
+.link-btn.month-now,
+.link-btn.line-link {
   font-size: 12.5px;
   padding: 6px 2px;
   margin: -6px 0;

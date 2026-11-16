@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type Goal } from '../db/db'
+import { db, type Goal, type Txn } from '../db/db'
 import { addGoal, addToGoal, deleteGoal, restoreGoal, updateGoal } from '../db/goals'
 import { addTxn, recentTxns, txnsForMonth } from '../db/repo'
 import { byCategory, pace, projectMonth, sum } from '../db/stats'
@@ -13,6 +13,8 @@ import { Icon } from '../components/Icon'
 import { Sheet } from '../components/Sheet'
 import { TagManager } from '../components/TagManager'
 import { RecurringManager } from '../components/RecurringManager'
+import { TagEntriesSheet, type TagPick } from '../components/TagEntriesSheet'
+import { MonthSheet } from '../components/MonthSheet'
 import { haptic, useUi } from '../state/ui'
 
 function BudgetDialog({
@@ -211,7 +213,15 @@ function GoalDialog({
   )
 }
 
-export function Budgets({ currency, onOpenSettings }: { currency: string; onOpenSettings: () => void }) {
+export function Budgets({
+  currency,
+  onEdit,
+  onOpenSettings
+}: {
+  currency: string
+  onEdit: (t: Txn) => void
+  onOpenSettings: () => void
+}) {
   const { showToast } = useUi()
   const monthKey = currentMonthKey()
   const today = todayISO()
@@ -219,6 +229,9 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
   const [pickingCategory, setPickingCategory] = useState(false)
   const [manageTags, setManageTags] = useState(false)
   const [goalDialog, setGoalDialog] = useState<{ goal: Goal | null } | null>(null)
+  // a budget's card opens what made it up: a tag's entries, or the whole month's for the monthly budget
+  const [openTag, setOpenTag] = useState<TagPick | null>(null)
+  const [monthOpen, setMonthOpen] = useState(false)
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const budgets = useLiveQuery(() => db.budgets.toArray(), []) ?? []
@@ -262,6 +275,13 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
 
   const overallPace = overall ? pace(spent, overall.amountMinor, today) : null
 
+  // a tag's card opens what made it up: the quiet chevron Insights' rows have, close after the name
+  const opens = (
+    <span className="faint" aria-hidden="true" style={{ display: 'inline-flex', flexShrink: 0, marginLeft: -5 }}>
+      <Icon name="chevronRight" size={13} />
+    </span>
+  )
+
   return (
     <div className="screen">
       <div className="row-between">
@@ -280,10 +300,11 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
       </div>
 
       {overall && overallPace ? (
+        // what made the month: its entries day by day, where "Change" sets the amount
         <button
           className="card"
           style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left' }}
-          onClick={() => setDialog({ id: 'overall', title: 'Monthly budget', amount: overall.amountMinor })}
+          onClick={() => setMonthOpen(true)}
         >
           <div className="row-between budget-month-head">
             <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
@@ -320,6 +341,8 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
                 : `Last day of the month — ${formatMinor(spent - overall.amountMinor, currency)} over budget.`
               : `Day ${parseInt(today.slice(8, 10), 10)} of ${daysInMonth(monthKey)} — the tick is today. Projected ${formatMinor(projected, currency)}.`}
           </span>
+          {/* everything on the card is its name, with where it leads after it */}
+          <span className="sr-only">Show {monthLabel(monthKey)}'s entries</span>
         </button>
       ) : (
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -337,18 +360,22 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
         const catPace = pace(catSpend.get(cat.id) ?? 0, b.amountMinor, today)
         const left = b.amountMinor - catPace.spent
         return (
+          // what made it up: the tag's entries this month, where "Change" sets the amount
           <button
             key={b.id}
             className="card"
             style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left', borderRadius: 16, padding: '13px 18px' }}
-            onClick={() => setDialog({ id: b.id, title: `${cat.name} budget`, amount: b.amountMinor })}
+            onClick={() => setOpenTag({ id: cat.id, name: cat.name, color: cat.color })}
           >
-            <div className="row-between">
-              <span style={{ display: 'flex', alignItems: 'center', gap: 9, fontWeight: 600, fontSize: 15 }}>
-                <span style={{ width: 9, height: 9, borderRadius: 5, background: cat.color }} />
-                {cat.name}
+            {/* a long name and big figures don't fit side by side on a narrow phone: the figures drop under the name
+                rather than squeeze it, and the name keeps its end */}
+            <div className="row-between" style={{ flexWrap: 'wrap', rowGap: 4 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 9, fontWeight: 600, fontSize: 15, minWidth: 0 }}>
+                <span style={{ width: 9, height: 9, borderRadius: 5, background: cat.color, flexShrink: 0 }} />
+                <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{cat.name}</span>
+                {opens}
               </span>
-              <span style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ display: 'flex', alignItems: 'baseline', gap: 6, whiteSpace: 'nowrap', marginLeft: 'auto' }}>
                 <span className="mono" style={{ fontWeight: 600, fontSize: 15, color: stateText(catPace.state, 'var(--ink)') }}>
                   {formatMinor(catPace.spent, currency)}
                 </span>
@@ -363,6 +390,7 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
                 ? `${formatMinor(left, currency)} left${catPace.state === 'warn' ? ' · ahead of pace' : ' · on pace'}`
                 : `Over by ${formatMinor(-left, currency)} — it happens; next month resets`}
             </span>
+            <span className="sr-only">Show its entries</span>
           </button>
         )
       })}
@@ -445,6 +473,35 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
         </div>
       )}
 
+      {monthOpen && (
+        <MonthSheet
+          currency={currency}
+          onEdit={onEdit}
+          onEditBudget={() => overall && setDialog({ id: 'overall', title: 'Monthly budget', amount: overall.amountMinor })}
+          onClose={() => setMonthOpen(false)}
+        />
+      )}
+
+      {openTag && (
+        <TagEntriesSheet
+          tag={openTag}
+          monthKey={monthKey}
+          isCurrent
+          monthTxns={monthTxns}
+          monthSpent={spent}
+          budgetMinor={catBudgets.find((b) => b.id === openTag.id)?.amountMinor ?? null}
+          categories={categories}
+          currency={currency}
+          onEdit={onEdit}
+          onEditBudget={() => {
+            const amount = catBudgets.find((b) => b.id === openTag.id)?.amountMinor ?? null
+            setDialog({ id: openTag.id ?? '', title: `${openTag.name} budget`, amount })
+          }}
+          onClose={() => setOpenTag(null)}
+        />
+      )}
+
+      {/* "Change" in either sheet above opens this over it: a sheet that opens later lies on top */}
       {dialog && (
         <BudgetDialog
           title={dialog.title}

@@ -16,9 +16,10 @@ export interface TagPick {
 }
 
 /**
- * What's behind one of Insights' "Where it went" rows: that tag's spends in the month, by day, with the total,
- * how many and the usual size, and its budget when it has one. A tap opens an entry to change it; this stays
- * open underneath, so a run of mis-tagged entries can be fixed one after another and leave the list as they go.
+ * What's behind one of Insights' "Where it went" rows, or a tag's card in Budgets: that tag's spends in the month, by
+ * day, with the total, how many and the usual size, and its budget when it has one. A tap opens an entry to change
+ * it; this stays open underneath, so a run of mis-tagged entries can be fixed one after another and leave the list as
+ * they go. From Budgets the budget line also has "Change", for the amount.
  */
 export function TagEntriesSheet({
   tag,
@@ -30,6 +31,7 @@ export function TagEntriesSheet({
   categories,
   currency,
   onEdit,
+  onEditBudget,
   onClose
 }: {
   tag: TagPick
@@ -42,6 +44,8 @@ export function TagEntriesSheet({
   categories: Category[]
   currency: string
   onEdit: (t: Txn) => void
+  /** change the tag's budget: Budgets, where the budgets are set */
+  onEditBudget?: () => void
   onClose: () => void
 }) {
   const txns = useMemo(
@@ -81,7 +85,16 @@ export function TagEntriesSheet({
       </div>
 
       {budgetMinor !== null && budgetMinor > 0 && (
-        <BudgetLine spent={total} budgetMinor={budgetMinor} isCurrent={isCurrent} color={tag.color} owner="its" currency={currency} />
+        <BudgetLine
+          spent={total}
+          budgetMinor={budgetMinor}
+          isCurrent={isCurrent}
+          color={tag.color}
+          owner="its"
+          currency={currency}
+          onChange={onEditBudget}
+          changeLabel={`Change the ${tag.name} budget`}
+        />
       )}
 
       <DayList txns={txns} categories={categories} currency={currency} onEdit={onEdit} />

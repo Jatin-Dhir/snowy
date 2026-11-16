@@ -19,15 +19,19 @@ const NBSP = String.fromCharCode(160)
 /**
  * One month read back, day by day: what went out and in, each day's spend under its heading, and the month's total.
  * The arrows step through the months; "Back to November" comes back to now from any of them, and so does closing
- * it. A tap on an entry opens it to change it, and this stays open underneath.
+ * it. A tap on an entry opens it to change it, and this stays open underneath. Opened from Activity's header, and
+ * from the monthly budget's card in Budgets, where its budget line also has "Change".
  */
 export function MonthSheet({
   currency,
   onEdit,
+  onEditBudget,
   onClose
 }: {
   currency: string
   onEdit: (t: Txn) => void
+  /** change the monthly budget: Budgets, where the budgets are set */
+  onEditBudget?: () => void
   onClose: () => void
 }) {
   const nowKey = currentMonthKey()
@@ -126,7 +130,16 @@ export function MonthSheet({
 
       {/* not for a month with nothing in it, often one from before Taily: "₹50,000 under" would be no news */}
       {txns && count > 0 && budgetMinor !== null && (
-        <BudgetLine spent={spent} budgetMinor={budgetMinor} isCurrent={isCurrent} color="var(--pos)" owner="your" currency={currency} />
+        <BudgetLine
+          spent={spent}
+          budgetMinor={budgetMinor}
+          isCurrent={isCurrent}
+          color="var(--pos)"
+          owner="your"
+          currency={currency}
+          onChange={onEditBudget}
+          changeLabel="Change the monthly budget"
+        />
       )}
 
       {txns && count > 0 && (
