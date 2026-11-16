@@ -407,7 +407,12 @@ export function AddSheet({
   }
 
   return (
-    <Sheet open={open} onClose={onClose} label={isEdit ? 'Edit expense' : 'New expense'}>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      label={isEdit ? 'Edit expense' : 'New expense'}
+      className={`keypad-sheet add-sheet${summing ? ' summing' : ''}`}
+    >
         <div ref={head} className="row-between">
           {editEntry ? (
             <span className="label" style={{ letterSpacing: '0.14em' }}>Trip spend</span>
@@ -586,7 +591,7 @@ export function AddSheet({
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+            <div className="add-tags" style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               {/* every other tag, from the heading: as the chips' last one it sat scrolled out of sight on
                   most phones. On the narrowest it drops under the heading rather than squeeze it */}
               <div className="row-between" style={{ flexWrap: 'wrap', rowGap: 6 }}>

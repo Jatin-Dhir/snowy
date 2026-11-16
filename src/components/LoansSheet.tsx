@@ -206,7 +206,13 @@ export function LoansSheet({
   }
 
   return (
-    <Sheet open={open} onClose={onClose} label="Lent & borrowed" style={{ gap: adding ? 8 : 12 }}>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      label="Lent & borrowed"
+      className={adding ? 'keypad-sheet loan-sheet' : undefined}
+      style={{ rowGap: adding ? 8 : 12 }}
+    >
       <div className="row-between">
         {adding ? (
           <span className="seg">
@@ -363,7 +369,7 @@ export function LoansSheet({
       )}
 
       {adding && (
-        <div>
+        <div className="loan-keys">
           <div ref={amountRow} className="amount-display" style={{ padding: 0 }}>
             <span className="amount-cur" style={{ fontSize: 20 }}>{currencySymbol(currency)}</span>
             <span

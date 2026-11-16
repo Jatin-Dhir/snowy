@@ -2048,6 +2048,141 @@ button.tag-row:active {
   }
 }
 
+/* Shorter still: a small phone's browser, split screen, a phone on its side. Even with the fields box down to one
+   row the Add sheet didn't fit, and Save, pinned to its foot, lay over the bottom keys: a tap meant for 0 saved.
+   The keypad sheets now reach almost to the top, and their keys give up height with the screen, down to 40px */
+@media (max-height: 555px) {
+  .sheet.keypad-sheet {
+    max-height: calc(100dvh - 12px - env(safe-area-inset-top));
+  }
+  .keypad-sheet .numpad {
+    gap: 5px;
+    padding-top: 4px;
+  }
+  /* everything in the Add sheet but its keys takes 340px, a sum's line 24px more: the four rows share the rest */
+  .add-sheet .key {
+    height: clamp(40px, calc((100dvh - 340px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 4), 44px);
+  }
+  .add-sheet.summing .key {
+    height: clamp(40px, calc((100dvh - 364px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 4), 44px);
+  }
+  /* Save on one line, so the keys above it can count on its height */
+  .add-sheet .sheet-cta .btn {
+    height: 48px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Lent & borrowed: its form's fields above the amount give up room first (to two rows), then the same */
+  .loan-sheet .key {
+    height: clamp(40px, calc((100dvh - 327px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 4), 44px);
+  }
+  /* shorter than that (split screen): the keys stay put just above Save and the rest scrolls behind them, so no
+     key is ever under Save. Not while a field is typed in: the keyboard is up then, and the field needs the room */
+  .add-sheet:not(:has(input:focus)) {
+    scroll-padding-bottom: calc(280px + env(safe-area-inset-bottom));
+  }
+  .add-sheet:not(:has(input:focus)) > .numpad {
+    position: sticky;
+    bottom: 58px;
+    z-index: 3;
+    background: var(--sheet-bg);
+  }
+  .loan-sheet:not(:has(input:focus)) {
+    scroll-padding-bottom: calc(320px + env(safe-area-inset-bottom));
+  }
+  .loan-sheet:not(:has(input:focus)) > .loan-keys {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    background: var(--sheet-bg);
+  }
+}
+
+/* a phone on its side: the keys and Save stand beside the amount and tags rather than under them */
+@media (max-height: 555px) and (min-width: 560px) {
+  .sheet.add-sheet,
+  .sheet.loan-sheet {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(0, 1fr);
+    column-gap: 24px;
+    align-content: start;
+    max-width: 640px;
+    /* clear of a side navigation bar or camera cutout */
+    left: env(safe-area-inset-left);
+    right: env(safe-area-inset-right);
+  }
+  /* Save in a row of its own under the keys, however tall its label: the tags reach down beside it */
+  .sheet.add-sheet {
+    grid-template-rows: auto auto auto auto 1fr auto auto;
+    grid-template-areas:
+      'grab grab'
+      'head keys'
+      'sum keys'
+      'amount keys'
+      'fields keys'
+      'tags keys'
+      'tags cta';
+  }
+  .add-sheet > .sheet-grab,
+  .loan-sheet > .sheet-grab {
+    grid-area: grab;
+  }
+  .add-sheet > .row-between,
+  .loan-sheet > .row-between {
+    grid-area: head;
+  }
+  .add-sheet > .amount-sum {
+    grid-area: sum;
+  }
+  .add-sheet > .amount-display {
+    grid-area: amount;
+  }
+  .add-sheet > .sheet-fields,
+  .loan-sheet > .sheet-fields {
+    grid-area: fields;
+  }
+  .add-sheet > .add-tags {
+    grid-area: tags;
+    align-self: end;
+  }
+  .add-sheet > .numpad,
+  .loan-sheet .loan-keys > .numpad {
+    grid-area: keys;
+    align-self: start;
+  }
+  .add-sheet > .sheet-cta,
+  .loan-sheet .loan-keys > .sheet-cta {
+    grid-area: cta;
+    align-self: end;
+  }
+  /* Lent & borrowed: the keys and Save beside who and what for, the amount under those, next to Save */
+  .sheet.loan-sheet {
+    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-areas:
+      'grab grab'
+      'head keys'
+      'fields keys'
+      'amount keys'
+      'amount cta';
+  }
+  .loan-sheet > .loan-keys {
+    display: contents;
+  }
+  .loan-sheet .loan-keys > .amount-display {
+    grid-area: amount;
+    align-self: end;
+  }
+  /* only the keys' column counts now: 123px besides the keys in Add, 139px in Lent & borrowed (its rows' gaps) */
+  .add-sheet .key,
+  .add-sheet.summing .key {
+    height: clamp(40px, calc((100dvh - 123px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 4), 44px);
+  }
+  .loan-sheet .key {
+    height: clamp(40px, calc((100dvh - 139px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 4), 44px);
+  }
+}
+
 /* segmented spent/received toggle */
 .seg {
   display: inline-flex;

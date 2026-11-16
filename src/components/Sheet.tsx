@@ -18,12 +18,15 @@ export function Sheet({
   open,
   onClose,
   label,
+  className,
   style,
   children
 }: {
   open: boolean
   onClose: () => void
   label: string
+  /** added to the sheet's own class, for a sheet with a layout of its own (the keypad sheets) */
+  className?: string
   style?: CSSProperties
   children: ReactNode
 }) {
@@ -130,7 +133,7 @@ export function Sheet({
       <div className={`scrim${out ? ' scrim-out' : ''}`} onClick={onClose} />
       <div
         ref={sheetEl}
-        className={`sheet${out ? ' sheet-out' : ''}`}
+        className={`sheet${className ? ` ${className}` : ''}${out ? ' sheet-out' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={label}
