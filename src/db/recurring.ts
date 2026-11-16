@@ -1,6 +1,6 @@
 import { db, type Rule } from './db'
 import { addTxn } from './repo'
-import { fromISO, nextMonthlyOccurrence, todayISO } from '../lib/dates'
+import { daysInMonth, fromISO, nextMonthlyOccurrence, todayISO } from '../lib/dates'
 
 /** Logs every due recurring rule (catching up missed months), advances next runs. */
 export async function runDueRules(currency: string): Promise<{ name: string; amountMinor: number }[]> {
@@ -74,21 +74,23 @@ function addDays(iso: string, days: number): string {
   return `${y}-${m}-${day}`
 }
 
-/** Edit a rule's facts; a changed day recomputes the next run, a changed amount clears its conversion base. */
+/**
+ * Edit a rule's facts; a changed amount clears its conversion base. A changed day moves the payment the rule is
+ * waiting to log to the new day of the same month: this month's once it's logged is next month's (rent logged on the
+ * 1st and moved to the 20th isn't logged again on the 20th), and one still to come stays this month's even when its
+ * new day has gone (an EMI moved from the 25th to the 10th is logged as the 10th's, not dropped for the month).
+ */
 export async function updateRule(
   id: string,
   patch: { name: string; amountMinor: number; categoryId: string | null; dayOfMonth: number }
 ): Promise<void> {
   const rule = await db.rules.get(id)
   if (!rule) return
-  const today = todayISO()
-  const dayNow = parseInt(today.slice(8, 10), 10)
+  const month = rule.nextRunISO.slice(0, 7)
   const nextRunISO =
     patch.dayOfMonth === rule.dayOfMonth
       ? rule.nextRunISO
-      : patch.dayOfMonth >= dayNow
-        ? nextMonthlyOccurrence(patch.dayOfMonth, addDays(today, -1))
-        : nextMonthlyOccurrence(patch.dayOfMonth, today)
+      : `${month}-${String(Math.min(Math.max(1, patch.dayOfMonth), daysInMonth(month))).padStart(2, '0')}`
   const clearBase = patch.amountMinor !== rule.amountMinor ? { baseMinor: null, baseCurrency: null } : {}
   await db.rules.update(id, { ...patch, ...clearBase, nextRunISO })
 }
