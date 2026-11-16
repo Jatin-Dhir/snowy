@@ -18,6 +18,7 @@ import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
 import { guessAccount, weeklyAnomalies } from '../lib/smart'
 import { notifyAlerts, syncLoanReminders } from '../lib/notify'
+import { currentDbName, dbNameFor } from '../lib/profiles'
 import { LoansSheet } from '../components/LoansSheet'
 import { TripCard, TripsRow } from '../components/TripCard'
 import { useAnimatedNumber } from '../lib/useAnimatedNumber'
@@ -190,6 +191,10 @@ export function Home({
   const alerts = useMemo(() => {
     const catSpend = byCategory(monthTxns)
     const list: { key: string; level: 'over' | 'warn' | 'info'; text: string }[] = []
+    // dismissed and already-notified alerts are remembered per profile: every profile has an "overall"
+    // budget, and one being over and dismissed says nothing about another's (the first profile's keys
+    // stay as they were, so nothing it already dismissed or was told comes back)
+    const scope = currentDbName() === dbNameFor('main') ? '' : `${currentDbName()}|`
     for (const b of budgets) {
       const isOverall = b.id === 'overall'
       const spentB = isOverall ? monthSpent : (catSpend.get(b.id) ?? 0)
@@ -197,13 +202,13 @@ export function Home({
       const frac = b.amountMinor > 0 ? spentB / b.amountMinor : 0
       if (frac >= 1) {
         list.push({
-          key: `${b.id}|${monthKey}|over`,
+          key: `${scope}${b.id}|${monthKey}|over`,
           level: 'over',
           text: `${name} is over by ${formatMinor(spentB - b.amountMinor, currency)} — be careful.`
         })
       } else if (frac >= 0.85) {
         list.push({
-          key: `${b.id}|${monthKey}|warn`,
+          key: `${scope}${b.id}|${monthKey}|warn`,
           level: 'warn',
           text: `${name} is at ${Math.round(frac * 100)}% — ${formatMinor(b.amountMinor - spentB, currency)} left.`
         })
@@ -211,7 +216,7 @@ export function Home({
     }
     for (const a of weeklyAnomalies(recent, categories, today)) {
       list.push({
-        key: `anom|${a.categoryId}|${weekDaysOf(today)[0]}`,
+        key: `${scope}anom|${a.categoryId}|${weekDaysOf(today)[0]}`,
         level: 'info',
         text: `${a.name} is ${a.ratio.toFixed(1)}× your usual pace this week.`
       })
