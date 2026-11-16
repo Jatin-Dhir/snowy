@@ -1,5 +1,3 @@
-const DAY_MS = 86400000
-
 // written out rather than asked of the locale: en-IN says "Sept" beside "Aug", and older
 // Android WebViews disagree with newer ones. Every short date reads the same on every phone
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -78,10 +76,10 @@ export function fullDate(iso: string): string {
 
 /** Monday-started week containing `iso`, as 7 ISO dates. */
 export function weekDaysOf(iso: string): string[] {
-  const d = fromISO(iso)
-  const shift = (d.getDay() + 6) % 7 // Mon=0
-  const mon = new Date(d.getTime() - shift * DAY_MS)
-  return Array.from({ length: 7 }, (_, i) => toISO(new Date(mon.getTime() + i * DAY_MS)))
+  const shift = (fromISO(iso).getDay() + 6) % 7 // Mon=0
+  // in calendar days, not 24-hour steps: where the clocks change midweek a day is 23 or 25 hours long
+  const mon = addDaysISO(iso, -shift)
+  return Array.from({ length: 7 }, (_, i) => addDaysISO(mon, i))
 }
 
 /** "8:10 pm", the way a phone in India shows the time */
