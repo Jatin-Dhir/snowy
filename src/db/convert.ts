@@ -99,3 +99,24 @@ export async function convertEverything(rate: number, oldCurrency: string, newCu
   })
   return count
 }
+
+/**
+ * "Just switch the symbol": every number stays as it is and is now in the new currency, the entries
+ * and records that carry a currency of their own included, so a row never shows another symbol than
+ * the totals beside it. That makes today's numbers the facts, so an original kept from an earlier
+ * conversion no longer describes anything: a later conversion starts from what's here now.
+ */
+export async function relabelEverything(newCurrency: string): Promise<void> {
+  const fresh = { baseMinor: null, baseCurrency: null }
+  await db.transaction('rw', [db.txns, db.budgets, db.rules, db.loans, db.goals, db.accounts, db.trips, db.tripEntries, db.tripPayments], async () => {
+    await db.txns.toCollection().modify({ ...fresh, currency: newCurrency })
+    await db.loans.toCollection().modify({ ...fresh, currency: newCurrency })
+    await db.tripEntries.toCollection().modify({ ...fresh, currency: newCurrency })
+    await db.tripPayments.toCollection().modify({ ...fresh, currency: newCurrency })
+    await db.budgets.toCollection().modify(fresh)
+    await db.rules.toCollection().modify(fresh)
+    await db.goals.toCollection().modify({ baseTargetMinor: null, baseSavedMinor: null, baseCurrency: null })
+    await db.trips.toCollection().modify({ baseBudgetMinor: null, baseCurrency: null })
+    await db.accounts.toCollection().modify({ baseOpeningMinor: null, baseCurrency: null })
+  })
+}

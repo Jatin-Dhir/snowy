@@ -8,7 +8,7 @@ import { hasPro, openProSheet, PRO_FOR_SALE, useProState } from '../lib/pro'
 import type { SharedFile } from '../lib/shareIntent'
 import { CURRENCIES, formatMinor } from '../lib/money'
 import { fetchRate, type RateInfo } from '../lib/rates'
-import { convertEverything } from '../db/convert'
+import { convertEverything, relabelEverything } from '../db/convert'
 import { APP_VERSION, checkForUpdate, type UpdateCheck } from '../lib/updater'
 import { PRIVACY_URL, SELF_UPDATE } from '../lib/distribution'
 import { applyCustomAccent, SPECIAL_THEMES } from '../lib/theme'
@@ -427,6 +427,7 @@ export function SettingsSheet({
         haptic('success')
         showToast(`Converted ${n} ${n === 1 ? 'entry' : 'entries'} to ${code}`)
       } else {
+        await relabelEverything(code)
         await saveSettings({ currency: code })
         haptic('success')
         showToast(`Switched to ${code} — numbers unchanged`)
