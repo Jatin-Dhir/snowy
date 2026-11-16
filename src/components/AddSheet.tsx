@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Category, type TripEntry, type Txn } from '../db/db'
@@ -14,7 +14,7 @@ import {
   updateTripEntry,
   type EntryInput
 } from '../db/trips'
-import { formatEntry, currencySymbol, formatMinor } from '../lib/money'
+import { formatEntry, formatPlain, currencySymbol, formatMinor, entryToMinor } from '../lib/money'
 import { guessAccount, guessCategory } from '../lib/smart'
 import type { ParsedSpeech } from '../lib/parseSpeech'
 import { useAmountEntry } from '../lib/useAmountEntry'
@@ -134,8 +134,24 @@ export function AddSheet({
   }, [recent, categories, kind, editTxn, editEntry, draft])
 
   const isEdit = editTxn !== null || editEntry !== null
+  // the whole sum when there's a + in it (120 + 45 saves 165)
   const amountMinor = amt.minor
   const canSave = amountMinor > 0
+  const summing = amt.terms.length > 0
+  // what a screen reader hears as a + is pressed: the parts are on screen only
+  const [sumSaid, setSumSaid] = useState('')
+
+  // The sum's line takes a little height. On a short phone the fields box has none left to give, and the keys would
+  // slide under Save, where a tap meant for 0 saves: the sheet scrolls up just enough to keep them clear
+  useLayoutEffect(() => {
+    if (!summing) return
+    const sheet = head.current?.closest<HTMLElement>('.sheet')
+    const keys = sheet?.querySelector('.numpad')
+    const cta = sheet?.querySelector('.sheet-cta')
+    if (!sheet || !keys || !cta) return
+    const over = keys.getBoundingClientRect().bottom - cta.getBoundingClientRect().top
+    if (over > 0) sheet.scrollTop += Math.ceil(over)
+  }, [summing])
   // before any amount is typed, the tag row (no use yet) offers those instead: one tap logs it again
   const showRepeats = !isEdit && !canSave && repeats.length > 0
   const everyone = trip?.people.map((p) => p.id) ?? []
@@ -185,6 +201,7 @@ export function AddSheet({
     setPickAccount(false)
     setManageTags(false)
     setNewAccountName('')
+    setSumSaid('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editTxn, editEntry, draft])
 
@@ -399,15 +416,37 @@ export function AddSheet({
           </div>
         </div>
 
+        {/* a sum being typed: its parts above the amount, which is their total. The part being typed is in ink */}
+        {summing && (
+          <div className="amount-sum" aria-hidden="true">
+            <span className="amount-sum-line">
+              {[...(amt.terms.length > 2 ? ['…'] : []), ...amt.terms.slice(-2).map((t) => formatEntry(t.r, t.p, currency))].map(
+                (part, i) => (
+                  <span key={i} className="amount-sum-part">
+                    {part}
+                    <span className="amount-sum-op">+</span>
+                  </span>
+                )
+              )}
+              {(amt.entry.r !== '' || amt.entry.p !== null) && (
+                <span className="amount-sum-live">{formatEntry(amt.entry.r, amt.entry.p, currency)}</span>
+              )}
+            </span>
+          </div>
+        )}
+        <span className="sr-only" role="status">
+          {summing ? sumSaid : ''}
+        </span>
+
         <div className="amount-display">
           <span className="amount-cur" style={kind === 'in' ? { color: 'var(--pos-text)' } : undefined}>
             {kind === 'in' ? '+' : ''}{currencySymbol(currency)}
           </span>
           <span
-            key={`${amt.entry.r}.${amt.entry.p ?? ''}`}
+            key={summing ? `sum ${amountMinor}` : `${amt.entry.r}.${amt.entry.p ?? ''}`}
             className={`amount-num amount-pop${canSave ? '' : ' zero'}`}
           >
-            {formatEntry(amt.entry.r, amt.entry.p, currency)}
+            {summing ? formatPlain(amountMinor, currency) : formatEntry(amt.entry.r, amt.entry.p, currency)}
           </span>
           <span className="caret" />
         </div>
@@ -550,7 +589,17 @@ export function AddSheet({
               <div className="chip-row">{showRepeats ? repeats.map(againChip) : suggested.map((c) => chip(c))}</div>
             </div>
 
-            <NumPad onDigit={amt.digit} onDot={amt.dot} onBackspace={amt.backspace} />
+            <NumPad
+              onDigit={amt.digit}
+              onDot={amt.dot}
+              onPlus={() => {
+                if (entryToMinor(amt.entry.r, amt.entry.p) <= 0) return
+                amt.plus()
+                setSumSaid(`Plus. ${formatMinor(amountMinor, currency)} so far`)
+              }}
+              plusReady={entryToMinor(amt.entry.r, amt.entry.p) > 0}
+              onBackspace={amt.backspace}
+            />
 
             <div className="sheet-cta">
               {isEdit ? (

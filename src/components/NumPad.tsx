@@ -13,6 +13,8 @@ function Key({ fire, ...button }: ButtonHTMLAttributes<HTMLButtonElement> & { fi
       {...button}
       onPointerDown={(e) => {
         e.preventDefault()
+        // a disabled key still hears a pointer in some browsers: it does nothing
+        if (button.disabled) return
         firedOnDown.current = true
         fire()
         button.onPointerDown?.(e)
@@ -37,11 +39,17 @@ function Key({ fire, ...button }: ButtonHTMLAttributes<HTMLButtonElement> & { fi
 export function NumPad({
   onDigit,
   onDot,
+  onPlus,
+  plusReady = true,
   onBackspace
 }: {
   onDigit: (d: string) => void
   /** Without it (a PIN) the key's corner of the grid is left empty. */
   onDot?: () => void
+  /** A sum (the add sheet): the decimal point shares its corner with a +, and the keyboard's + adds too. */
+  onPlus?: () => void
+  /** whether there's an amount typed for the + to add yet */
+  plusReady?: boolean
   onBackspace: () => void
 }) {
   const pad = useRef<HTMLDivElement>(null)
@@ -65,6 +73,7 @@ export function NumPad({
       else if (e.repeat) return
       else if (e.key >= '0' && e.key <= '9') onDigit(e.key)
       else if (e.key === '.') onDot?.()
+      else if (e.key === '+') onPlus?.()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -77,7 +86,25 @@ export function NumPad({
           {d}
         </Key>
       ))}
-      {onDot ? (
+      {onDot && onPlus ? (
+        // the least used key gives up half its room: the point and a + share the corner, and no other key moves
+        <div className="key-pair">
+          <Key aria-label="Decimal point" fire={onDot}>
+            .
+          </Key>
+          <Key
+            aria-label="Plus"
+            // not `disabled`: pressed from a keyboard, the + empties the part it adds, and a disabled key would drop
+            // the focus with it. It just does nothing until there's an amount
+            aria-disabled={!plusReady}
+            fire={() => {
+              if (plusReady) onPlus()
+            }}
+          >
+            <Icon name="plus" size={18} strokeWidth={2.4} />
+          </Key>
+        </div>
+      ) : onDot ? (
         <Key aria-label="Decimal point" fire={onDot}>
           .
         </Key>

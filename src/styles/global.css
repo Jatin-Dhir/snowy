@@ -1667,10 +1667,76 @@ button.tag-row:active {
   transition-duration: 0ms, 0ms;
 }
 
+/* the add sheet's corner: the decimal point and a + for sums, two keys in one key's place */
+.key-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+/* the + before there's an amount to add to: dimmed, and a press doesn't sink it */
+.key[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.key[aria-disabled='true']:active {
+  box-shadow: var(--btn-shadow);
+  transform: none;
+}
+
+/* a sum being typed (120 + 45): its parts over the amount, which is their total. Into the amount's own top
+   padding a little, so the sheet grows by less. Centred while it fits; a line too long for the phone is cut at its
+   start, never at the part being typed (laid out from the right, the line's margins centre it until there's no room) */
+.amount-sum {
+  display: flex;
+  flex-direction: row-reverse;
+  padding-top: 10px;
+  margin-bottom: -6px;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  /* a short phone's sheet takes its room from the fields box, never from this line */
+  flex-shrink: 0;
+  animation: sum-in 180ms var(--ease-soft);
+}
+
+.amount-sum-line {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
+.amount-sum-part {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.amount-sum-live {
+  color: var(--ink);
+}
+
+@keyframes sum-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
 /* short phones: the amount and the keys give up a little, so the fields above the keys keep more room */
 @media (max-height: 680px) {
   .amount-display {
     padding-top: 8px;
+  }
+  .amount-sum {
+    padding-top: 6px;
+    margin-bottom: -4px;
   }
   .numpad {
     gap: 8px;
@@ -1690,6 +1756,10 @@ button.tag-row:active {
   }
   .amount-display {
     padding-top: 2px;
+  }
+  .amount-sum {
+    padding-top: 4px;
+    margin-bottom: 0;
   }
   .numpad {
     gap: 6px;

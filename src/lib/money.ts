@@ -66,6 +66,12 @@ export function formatEntry(rupees: string, paise: string | null, currency = 'IN
   return paise === null ? grouped : `${grouped}.${paise}`
 }
 
+/** An amount the way the keypad shows it, without the symbol: "1,28,406" or "165.50". */
+export function formatPlain(minor: number, currency = 'INR'): string {
+  const e = minorToEntry(minor)
+  return formatEntry(e.rupees, e.paise, currency)
+}
+
 export function entryToMinor(rupees: string, paise: string | null): number {
   const r = parseInt(rupees || '0', 10) || 0
   const p = paise ? parseInt(paise.padEnd(2, '0').slice(0, 2), 10) || 0 : 0
