@@ -54,11 +54,16 @@ export function TabBar({
   // which shut the sheet it had just opened, or the voice mic, which ended listening. That click is the +'s,
   // and so is a double tap's second tap, which typed a digit on the keypad sliding up under it. For a moment,
   // presses and clicks where the finger lifted are swallowed before anything sees them. A tap anywhere else,
-  // the + itself once nothing covers it, and a keyboard's press of the + go through as always.
+  // the + itself once nothing covers it, and a keyboard's press of the + go through as always. A press somewhere
+  // else also ends it: after a key or a tag, a press where the + was is meant, and Save sits right there.
   useEffect(() => {
     function swallow(e: MouseEvent) {
       const at = liftAt.current
-      if (!at || performance.now() - pointerDoneAt.current > 800 || Math.hypot(e.clientX - at.x, e.clientY - at.y) > DRIFT_PX) return
+      if (!at || performance.now() - pointerDoneAt.current > 800) return
+      if (Math.hypot(e.clientX - at.x, e.clientY - at.y) > DRIFT_PX) {
+        if (e.type === 'pointerdown') liftAt.current = null
+        return
+      }
       if (e.target instanceof Element && e.target.closest('[data-voice-anchor]')) return
       e.preventDefault()
       e.stopPropagation()
