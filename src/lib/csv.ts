@@ -120,19 +120,19 @@ export const KNOWN_HEADER_WORDS: Set<string> = new Set(Object.keys(HEADER_ALIASE
 
 function parseDate(raw: string): string | null {
   const v = raw.trim()
+  let y: number, mo: number, d: number
   let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(v)
   if (m) {
-    const [, y, mo, d] = m
-    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
+    ;[y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])]
+  } else if ((m = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/.exec(v))) {
+    // Indian/European day-first: 23/08/2026 or 23-08-2026
+    ;[d, mo, y] = [Number(m[1]), Number(m[2]), Number(m[3])]
+  } else {
+    return null
   }
-  // Indian/European day-first: 23/08/2026 or 23-08-2026
-  m = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/.exec(v)
-  if (m) {
-    const [, d, mo, y] = m
-    if (parseInt(mo, 10) > 12) return null
-    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
-  }
-  return null
+  // a day the calendar doesn't have (31/02, month 13) is a misread: as an entry, no month would ever show it
+  if (mo < 1 || mo > 12 || d < 1 || d > new Date(y, mo, 0).getDate()) return null
+  return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
 function parseAmount(raw: string): number | null {
@@ -257,10 +257,12 @@ export function planImportFromGrid(
       accountName = accRaw
     }
 
+    // a time that can't be (25:70) means noon, like no time: an entry without a real moment sorts nowhere
     const time = /^(\d{1,2}):(\d{2})/.exec(cell('time'))
-    const ts = time
-      ? new Date(`${dateISO}T${time[1].padStart(2, '0')}:${time[2]}:00`).getTime()
-      : new Date(`${dateISO}T12:00:00`).getTime()
+    const ts =
+      time && Number(time[1]) < 24 && Number(time[2]) < 60
+        ? new Date(`${dateISO}T${time[1].padStart(2, '0')}:${time[2]}:00`).getTime()
+        : new Date(`${dateISO}T12:00:00`).getTime()
 
     txns.push({
       id: id || crypto.randomUUID(),
