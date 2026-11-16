@@ -321,6 +321,8 @@ export function AddSheet({
     if (goesInTrip && trip) {
       // an expense that turned out to be for the group: it moves into the trip whole
       await addTripEntry(trip, tripInput(selectedCat, dateISO === editTxn.dateISO ? editTxn.ts : new Date(dateISO + 'T12:00:00').getTime()))
+      // it leaves your own entries, and what it held in a goal leaves the goal with it
+      await softDeleteTxn(editTxn.id)
       await removeTxnPermanently(editTxn.id)
       haptic('success')
       showToast(`Moved into ${trip.name}`)

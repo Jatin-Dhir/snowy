@@ -38,13 +38,28 @@ export async function addTxn(input: NewTxn): Promise<Txn> {
 }
 
 export async function updateTxn(id: string, patch: Partial<Txn>): Promise<void> {
-  // a hand-edited amount is a new fact in the current currency — the stored
-  // pre-conversion original no longer describes it. The edit sheet sends the
-  // amount back with every save, so only a different one counts
-  const was = await db.txns.get(id)
-  const changed = patch.amountMinor !== undefined && patch.amountMinor !== was?.amountMinor
-  const clearBase = changed ? { baseMinor: null, baseCurrency: null } : {}
-  await db.txns.update(id, { ...patch, ...clearBase, updatedAt: Date.now() })
+  await db.transaction('rw', [db.txns, db.goals], async () => {
+    // a hand-edited amount is a new fact in the current currency — the stored
+    // pre-conversion original no longer describes it. The edit sheet sends the
+    // amount back with every save, so only a different one counts
+    const was = await db.txns.get(id)
+    const changed = patch.amountMinor !== undefined && patch.amountMinor !== was?.amountMinor
+    const clearBase = changed ? { baseMinor: null, baseCurrency: null } : {}
+    // the goal follows its entry: a new amount moves it by the difference, and a new tag or direction is the entry
+    // taken out and put in again. An older entry found its goal by its note; it keeps that goal from now on, so a
+    // new note can't carry its money off
+    const goal = was ? await goalOf(was) : undefined
+    const pin = was && was.goalId === undefined ? { goalId: goal?.id ?? null } : {}
+    await db.txns.update(id, { ...patch, ...clearBase, ...pin, updatedAt: Date.now() })
+    const delta = was && goal ? heldInGoal({ ...was, ...patch }) - heldInGoal(was) : 0
+    if (goal && delta) await moveGoal(goal, delta)
+  })
+}
+
+/** What a live entry holds in its goal: spent on the savings tag, its amount; received there, minus it; else nothing */
+function heldInGoal(t: Pick<Txn, 'categoryId' | 'kind' | 'amountMinor' | 'deleted'>): number {
+  if (t.deleted || t.categoryId !== 'savings') return 0
+  return (t.kind ?? 'out') === 'out' ? t.amountMinor : -t.amountMinor
 }
 
 /**
@@ -76,11 +91,10 @@ export async function softDeleteTxn(id: string): Promise<void> {
     const t = await db.txns.get(id)
     await db.txns.update(id, { deleted: 1, updatedAt: Date.now() })
     if (t?.tripEntryId) await db.tripEntries.update(t.tripEntryId, { deleted: 1, updatedAt: Date.now() })
-    const goal = t && !t.deleted ? await goalOf(t) : undefined
-    if (t && goal) {
-      const added = (t.kind ?? 'out') === 'out' ? t.amountMinor : -t.amountMinor
-      goalUndo.set(id, { goalId: goal.id, deltaMinor: await moveGoal(goal, -added) })
-    }
+    // off the savings tag it gave its money back when it was moved off
+    const added = t ? heldInGoal(t) : 0
+    const goal = t && added ? await goalOf(t) : undefined
+    if (goal) goalUndo.set(id, { goalId: goal.id, deltaMinor: await moveGoal(goal, -added) })
   })
 }
 
