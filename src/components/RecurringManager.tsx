@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Rule } from '../db/db'
-import { addRule, deleteRule, restoreRule, togglePauseRule, updateRule } from '../db/recurring'
+import { addRule, deleteRule, loggedNote, restoreRule, runDueRules, togglePauseRule, updateRule } from '../db/recurring'
 import { hasPro } from '../lib/pro'
 import { formatMinor } from '../lib/money'
 import { todayISO } from '../lib/dates'
@@ -58,15 +58,24 @@ export function RecurringManager({ currency }: { currency: string }) {
     setFormOpen('edit')
   }
 
+  /**
+   * A payment whose day has come (a rule added on its day, moved to a day gone this month, or resumed with its run
+   * come) is logged now, the way start-up logs it, and said as start-up says it; otherwise `said` is the word. Left
+   * for the next start, Home's Today list went without it while the widget counted it already
+   */
+  async function logDue(said: string) {
+    showToast(loggedNote(await runDueRules(currency), currency) ?? said)
+  }
+
   async function saveForm() {
     if (!canSave) return
     if (formOpen === 'edit' && active) {
       await updateRule(active.id, { name: form.name.trim(), amountMinor: minor, categoryId: form.cat, dayOfMonth: dayNum })
-      showToast('Updated')
+      await logDue('Updated')
       setActive(null)
     } else {
       await addRule({ name: form.name.trim(), amountMinor: minor, categoryId: form.cat, dayOfMonth: dayNum })
-      showToast(`${form.name.trim()} logs itself on day ${dayNum} every month`)
+      await logDue(`${form.name.trim()} logs itself on day ${dayNum} every month`)
     }
     haptic('success')
     setFormOpen(null)
@@ -149,8 +158,13 @@ export function RecurringManager({ currency }: { currency: string }) {
           <button
             className="btn ghost"
             onClick={() => {
-              void togglePauseRule(active.id)
-              showToast(active.paused ? `${active.name} is back on` : `${active.name} paused — nothing logs until you resume`)
+              const { id, name, paused } = active
+              if (paused) {
+                void togglePauseRule(id).then(() => logDue(`${name} is back on`))
+              } else {
+                void togglePauseRule(id)
+                showToast(`${name} paused — nothing logs until you resume`)
+              }
               setActive(null)
             }}
           >

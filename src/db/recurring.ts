@@ -1,6 +1,7 @@
 import { db, type Rule } from './db'
 import { addTxn } from './repo'
 import { daysInMonth, fromISO, nextMonthlyOccurrence, todayISO } from '../lib/dates'
+import { formatMinor } from '../lib/money'
 
 /** Logs every due recurring rule (catching up missed months), advances next runs. */
 export async function runDueRules(currency: string): Promise<{ name: string; amountMinor: number }[]> {
@@ -37,6 +38,13 @@ export async function runDueRules(currency: string): Promise<{ name: string; amo
     }
     return logged
   })
+}
+
+/** What Taily says when it logs payments that fell due: one by name, several by count; null when it logged none. */
+export function loggedNote(logged: { name: string; amountMinor: number }[], currency: string): string | null {
+  if (logged.length === 1) return `Logged ${logged[0].name} — ${formatMinor(logged[0].amountMinor, currency)} (recurring)`
+  if (logged.length > 1) return `Logged ${logged.length} recurring expenses`
+  return null
 }
 
 export async function addRule(input: {

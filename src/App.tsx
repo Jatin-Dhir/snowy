@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, DEFAULT_SETTINGS, type Settings, type TripEntry, type Txn } from './db/db'
 import { ensureSeeded } from './db/seed'
-import { runDueRules } from './db/recurring'
-import { formatMinor } from './lib/money'
+import { loggedNote, runDueRules } from './db/recurring'
 import { todayISO } from './lib/dates'
 import { checkForUpdate, type UpdateInfo } from './lib/updater'
 import { DISTRIBUTION } from './lib/distribution'
@@ -78,12 +77,8 @@ export default function App() {
 
   /** Logs the monthly payments that have fallen due, and says so. */
   async function logDueRules(currency: string) {
-    const logged = await runDueRules(currency)
-    if (logged.length === 1) {
-      showToast(`Logged ${logged[0].name} — ${formatMinor(logged[0].amountMinor, currency)} (recurring)`)
-    } else if (logged.length > 1) {
-      showToast(`Logged ${logged.length} recurring expenses`)
-    }
+    const note = loggedNote(await runDueRules(currency), currency)
+    if (note) showToast(note)
   }
 
   // The day on screen. Android keeps Taily alive in the background, often overnight, so the day can change
