@@ -234,8 +234,9 @@ export function planImportFromGrid(
     }
     if (id) seenIds.add(id)
 
-    const kindRaw = cell('kind').toLowerCase()
-    if (kindRaw) kind = ['in', 'income', 'received', 'credit', 'deposit'].includes(kindRaw) ? 'in' : 'out'
+    // statements mark the direction "Cr" / "Dr" as often as they spell it out
+    const kindRaw = cell('kind').toLowerCase().replace(/\.$/, '')
+    if (kindRaw) kind = ['in', 'income', 'received', 'credit', 'credited', 'deposit', 'cr'].includes(kindRaw) ? 'in' : 'out'
     else if (hasNegatives) kind = amountRaw < 0 ? 'out' : 'in'
 
     const catRaw = cell('category')
