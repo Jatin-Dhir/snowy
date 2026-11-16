@@ -4,35 +4,39 @@ import { fromISO, nextMonthlyOccurrence, todayISO } from '../lib/dates'
 
 /** Logs every due recurring rule (catching up missed months), advances next runs. */
 export async function runDueRules(currency: string): Promise<{ name: string; amountMinor: number }[]> {
-  const today = todayISO()
-  const due = await db.rules.where('nextRunISO').belowOrEqual(today).toArray()
-  const logged: { name: string; amountMinor: number }[] = []
+  // one transaction: two starts at once (two tabs of the web app) queue up, and the second finds
+  // the first's next runs already moved on, rather than logging every payment a second time
+  return db.transaction('rw', db.rules, db.txns, async () => {
+    const today = todayISO()
+    const due = await db.rules.where('nextRunISO').belowOrEqual(today).toArray()
+    const logged: { name: string; amountMinor: number }[] = []
 
-  for (const rule of due) {
-    if (rule.paused) {
-      await db.rules.update(rule.id, { nextRunISO: nextMonthlyOccurrence(rule.dayOfMonth, today) })
-      continue
+    for (const rule of due) {
+      if (rule.paused) {
+        await db.rules.update(rule.id, { nextRunISO: nextMonthlyOccurrence(rule.dayOfMonth, today) })
+        continue
+      }
+      let run = rule.nextRunISO
+      let guard = 0
+      while (run <= today && guard < 24) {
+        await addTxn({
+          amountMinor: rule.amountMinor,
+          currency,
+          categoryId: rule.categoryId,
+          accountId: rule.accountId,
+          note: rule.name,
+          dateISO: run,
+          ts: fromISO(run).getTime() + 12 * 3600000,
+          source: 'recurring'
+        })
+        logged.push({ name: rule.name, amountMinor: rule.amountMinor })
+        run = nextMonthlyOccurrence(rule.dayOfMonth, run)
+        guard++
+      }
+      await db.rules.update(rule.id, { nextRunISO: run })
     }
-    let run = rule.nextRunISO
-    let guard = 0
-    while (run <= today && guard < 24) {
-      await addTxn({
-        amountMinor: rule.amountMinor,
-        currency,
-        categoryId: rule.categoryId,
-        accountId: rule.accountId,
-        note: rule.name,
-        dateISO: run,
-        ts: fromISO(run).getTime() + 12 * 3600000,
-        source: 'recurring'
-      })
-      logged.push({ name: rule.name, amountMinor: rule.amountMinor })
-      run = nextMonthlyOccurrence(rule.dayOfMonth, run)
-      guard++
-    }
-    await db.rules.update(rule.id, { nextRunISO: run })
-  }
-  return logged
+    return logged
+  })
 }
 
 export async function addRule(input: {
