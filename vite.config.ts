@@ -15,7 +15,9 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // the web app takes a new version only at a calm moment (src/lib/swUpdate.ts); the Android app's pages come
+      // from inside the app, and it goes on taking a new one at once
+      registerType: mode === 'web' ? 'prompt' : 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
         name: 'Taily',
@@ -41,6 +43,8 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
+        // a first visit is looked after offline at once, as before; only a new version waits for its moment
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         runtimeCaching: [
           {
