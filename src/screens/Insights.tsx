@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
 import { txnsBetween } from '../db/repo'
-import { byCategory, incomeSum, isRealSpend, pace, projectMonth, stillDue, sum } from '../db/stats'
+import { byCategory, fixedOf, incomeSum, isRealSpend, pace, projectMonth, stillDue, sum } from '../db/stats'
 import { formatCompact, formatMinor } from '../lib/money'
 import { adviceFor, smartNotes } from '../lib/smart'
 import { LoansSheet } from '../components/LoansSheet'
@@ -123,10 +123,10 @@ export function Insights({
     const pct = Math.round((spent / overallBudget.amountMinor) * 100)
     const budgetLabel = formatMinor(overallBudget.amountMinor, currency)
     if (!isCurrent) return { pct, budgetLabel, paceLabel: null as string | null }
-    const p = pace(spent, overallBudget.amountMinor)
+    const p = pace(spent, overallBudget.amountMinor, today, fixedOf(monthTxns, due))
     const paceLabel = p.state === 'over' ? 'over' : p.state === 'warn' ? 'ahead of pace' : 'on pace'
     return { pct, budgetLabel, paceLabel }
-  }, [overallBudget, spent, isCurrent, currency])
+  }, [overallBudget, spent, isCurrent, currency, today, monthTxns, due])
 
   const notes = useMemo(() => smartNotes(monthTxns, categories, currency), [monthTxns, categories, currency])
   const chartMax = Math.max(...sixMonths.map((m) => m.total), 1)

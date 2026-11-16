@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
 import { txnsForMonth } from '../db/repo'
-import { incomeSum, sum } from '../db/stats'
+import { fixedOf, incomeSum, stillDue, sum } from '../db/stats'
 import { formatMinor } from '../lib/money'
 import { addMonths, currentMonthKey, daysInMonth, monthLabel, todayISO } from '../lib/dates'
 import { useBudgetEditor } from './BudgetDialog'
@@ -47,6 +47,7 @@ export function MonthSheet({
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const overall = useLiveQuery(() => db.budgets.get('overall'), [])
+  const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
   // tagged with its month: while the next month loads, the one before mustn't show under the new name
   const loaded = useLiveQuery(async () => ({ key: monthKey, txns: await txnsForMonth(monthKey) }), [monthKey])
   const txns = loaded?.key === monthKey ? loaded.txns : null
@@ -151,6 +152,7 @@ export function MonthSheet({
           currency={currency}
           onChange={() => budgetEditor.edit({ id: 'overall', title: 'Monthly budget', amount: budgetMinor })}
           changeLabel="Change the monthly budget"
+          fixed={isCurrent ? fixedOf(txns, stillDue(rules, monthKey)) : undefined}
         />
       )}
 

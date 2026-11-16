@@ -13,7 +13,19 @@ import {
   restoreTxn
 } from '../db/repo'
 import { addToGoal } from '../db/goals'
-import { safeToSpend, saveSuggestion, weekBars, sum, onDay, byCategory, totalBalance, balanceByAccount, pace } from '../db/stats'
+import {
+  safeToSpend,
+  saveSuggestion,
+  weekBars,
+  sum,
+  onDay,
+  byCategory,
+  totalBalance,
+  balanceByAccount,
+  pace,
+  stillDue,
+  fixedOf
+} from '../db/stats'
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
 import { guessAccount, weeklyAnomalies } from '../lib/smart'
@@ -280,14 +292,15 @@ export function Home({
   const dim = daysInMonth(monthKey)
   const dayOfMonth = parseInt(today.slice(8, 10), 10)
   const budgetMinor = overallBudget && overallBudget.amountMinor > 0 ? overallBudget.amountMinor : 0
-  const monthPace = budgetMinor ? pace(monthSpent, budgetMinor, today) : null
+  // the month's recurring payments: rent paid on the 1st is expected on the 1st, a bill due later is set aside
+  const monthPace = budgetMinor ? pace(monthSpent, budgetMinor, today, fixedOf(monthTxns, stillDue(rules, monthKey))) : null
   const paceWords = !monthPace
     ? ''
     : monthPace.state === 'over'
       ? `${formatMinor(monthSpent - budgetMinor, currency)} over budget`
       : monthPace.state === 'warn'
-        ? // an estimate, so whole rupees like the projection: "₹12,719", never "₹12,719.33"
-          `${formatMinor(Math.max(0, Math.round((monthSpent - budgetMinor * monthPace.dayFraction) / 100) * 100), currency)} ahead of pace`
+        ? // an estimate, so whole rupees like the projection: "₹6,893", never "₹6,893.13"
+          `${formatMinor(Math.max(0, Math.round((monthSpent - monthPace.expected) / 100) * 100), currency)} ahead of pace`
         : 'On pace'
   const paceColor = !monthPace ? '' : monthPace.state === 'over' ? 'var(--over-fill)' : monthPace.state === 'warn' ? 'var(--amber)' : 'var(--pos)'
   const paceText = !monthPace ? '' : monthPace.state === 'over' ? 'var(--over-text)' : monthPace.state === 'warn' ? 'var(--amber-text)' : 'var(--pos-text)'
@@ -393,7 +406,7 @@ export function Home({
                 <span className="muted"> of {formatMinor(budgetMinor, currency)}</span>
               </span>
             </span>
-            <Progress fraction={monthPace.fraction} color={paceColor} tickFraction={monthPace.dayFraction} height={7} />
+            <Progress fraction={monthPace.fraction} color={paceColor} tickFraction={monthPace.expectedFraction} height={7} />
             <span className="row-between">
               <span className="caption" style={{ color: paceText, fontWeight: 700 }}>
                 {paceWords}

@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Goal, type Txn } from '../db/db'
 import { addGoal, addToGoal, deleteGoal, restoreGoal, updateGoal } from '../db/goals'
 import { addTxn, recentTxns, txnsForMonth } from '../db/repo'
-import { byCategory, pace, projectMonth, stillDue, sum } from '../db/stats'
+import { byCategory, fixedOf, pace, projectMonth, stillDue, sum } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
 import { guessAccount } from '../lib/smart'
@@ -199,7 +199,6 @@ export function Budgets({
   const catSpend = useMemo(() => byCategory(monthTxns), [monthTxns])
   const overall = budgets.find((b) => b.id === 'overall') ?? null
   const catBudgets = budgets.filter((b) => b.id !== 'overall')
-  const dayFraction = parseInt(today.slice(8, 10), 10) / daysInMonth(monthKey)
   // the month's recurring payments still to come: counted once each in where the month lands
   const due = useMemo(() => stillDue(rules, monthKey), [rules, monthKey])
   const projected = projectMonth(monthTxns, monthKey, today, due)
@@ -214,7 +213,8 @@ export function Budgets({
     return state === 'over' ? 'var(--over-text)' : state === 'warn' ? 'var(--amber-text)' : fallback
   }
 
-  const overallPace = overall ? pace(spent, overall.amountMinor, today) : null
+  // the tick is what the budget expects spent by today: recurring payments on their days, the rest day by day
+  const overallPace = overall ? pace(spent, overall.amountMinor, today, fixedOf(monthTxns, due)) : null
 
   // a tag's card opens what made it up: the quiet chevron Insights' rows have, close after the name
   const opens = (
@@ -271,7 +271,7 @@ export function Budgets({
           <Progress
             fraction={overallPace.fraction}
             color={stateColor(overallPace.state, 'var(--pos)')}
-            tickFraction={dayFraction}
+            tickFraction={overallPace.expectedFraction}
             height={8}
           />
           <span className="caption">
@@ -298,7 +298,8 @@ export function Budgets({
       {catBudgets.map((b) => {
         const cat = categories.find((c) => c.id === b.id)
         if (!cat) return null
-        const catPace = pace(catSpend.get(cat.id) ?? 0, b.amountMinor, today)
+        // a tag's own recurring payments and rules, the same way
+        const catPace = pace(catSpend.get(cat.id) ?? 0, b.amountMinor, today, fixedOf(monthTxns, due, cat.id))
         const left = b.amountMinor - catPace.spent
         return (
           // what made it up: the tag's entries this month, where "Change" sets the amount
@@ -325,7 +326,7 @@ export function Budgets({
                 </span>
               </span>
             </div>
-            <Progress fraction={catPace.fraction} color={stateColor(catPace.state, cat.color)} tickFraction={dayFraction} />
+            <Progress fraction={catPace.fraction} color={stateColor(catPace.state, cat.color)} tickFraction={catPace.expectedFraction} />
             <span className="caption" style={{ fontSize: 12 }}>
               {left >= 0
                 ? `${formatMinor(left, currency)} left${catPace.state === 'warn' ? ' · ahead of pace' : ' · on pace'}`

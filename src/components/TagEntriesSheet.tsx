@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
-import type { Category, Txn } from '../db/db'
-import { sum } from '../db/stats'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db, type Category, type Txn } from '../db/db'
+import { fixedOf, stillDue, sum } from '../db/stats'
 import { formatMinor } from '../lib/money'
 import { monthLabel } from '../lib/dates'
 import { useBudgetEditor } from './BudgetDialog'
@@ -52,6 +53,9 @@ export function TagEntriesSheet({
   )
   const total = sum(txns)
   const month = monthLabel(monthKey)
+  // the tag's own recurring payments this month, so the budget line's tick sits where its card's does
+  const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
+  const fixed = isCurrent && tag.id ? fixedOf(monthTxns, stillDue(rules, monthKey), tag.id) : undefined
   const share = monthSpent > 0 ? Math.round((total / monthSpent) * 100) : 0
 
   // a tag of yours can have a budget, set right here; not "Untagged", and not a new one for a tag you've put away
@@ -99,6 +103,7 @@ export function TagEntriesSheet({
           currency={currency}
           onChange={cat ? editBudget : undefined}
           changeLabel={`Change the ${tag.name} budget`}
+          fixed={fixed}
         />
       ) : (
         cat &&

@@ -16,7 +16,7 @@ export function Progress({
       {tickFraction !== undefined && (
         <div
           className="bar-tick"
-          style={{ left: `${Math.min(99, tickFraction * 100)}%`, height: height + 6, top: -3 }}
+          style={{ left: `${Math.max(0, Math.min(99, tickFraction * 100))}%`, height: height + 6, top: -3 }}
         />
       )}
     </div>

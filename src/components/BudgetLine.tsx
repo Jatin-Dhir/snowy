@@ -1,4 +1,4 @@
-import { pace } from '../db/stats'
+import { pace, type Fixed } from '../db/stats'
 import { formatMinor } from '../lib/money'
 import { Progress } from './Progress'
 
@@ -15,7 +15,8 @@ export function BudgetLine({
   owner,
   currency,
   onChange,
-  changeLabel
+  changeLabel,
+  fixed
 }: {
   spent: number
   budgetMinor: number
@@ -28,8 +29,10 @@ export function BudgetLine({
   onChange?: () => void
   /** what "Change" changes, for a screen reader */
   changeLabel?: string
+  /** this month's recurring payments under this budget (fixedOf): where the tick sits, as on its card */
+  fixed?: Fixed
 }) {
-  const p = pace(spent, budgetMinor)
+  const p = pace(spent, budgetMinor, undefined, fixed)
   const left = budgetMinor - spent
   const budget = formatMinor(budgetMinor, currency)
   const words = (
@@ -47,7 +50,7 @@ export function BudgetLine({
       <Progress
         fraction={p.fraction}
         color={p.state === 'over' ? 'var(--over-fill)' : isCurrent && p.state === 'warn' ? 'var(--amber)' : color}
-        tickFraction={isCurrent ? p.dayFraction : undefined}
+        tickFraction={isCurrent ? p.expectedFraction : undefined}
       />
       {onChange ? (
         <div className="row-between" style={{ flexWrap: 'wrap', rowGap: 2 }}>

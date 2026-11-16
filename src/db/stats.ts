@@ -147,20 +147,32 @@ export interface PaceInfo {
   budget: number
   fraction: number
   dayFraction: number
+  /** What the budget expects spent by today: the recurring payments logged so far, and the day's share of the rest */
+  expected: number
+  /** The same, as a share of the budget: where the pace tick sits */
+  expectedFraction: number
   state: 'ok' | 'warn' | 'over'
 }
+
+const NO_FIXED: Fixed = { logged: 0, due: 0 }
 
 /**
  * state is pace-relative, not a static fraction cutoff — "warn" means
  * spending faster than the days elapsed would predict, the same comparison
  * the pace label text uses, so the color and the words never disagree.
+ * The month's recurring payments (fixedOf) aren't spread over its days: rent
+ * paid on the 1st is expected on the 1st, and a bill due on the 25th leaves
+ * the rest of the budget smaller from the start.
  */
-export function pace(spent: number, budget: number, todayIso = todayISO()): PaceInfo {
+export function pace(spent: number, budget: number, todayIso = todayISO(), fixed: Fixed = NO_FIXED): PaceInfo {
   const monthKey = todayIso.slice(0, 7)
   const dayFraction = parseInt(todayIso.slice(8, 10), 10) / daysInMonth(monthKey)
   const fraction = budget > 0 ? spent / budget : 0
-  const state: PaceInfo['state'] = fraction > 1 ? 'over' : fraction > dayFraction + 0.05 ? 'warn' : 'ok'
-  return { spent, budget, fraction, dayFraction, state }
+  const expected = fixed.logged + (budget - fixed.logged - fixed.due) * dayFraction
+  // worked out as shares, so without recurring payments it is the day's share itself, to the last digit
+  const expectedFraction = budget > 0 ? fixed.logged / budget + (1 - (fixed.logged + fixed.due) / budget) * dayFraction : dayFraction
+  const state: PaceInfo['state'] = fraction > 1 ? 'over' : fraction > expectedFraction + 0.05 ? 'warn' : 'ok'
+  return { spent, budget, fraction, dayFraction, expected, expectedFraction, state }
 }
 
 export interface SaveSuggestion {
