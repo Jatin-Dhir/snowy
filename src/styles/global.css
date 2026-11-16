@@ -1624,7 +1624,8 @@ button.tag-row:active {
 }
 
 /* a loan's line: who owes whom, when its reminder comes, what it was for. The reminder is never cut off (where even
-   it can't fit, as with the largest text, it moves to a line of its own whole); the note takes what room is left */
+   it can't fit, as with the largest text, it moves to a line of its own whole); the note takes what room is left,
+   and beside a reminder, where that was a few letters ("Cab s…") or none at 320px, the line under it */
 .loan-sub {
   display: flex;
   flex-wrap: wrap;
@@ -1645,6 +1646,10 @@ button.tag-row:active {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.loan-sub > .loan-note-own {
+  flex-basis: 100%;
 }
 
 .txn-amount {

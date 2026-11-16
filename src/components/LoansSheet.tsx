@@ -225,7 +225,13 @@ export function LoansSheet({
                   {reminderWhen(l)}
                 </span>
               ))}
-            {l.note && <span className="loan-note">{`${DOT}${l.note}`}</span>}
+            {/* beside a reminder, the note on the line under it, whole, rather than squeezed to a few letters */}
+            {l.note &&
+              (!l.settledISO && l.remindISO ? (
+                <span className="loan-note loan-note-own">{l.note}</span>
+              ) : (
+                <span className="loan-note">{`${DOT}${l.note}`}</span>
+              ))}
           </span>
         </span>
         <span
