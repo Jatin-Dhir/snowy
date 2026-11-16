@@ -16,6 +16,7 @@ import { addToGoal } from '../db/goals'
 import {
   safeToSpend,
   saveSuggestion,
+  recentDailySpend,
   weekBars,
   sum,
   onDay,
@@ -114,10 +115,8 @@ export function Home({
   }, [goals])
   const saveIdea = useMemo(() => {
     if (!saveGoal) return null
-    const cutoff = Date.now() - 30 * 86400000
-    const last30 = recent.filter((t) => t.ts >= cutoff)
-    const avgDaily = last30.length > 0 ? sum(last30) / 30 : 0
-    return saveSuggestion(sts, avgDaily, saveGoal.targetMinor - saveGoal.savedMinor)
+    // a usual day's spend: rent, and what's gone into goals already, aren't what a day's 10% is taken from
+    return saveSuggestion(sts, recentDailySpend(recent), saveGoal.targetMinor - saveGoal.savedMinor)
   }, [saveGoal, recent, sts])
 
   async function tuckAway() {
@@ -607,7 +606,8 @@ export function Home({
             <span className="week-line" style={{ bottom: `calc(${Math.round((dailyBudget / weekScale) * BAR_MAX)}px + var(--day-h))` }} />
           )}
           {bars.map((b) => {
-            const overDay = dailyBudget > 0 && b.total > dailyBudget && !b.isToday
+            // the bar stands for everything spent; amber for the day's everyday spending past the line (rent day isn't)
+            const overDay = dailyBudget > 0 && b.everyday > dailyBudget && !b.isToday
             return (
               <button
                 className="weekbar-col"

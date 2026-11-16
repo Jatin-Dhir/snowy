@@ -146,8 +146,11 @@ export function Insights({
     const daysElapsed = isCurrent ? Math.max(1, parseInt(today.slice(8, 10), 10)) : daysInMonth(monthKey)
     const byDay = new Map<string, number>()
     for (const t of outs) byDay.set(t.dateISO, (byDay.get(t.dateISO) ?? 0) + t.amountMinor)
+    // the heaviest day of everyday spending: rent, paid once on the 1st, doesn't make the 1st the month's big day
+    const everyday = new Map<string, number>()
+    for (const t of outs) if (!isRecurring(t)) everyday.set(t.dateISO, (everyday.get(t.dateISO) ?? 0) + t.amountMinor)
     let biggestDay: { iso: string; total: number } | null = null
-    for (const [iso, total] of byDay) {
+    for (const [iso, total] of everyday) {
       if (!biggestDay || total > biggestDay.total) biggestDay = { iso, total }
     }
     // mid-month, compare against the same days of last month — not its full

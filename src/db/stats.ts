@@ -104,19 +104,26 @@ export function byCategory(txns: Txn[]): Map<string | null, number> {
 
 export interface WeekBar {
   iso: string
+  /** everything spent that day: the bar's height */
   total: number
+  /** the same, its recurring payments set aside: what's held against the daily budget (rent day isn't a spree) */
+  everyday: number
   isToday: boolean
   isFuture: boolean
 }
 
 export function weekBars(txns: Txn[], today = todayISO()): WeekBar[] {
   const days = weekDaysOf(today)
-  return days.map((iso) => ({
-    iso,
-    total: sum(onDay(txns, iso)),
-    isToday: iso === today,
-    isFuture: iso > today
-  }))
+  return days.map((iso) => {
+    const spent = onDay(txns, iso)
+    return {
+      iso,
+      total: sum(spent),
+      everyday: sum(spent.filter((t) => !isRecurring(t))),
+      isToday: iso === today,
+      isFuture: iso > today
+    }
+  })
 }
 
 export interface SafeToSpend {
@@ -197,9 +204,18 @@ export interface SaveSuggestion {
 }
 
 /**
+ * A usual day's spend over the last 30 days, for the steady saving idea: purchases only. Recurring payments are paid
+ * once a month, not a little every day, and money put into a savings goal is saved already, not spent.
+ */
+export function recentDailySpend(txns: Txn[], now = Date.now()): number {
+  const cutoff = now - 30 * 86400000
+  return sum(txns.filter((t) => t.ts >= cutoff && isRealSpend(t) && !isRecurring(t))) / 30
+}
+
+/**
  * How much could go into savings today. With a budget: whatever of today's
  * allowance is still unspent (rounded to a clean step). Without one: a steady
- * 10% of the recent daily spend. Only suggested while a goal wants money.
+ * 10% of a usual day's spend (recentDailySpend). Only suggested while a goal wants money.
  */
 export function saveSuggestion(
   sts: SafeToSpend,
