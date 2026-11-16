@@ -139,8 +139,9 @@ export function MonthSheet({
         )}
       </div>
 
-      {/* not for a month with nothing in it, often one from before Taily: "₹50,000 under" would be no news */}
-      {txns && count > 0 && budgetMinor !== null && (
+      {/* not for a month with nothing in it, often one from before Taily: "₹50,000 under" would be no news. Nor for a
+          past one with only money received in it (a refund logged back then): nothing spent is the same no news */}
+      {txns && count > 0 && (isCurrent || spent > 0) && budgetMinor !== null && (
         <BudgetLine
           spent={spent}
           budgetMinor={budgetMinor}
