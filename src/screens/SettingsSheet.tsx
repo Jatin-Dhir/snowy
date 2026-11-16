@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, saveSettings, type Settings } from '../db/db'
 import { allLiveTxns } from '../db/repo'
-import { txnsToCsv, parseCsv, planImportFromGrid, type ImportPlan } from '../lib/csv'
+import { txnsToCsv, parseCsv, planImportFromGrid, leftOutLine, type ImportPlan } from '../lib/csv'
 import { saveFile } from '../lib/saveFile'
 import { hasPro, openProSheet, PRO_FOR_SALE, useProState } from '../lib/pro'
 import type { SharedFile } from '../lib/shareIntent'
@@ -246,7 +246,11 @@ export function SettingsSheet({
       return
     }
     if (plan.txns.length === 0) {
-      showToast(`Nothing new in that file — ${entries(plan.duplicates)} ${plan.duplicates === 1 ? 'is' : 'are'} already here`)
+      showToast(
+        plan.otherCurrency.length > 0
+          ? leftOutLine(plan.otherCurrency, settings.currency)
+          : `Nothing new in that file — ${entries(plan.duplicates)} ${plan.duplicates === 1 ? 'is' : 'are'} already here`
+      )
       return
     }
     setImportPlan(plan)
@@ -976,6 +980,12 @@ export function SettingsSheet({
                 </span>
               )}
             </div>
+            {/* rows in another currency would have counted as this one's money: what stayed out, and why */}
+            {importPlan.otherCurrency.length > 0 && (
+              <span className="caption" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--amber-text)', textWrap: 'pretty' }}>
+                {leftOutLine(importPlan.otherCurrency, settings.currency)}
+              </span>
+            )}
             <span className="caption" style={{ fontSize: 12.5 }}>
               {[
                 importPlan.newCategories.length > 0 &&

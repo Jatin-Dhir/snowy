@@ -1,5 +1,6 @@
 import type { Account, Category, Txn } from '../db/db'
 import { fmtTime24 } from './dates'
+import { CURRENCIES } from './money'
 
 function esc(v: string): string {
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
@@ -92,6 +93,8 @@ export interface ImportPlan {
   newAccounts: string[]
   duplicates: number
   badRows: number
+  /** rows in another currency than the profile's, left out: most first */
+  otherCurrency: { code: string; rows: number }[]
   dateFrom: string | null
   dateTo: string | null
 }
@@ -105,8 +108,14 @@ const HEADER_ALIASES: Record<string, string> = {
   // separate columns instead of one signed amount — whichever has a value
   // for a given row decides that row's direction
   debit: 'debit', 'debit amount': 'debit', 'withdrawal amt': 'debit', 'withdrawal amt.': 'debit', withdrawal: 'debit', 'dr amount': 'debit',
+  'withdrawal amount': 'debit',
   credit: 'credit', 'credit amount': 'credit', 'deposit amt': 'credit', 'deposit amt.': 'credit', deposit: 'credit', 'cr amount': 'credit',
+  'deposit amount': 'credit',
   currency: 'currency',
+  // a card's foreign purchase, as it was before the bank turned it into the account's currency (N26, Monzo, most cards)
+  'original amount': 'origAmount', 'foreign amount': 'origAmount', 'foreign currency amount': 'origAmount',
+  'amount (foreign currency)': 'origAmount', 'local amount': 'origAmount', 'intl.amount': 'origAmount', 'intl amount': 'origAmount',
+  'original currency': 'origCurrency', 'foreign currency': 'origCurrency', 'type foreign currency': 'origCurrency', 'local currency': 'origCurrency',
   category: 'category', tag: 'category',
   account: 'account', wallet: 'account', 'paid from': 'account',
   note: 'note', notes: 'note', description: 'note', memo: 'note',
@@ -117,6 +126,50 @@ const HEADER_ALIASES: Record<string, string> = {
 
 /** Every column name this importer recognizes — used by the PDF extractor to spot a header row among raw positioned text. */
 export const KNOWN_HEADER_WORDS: Set<string> = new Set(Object.keys(HEADER_ALIASES))
+
+// The codes a statement can name. A WebView too old to list them all knows the app's own and the commonest others
+const KNOWN_CODES: Set<string> = (() => {
+  const own: string[] = CURRENCIES.map((c) => c.code)
+  try {
+    const all = (Intl as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf?.('currency')
+    if (all && all.length > 0) return new Set([...all, ...own])
+  } catch {
+    /* an engine without the list */
+  }
+  return new Set([...own, 'AUD', 'CAD', 'CHF', 'CNY', 'HKD', 'NZD', 'SEK', 'NOK', 'DKK', 'THB', 'MYR', 'IDR', 'PHP', 'KRW', 'LKR', 'NPR', 'PKR', 'BDT', 'SAR', 'QAR', 'KWD', 'OMR', 'BHD', 'ZAR', 'BRL', 'MXN', 'TRY'])
+})()
+
+/** A currency the way a statement names it: a code in any case, or a sign only one currency uses. A bare "$" is a dozen dollars, so it names none. */
+function currencyCode(raw: string): string | null {
+  const v = raw.trim().toUpperCase().replace(/\.$/, '')
+  if (v === '₹' || v === 'RS') return 'INR'
+  if (v === '€') return 'EUR'
+  if (v === '£') return 'GBP'
+  if (v === 'US$') return 'USD'
+  if (v === 'S$') return 'SGD'
+  return KNOWN_CODES.has(v) ? v : null
+}
+
+/**
+ * What a column holds, from its header: one of HEADER_ALIASES, and the currency its amounts are in when the header
+ * says so, as "Amount (INR)", "Amount(in Rs.)", ICICI's "Withdrawal Amount (INR )", "Amount in EUR" or "INR Amount" do.
+ */
+function readHeader(cell: string): { role: string; cur: string | null } {
+  const h = cell.trim().toLowerCase().replace(/\s+/g, ' ')
+  if (HEADER_ALIASES[h]) return { role: HEADER_ALIASES[h], cur: null }
+  const named = /^(.+?) ?[([] ?(?:in )?([^)\]]+?) ?[)\]]$/.exec(h) ?? /^(.+?) in (\S+)$/.exec(h)
+  if (named && HEADER_ALIASES[named[1]] && currencyCode(named[2])) return { role: HEADER_ALIASES[named[1]], cur: currencyCode(named[2]) }
+  const lead = /^(\S+) (.+)$/.exec(h)
+  if (lead && HEADER_ALIASES[lead[2]] && currencyCode(lead[1])) return { role: HEADER_ALIASES[lead[2]], cur: currencyCode(lead[1]) }
+  return { role: '', cur: null }
+}
+
+/** "3 rows in USD and 1 in EUR left out: this profile keeps its money in INR" */
+export function leftOutLine(left: { code: string; rows: number }[], currency: string): string {
+  const parts = left.map((l, i) => `${l.rows} ${i === 0 ? (l.rows === 1 ? 'row' : 'rows') + ' ' : ''}in ${l.code}`)
+  const list = parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0]
+  return `${list} left out: this profile keeps its money in ${currency}`
+}
 
 const MONTH_NAMES = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
 
@@ -150,6 +203,21 @@ function parseAmount(raw: string): number | null {
   const n = parseFloat(cleaned)
   if (!Number.isFinite(n)) return null
   return Math.round(n * 100)
+}
+
+/**
+ * An amount, and the currency written into it if there is one: "USD 15.00", "15.00 USD", "₹450". Taken off before the
+ * number is read, or "Rs. 1,260.00" became ₹0.13 (its dot read as the decimal point).
+ */
+function readAmount(raw: string): { minor: number | null; cur: string | null } {
+  const v = raw.trim()
+  const lead = /^(US\$|S\$|Rs\.?|[₹€£]|[A-Za-z]{3}(?![A-Za-z]))/i.exec(v)
+  const leadCur = lead && currencyCode(lead[1])
+  if (leadCur && lead) return { minor: parseAmount(v.slice(lead[0].length)), cur: leadCur }
+  const trail = /(?:^|[^A-Za-z])(Rs\.?|[A-Za-z]{3})$/i.exec(v)
+  const trailCur = trail && currencyCode(trail[1])
+  if (trailCur && trail) return { minor: parseAmount(v.slice(0, v.length - trail[1].length)), cur: trailCur }
+  return { minor: parseAmount(v), cur: null }
 }
 
 /** cyrb53: a quick, well-spread 53-bit hash of a string, in base 36 */
@@ -213,17 +281,30 @@ export function planImportFromGrid(
 ): ImportPlan | null {
   // a bank's export often starts with the account's details (name, number, period) and only then the
   // table: its header is the first row that names a date and an amount, or debit and credit columns
-  const headerOf = (row: string[]) => row.map((h) => HEADER_ALIASES[h.trim().toLowerCase()] ?? '')
+  const headerOf = (row: string[]) => row.map((h) => readHeader(h).role)
   const at = grid.slice(0, 40).findIndex((row) => {
     const h = headerOf(row)
     return h.includes('date') && (h.includes('amount') || h.includes('debit') || h.includes('credit'))
   })
   if (at < 0 || grid.length - at < 2) return null
-  const header = headerOf(grid[at])
+  const heads = grid[at].map(readHeader)
+  const header = heads.map((h) => h.role)
   const body = grid.slice(at + 1)
-  const col = (name: string) => header.indexOf(name)
+  // two amount columns (what a purchase cost, and what the bank charged for it): the one in this profile's
+  // currency, else one whose header names no currency
+  const amountCols = header.flatMap((role, i) => (role === 'amount' ? [i] : []))
+  const amountCol = amountCols.find((i) => heads[i].cur === ctx.defaultCurrency) ?? amountCols.find((i) => !heads[i].cur) ?? amountCols[0] ?? -1
+  const col = (name: string) => (name === 'amount' ? amountCol : header.indexOf(name))
   const debitCreditMode = col('amount') < 0 && (col('debit') >= 0 || col('credit') >= 0)
   if (col('date') < 0 || (col('amount') < 0 && !debitCreditMode)) return null
+
+  // The currency an amount is in: its header's ("Amount (INR)"), else a currency column's, else one written into the
+  // amount itself. A card statement that lists a foreign purchase's original amount without a currency column of its
+  // own names that amount's currency in its "Currency" column: the amount the account was charged needs none
+  const origCol = col('origAmount')
+  const currencyIsOrig = origCol >= 0 && heads[origCol].cur === null && col('origCurrency') < 0
+  const mainHeaderCur = debitCreditMode ? (heads[col('debit')]?.cur ?? heads[col('credit')]?.cur ?? null) : heads[amountCol].cur
+  const otherCurrency = new Map<string, number>()
 
   const catByName = new Map(ctx.categories.map((c) => [c.name.toLowerCase(), c.name]))
   const accByName = new Map(ctx.accounts.map((a) => [a.name.toLowerCase(), a.name]))
@@ -239,7 +320,7 @@ export function planImportFromGrid(
   const hasNegatives =
     !debitCreditMode &&
     kindCol < 0 &&
-    body.some((r) => parseFloat((r[col('amount')] ?? '').replace(/[^0-9.\-]/g, '')) < 0)
+    body.some((r) => (readAmount(r[col('amount')] ?? '').minor ?? 0) < 0)
 
   // Numbers-only dates are read day first (23/08/2026). A US bank writes the month first (08/23/2026): read that
   // way, its 5 November came in as 11 May and every day past the 12th was "unreadable". A file shows which it is
@@ -262,28 +343,52 @@ export function planImportFromGrid(
     const dateISO = parseDate(cell('date'), monthFirst)
 
     let amountRaw: number | null
+    let cellCur: string | null = null
     let kind: 'out' | 'in' = 'out'
     if (debitCreditMode) {
       // exactly one of the two is populated per row in a real statement;
       // if a row somehow has both, treat it as a debit — the conservative
       // read, since missing an expense is worse than missing income
-      const debit = parseAmount(cell('debit'))
-      const credit = parseAmount(cell('credit'))
-      if (debit) {
-        amountRaw = debit
+      const debit = readAmount(cell('debit'))
+      const credit = readAmount(cell('credit'))
+      if (debit.minor) {
+        amountRaw = debit.minor
+        cellCur = debit.cur
         kind = 'out'
-      } else if (credit) {
-        amountRaw = credit
+      } else if (credit.minor) {
+        amountRaw = credit.minor
+        cellCur = credit.cur
         kind = 'in'
       } else {
         amountRaw = null
       }
     } else {
-      amountRaw = parseAmount(cell('amount'))
+      const amount = readAmount(cell('amount'))
+      amountRaw = amount.minor
+      cellCur = amount.cur
     }
     if (!dateISO || amountRaw === null || amountRaw === 0) {
       badRows++
       continue
+    }
+
+    // A row in another currency would count its number as this profile's money: 15 dollars as ₹15. It stays out,
+    // unless the row also says what it cost in this profile's currency, as a card's foreign purchase does
+    let amountMinor = Math.abs(amountRaw)
+    const rowCur = mainHeaderCur ?? (currencyIsOrig ? null : currencyCode(cell('currency'))) ?? cellCur
+    if (rowCur && rowCur !== ctx.defaultCurrency) {
+      const orig = origCol >= 0 ? readAmount(cell('origAmount')) : null
+      const origCur =
+        heads[origCol]?.cur ??
+        (col('origCurrency') >= 0 ? currencyCode(cell('origCurrency')) : currencyIsOrig ? currencyCode(cell('currency')) : null) ??
+        orig?.cur ??
+        null
+      if (orig?.minor && origCur === ctx.defaultCurrency) {
+        amountMinor = Math.abs(orig.minor)
+      } else {
+        otherCurrency.set(rowCur, (otherCurrency.get(rowCur) ?? 0) + 1)
+        continue
+      }
     }
 
     // statements mark the direction "Cr" / "Dr" as often as they spell it out
@@ -293,7 +398,7 @@ export function planImportFromGrid(
 
     const note = cell('note')
     const accRaw = cell('account') || 'Cash'
-    const id = cell('id') || statementRowId([dateISO, kind, Math.abs(amountRaw), note, accRaw], repeats)
+    const id = cell('id') || statementRowId([dateISO, kind, amountMinor, note, accRaw], repeats)
     if (ctx.existingIds.has(id) || seenIds.has(id)) {
       duplicates++
       continue
@@ -326,8 +431,8 @@ export function planImportFromGrid(
 
     txns.push({
       id,
-      amountMinor: Math.abs(amountRaw),
-      currency: cell('currency').toUpperCase() || ctx.defaultCurrency,
+      amountMinor,
+      currency: ctx.defaultCurrency,
       categoryName,
       accountName,
       kind,
@@ -338,7 +443,7 @@ export function planImportFromGrid(
     })
   }
 
-  if (txns.length === 0 && duplicates === 0) return null
+  if (txns.length === 0 && duplicates === 0 && otherCurrency.size === 0) return null
   const dates = txns.map((t) => t.dateISO).sort()
   return {
     txns,
@@ -346,6 +451,7 @@ export function planImportFromGrid(
     newAccounts: [...newAccounts.values()],
     duplicates,
     badRows,
+    otherCurrency: [...otherCurrency].map(([code, rows]) => ({ code, rows })).sort((a, b) => b.rows - a.rows),
     dateFrom: dates[0] ?? null,
     dateTo: dates[dates.length - 1] ?? null
   }
