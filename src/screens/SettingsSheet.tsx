@@ -39,6 +39,9 @@ const BASE_COLORS = [
 /** The daily reminder's own times; Custom has any other (ReminderTimeSheet) */
 const PRESET_REMINDERS = ['20:00', '21:00', '22:00']
 
+/** "1 entry", "2 entries": what an import or export moved, said the way it's read */
+const entries = (n: number) => `${n} ${n === 1 ? 'entry' : 'entries'}`
+
 // set/confirm create or replace a PIN; verify gates the manage view for an existing one
 type PinMode = 'set' | 'confirm' | 'verify' | 'manage' | null
 
@@ -222,7 +225,7 @@ export function SettingsSheet({
     const csv = txnsToCsv(txns, categories, accounts)
     const result = await saveFile(csv, `taily-${profileSlug()}-${todayISO()}.csv`, 'text/csv')
     showToast(
-      result === 'saved' ? `Exported ${txns.length} entries` : result === 'canceled' ? 'Export canceled' : "Couldn't export — try again"
+      result === 'saved' ? `Exported ${entries(txns.length)}` : result === 'canceled' ? 'Export canceled' : "Couldn't export — try again"
     )
   }
 
@@ -243,7 +246,7 @@ export function SettingsSheet({
       return
     }
     if (plan.txns.length === 0) {
-      showToast(`Nothing new in that file — ${plan.duplicates} entries are already here`)
+      showToast(`Nothing new in that file — ${entries(plan.duplicates)} ${plan.duplicates === 1 ? 'is' : 'are'} already here`)
       return
     }
     setImportPlan(plan)
@@ -347,7 +350,7 @@ export function SettingsSheet({
         }))
       )
       haptic('success')
-      showToast(`Imported ${plan.txns.length} entries`)
+      showToast(`Imported ${entries(plan.txns.length)}`)
       setImportPlan(null)
     } finally {
       setImportBusy(false)
@@ -964,7 +967,7 @@ export function SettingsSheet({
               </button>
             </div>
             <div className="well" style={{ alignItems: 'center' }}>
-              <span className="well-num">{importPlan.txns.length} entries</span>
+              <span className="well-num">{entries(importPlan.txns.length)}</span>
               {importPlan.dateFrom && importPlan.dateTo && (
                 <span className="caption" style={{ fontSize: 11.5 }}>
                   {importPlan.dateFrom === importPlan.dateTo
@@ -986,7 +989,7 @@ export function SettingsSheet({
                 .join(' · ') || 'Everything maps onto your existing tags and accounts.'}
             </span>
             <button className="btn" disabled={importBusy} onClick={() => void applyImport(importPlan)}>
-              {importBusy ? 'Importing…' : `Import ${importPlan.txns.length} entries`}
+              {importBusy ? 'Importing…' : `Import ${entries(importPlan.txns.length)}`}
             </button>
             <button className="btn ghost" disabled={importBusy} onClick={() => setImportPlan(null)}>
               Cancel
