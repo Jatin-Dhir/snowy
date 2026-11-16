@@ -144,9 +144,8 @@ export function Insights({
     // a savings tuck-away shouldn't make a day look artificially heavy
     const outs = monthTxns.filter(isRealSpend)
     const daysElapsed = isCurrent ? Math.max(1, parseInt(today.slice(8, 10), 10)) : daysInMonth(monthKey)
-    const byDay = new Map<string, number>()
-    for (const t of outs) byDay.set(t.dateISO, (byDay.get(t.dateISO) ?? 0) + t.amountMinor)
-    // the heaviest day of everyday spending: rent, paid once on the 1st, doesn't make the 1st the month's big day
+    // the heaviest day and the no-spend days are about everyday spending: rent, paid once on the 1st, doesn't make
+    // the 1st the month's big day, and a day where only rent went out is still a day nothing was spent
     const everyday = new Map<string, number>()
     for (const t of outs) if (!isRecurring(t)) everyday.set(t.dateISO, (everyday.get(t.dateISO) ?? 0) + t.amountMinor)
     let biggestDay: { iso: string; total: number } | null = null
@@ -168,7 +167,7 @@ export function Insights({
       // an average, so whole rupees, like Home's week: its recurring payments stay out of it, paid once each
       dailyAvg: Math.round(sum(monthTxns.filter((t) => !isRecurring(t))) / daysElapsed / 100) * 100,
       biggestDay,
-      noSpendDays: Math.max(0, daysElapsed - byDay.size),
+      noSpendDays: Math.max(0, daysElapsed - everyday.size),
       topTags
     }
   }, [monthTxns, windowTxns, breakdown, prevKey, spent, isCurrent, today, monthKey])
