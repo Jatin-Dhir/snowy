@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
 import { allLiveTxns, softDeleteTxn, restoreTxn } from '../db/repo'
@@ -10,24 +10,30 @@ import { Icon } from '../components/Icon'
 import { MonthSheet } from '../components/MonthSheet'
 import { haptic, useUi } from '../state/ui'
 
-function matchesQuery(t: Txn, catName: string, accountName: string, q: string): boolean {
+/** A search's test for one entry: the search is read once, not once for each of thousands of entries. */
+function matcherFor(q: string): (t: Txn, catName: string, accountName: string) => boolean {
   const query = q.trim().toLowerCase()
-  if (!query) return true
+  if (!query) return () => true
   const gt = query.match(/^>\s*(\d+)$/)
-  if (gt) return t.amountMinor > parseInt(gt[1], 10) * 100
+  if (gt) {
+    const min = parseInt(gt[1], 10) * 100
+    return (t) => t.amountMinor > min
+  }
   const lt = query.match(/^<\s*(\d+)$/)
-  if (lt) return t.amountMinor < parseInt(lt[1], 10) * 100
+  if (lt) {
+    const max = parseInt(lt[1], 10) * 100
+    return (t) => t.amountMinor < max
+  }
   const exact = query.match(/^=?\s*(\d+(?:\.\d{1,2})?)$/)
   if (exact) {
     const minor = Math.round(parseFloat(exact[1]) * 100)
-    return t.amountMinor === minor || String(t.amountMinor / 100).includes(exact[1])
+    return (t) => t.amountMinor === minor || String(t.amountMinor / 100).includes(exact[1])
   }
-  return (
+  return (t, catName, accountName) =>
     t.note.toLowerCase().includes(query) ||
     catName.toLowerCase().includes(query) ||
     accountName.toLowerCase().includes(query) ||
     (t.tripName ?? '').toLowerCase().includes(query)
-  )
 }
 
 export function Activity({
@@ -98,26 +104,23 @@ export function Activity({
   // search by the name you gave an account, not its internal id
   const accName = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts])
 
+  // each letter shows in the box at once; with thousands of entries, the list follows a moment later and gives way
+  // to the next letter instead of holding it up
+  const search = useDeferredValue(query)
   const monthKey = currentMonthKey()
   const monthTotal = useMemo(() => sum(txns.filter((t) => t.dateISO.startsWith(monthKey))), [txns, monthKey])
-  const hasFilters = catFilter !== null || accFilter !== null || dateFilter !== null || query.trim() !== ''
+  const hasFilters = catFilter !== null || accFilter !== null || dateFilter !== null || search.trim() !== ''
 
-  const filtered = useMemo(
-    () =>
-      txns.filter(
-        (t) =>
-          (catFilter === null || t.categoryId === catFilter) &&
-          (accFilter === null || t.accountId === accFilter) &&
-          (dateFilter === null || t.dateISO === dateFilter) &&
-          matchesQuery(
-            t,
-            t.categoryId ? (catName.get(t.categoryId) ?? '') : 'untagged',
-            accName.get(t.accountId) ?? t.accountId,
-            query
-          )
-      ),
-    [txns, catFilter, accFilter, dateFilter, query, catName, accName]
-  )
+  const filtered = useMemo(() => {
+    const matches = matcherFor(search)
+    return txns.filter(
+      (t) =>
+        (catFilter === null || t.categoryId === catFilter) &&
+        (accFilter === null || t.accountId === accFilter) &&
+        (dateFilter === null || t.dateISO === dateFilter) &&
+        matches(t, t.categoryId ? (catName.get(t.categoryId) ?? '') : 'untagged', accName.get(t.accountId) ?? t.accountId)
+    )
+  }, [txns, catFilter, accFilter, dateFilter, search, catName, accName])
   const filteredTotal = useMemo(() => sum(filtered), [filtered])
 
   function clearFilters() {
@@ -132,7 +135,7 @@ export function Activity({
   function noMatchLine(): string {
     const tag = catFilter ? catName.get(catFilter) : null
     const acc = accFilter ? accName.get(accFilter) : null
-    const q = query.trim()
+    const q = search.trim()
     return (
       `No ${tag ? `${tag} ` : ''}entries` +
       (acc ? ` from ${acc}` : '') +
@@ -142,7 +145,7 @@ export function Activity({
     )
   }
 
-  const shown = filtered.slice(0, limit)
+  const shown = useMemo(() => filtered.slice(0, limit), [filtered, limit])
   const groups = useMemo(() => groupByDay(shown), [shown])
   // a day cut in two by "Show more" still heads with its whole total, not the part above the button
   const dayTotals = useMemo(() => new Map(groupByDay(filtered).map((g) => [g.iso, g.total])), [filtered])
@@ -150,6 +153,37 @@ export function Activity({
     const used = new Set(txns.map((t) => t.categoryId))
     return categories.filter((c) => used.has(c.id))
   }, [txns, categories])
+
+  // the rows change with the results, not with each letter typed: a letter re-renders the box, not a hundred rows
+  const rows = useMemo(
+    () =>
+      groups.map((g) => (
+        <div key={g.iso}>
+          <div className="day-heading">
+            <h2 className="label" style={{ fontSize: 10.5 }}>
+              {fmtDayHeading(g.iso)}
+            </h2>
+            <span className="mono faint" style={{ fontWeight: 600, fontSize: 12 }}>
+              {formatMinor(dayTotals.get(g.iso) ?? g.total, currency)}
+            </span>
+          </div>
+          {g.txns.map((t) => (
+            <TransactionRow
+              key={t.id}
+              txn={t}
+              categories={categories}
+              selected={selectedIds.has(t.id)}
+              selecting={selecting}
+              onLongPress={() => enterSelect(t.id)}
+              onClick={() => (selecting ? toggleSelect(t.id) : onEdit(t))}
+            />
+          ))}
+        </div>
+      )),
+    // enterSelect and toggleSelect change only with `selecting`
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [groups, dayTotals, categories, selectedIds, selecting, currency, onEdit]
+  )
 
   return (
     <div className="screen">
@@ -332,29 +366,7 @@ export function Activity({
             )}
           </div>
         ) : (
-          groups.map((g) => (
-            <div key={g.iso}>
-              <div className="day-heading">
-                <h2 className="label" style={{ fontSize: 10.5 }}>
-                  {fmtDayHeading(g.iso)}
-                </h2>
-                <span className="mono faint" style={{ fontWeight: 600, fontSize: 12 }}>
-                  {formatMinor(dayTotals.get(g.iso) ?? g.total, currency)}
-                </span>
-              </div>
-              {g.txns.map((t) => (
-                <TransactionRow
-                  key={t.id}
-                  txn={t}
-                  categories={categories}
-                  selected={selectedIds.has(t.id)}
-                  selecting={selecting}
-                  onLongPress={() => enterSelect(t.id)}
-                  onClick={() => (selecting ? toggleSelect(t.id) : onEdit(t))}
-                />
-              ))}
-            </div>
-          ))
+          rows
         )}
         {filtered.length > limit && (
           <button className="btn ghost" style={{ marginTop: 10 }} onClick={() => setLimit(limit + 200)}>
