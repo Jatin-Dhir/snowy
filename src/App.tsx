@@ -238,6 +238,8 @@ export default function App() {
     setPendingAdd(false)
     dismissToast()
     setEditTxn(null)
+    setEditEntry(null)
+    setAddDraft(null)
     setAddOpen(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingAdd, ready, locked, settings.initialized])
@@ -518,12 +520,9 @@ export default function App() {
           setAddDraft(null)
           openVoice('free')
         }}
-        onClose={() => {
-          setAddOpen(false)
-          setEditTxn(null)
-          setEditEntry(null)
-          setAddDraft(null)
-        }}
+        // only closes: while it slides away it keeps showing what it was, so an edit doesn't turn into a new
+        // expense offering "Save ₹250" on its way out. Every way of opening it says what it's for
+        onClose={() => setAddOpen(false)}
       />
 
       <TripSheet
