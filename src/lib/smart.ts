@@ -65,6 +65,21 @@ export function guessAccount(accounts: Account[], recent: Txn[]): string | null 
   return (top ? active.find((a) => a.id === top[0]) : undefined)?.id ?? active[0].id
 }
 
+// What ₹1 of everyday spending is, near enough, in each currency Taily offers. A tip's "small expense" (₹200) or the
+// least a week's spike has to come to (₹500) is about what a coffee or a cab costs, not an exchange rate: in rupees
+// they made every dollar spend "small", and a week of food had to pass $500 before anything was said
+const EVERYDAY_PER_RUPEE: Record<string, number> = { INR: 1, USD: 1 / 40, EUR: 1 / 40, GBP: 1 / 40, SGD: 1 / 40, AED: 1 / 10, JPY: 2.5 }
+
+/** An everyday amount given in rupees (minor units) as the same sort of amount in `currency`: ₹200 is $5, AED 20, ¥500. */
+export function everydayAmount(inrMinor: number, currency: string): number {
+  const value = (inrMinor / 100) * (EVERYDAY_PER_RUPEE[currency] ?? 1)
+  if (value <= 0) return 0
+  // a round amount people think in: 1, 2 or 5 of a power of ten
+  const step = 10 ** Math.floor(Math.log10(value))
+  const nice = [1, 2, 5, 10].map((m) => m * step).reduce((a, b) => (Math.abs(b - value) < Math.abs(a - value) ? b : a))
+  return Math.round(nice * 100)
+}
+
 export interface Anomaly {
   categoryId: string
   name: string
@@ -73,7 +88,8 @@ export interface Anomaly {
 }
 
 /** Categories running ≥1.8× their trailing 4-week average this week. */
-export function weeklyAnomalies(txns: Txn[], categories: Category[], today = todayISO()): Anomaly[] {
+export function weeklyAnomalies(txns: Txn[], categories: Category[], today = todayISO(), currency = 'INR'): Anomaly[] {
+  const least = everydayAmount(50000, currency)
   const week = weekDaysOf(today)
   const weekStart = week[0]
   const out: Anomaly[] = []
@@ -83,7 +99,7 @@ export function weeklyAnomalies(txns: Txn[], categories: Category[], today = tod
     // a trip is the opposite of your usual pace: its spends count everywhere but here
     const catTx = txns.filter((t) => isOut(t) && t.categoryId === cat.id && !t.tripEntryId)
     const thisWeek = sum(catTx.filter((t) => t.dateISO >= weekStart && t.dateISO <= today))
-    if (thisWeek < 50000) continue // ignore small numbers (< ₹500)
+    if (thisWeek < least) continue // ignore small numbers (under ₹500, $10, ¥1,000)
     let prior = 0
     let weeksWithData = 0
     for (let w = 1; w <= 4; w++) {
@@ -179,10 +195,11 @@ export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonth
     )
   }
 
-  const small = realOuts.filter((t) => t.amountMinor <= 20000)
+  const smallMax = everydayAmount(20000, currency)
+  const small = realOuts.filter((t) => t.amountMinor <= smallMax)
   if (small.length >= 12) {
     tips.push(
-      `${small.length} small expenses under ${formatMinor(20000, currency)} added up to ${formatMinor(sum(small), currency)}. Little leaks sink the ship — pick one to skip daily.`
+      `${small.length} small expenses under ${formatMinor(smallMax, currency)} added up to ${formatMinor(sum(small), currency)}. Little leaks sink the ship — pick one to skip daily.`
     )
   }
 

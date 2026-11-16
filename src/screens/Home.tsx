@@ -219,7 +219,7 @@ export function Home({
         })
       }
     }
-    for (const a of weeklyAnomalies(recent, categories, today)) {
+    for (const a of weeklyAnomalies(recent, categories, today, currency)) {
       list.push({
         key: `${scope}anom|${a.categoryId}|${weekDaysOf(today)[0]}`,
         level: 'info',
