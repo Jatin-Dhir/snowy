@@ -641,6 +641,7 @@ export function Home({
               txn={t}
               categories={categories}
               selected={selectedIds.has(t.id)}
+              selecting={selecting}
               onLongPress={() => enterSelect(t.id)}
               onClick={() => (selecting ? toggleSelect(t.id) : onEdit(t))}
             />
