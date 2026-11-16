@@ -118,15 +118,23 @@ const HEADER_ALIASES: Record<string, string> = {
 /** Every column name this importer recognizes — used by the PDF extractor to spot a header row among raw positioned text. */
 export const KNOWN_HEADER_WORDS: Set<string> = new Set(Object.keys(HEADER_ALIASES))
 
+const MONTH_NAMES = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+
+/** A statement's two-digit year is this century's: "26" is 2026. */
+const fullYear = (y: string) => (y.length === 2 ? 2000 + Number(y) : Number(y))
+
 function parseDate(raw: string): string | null {
   const v = raw.trim()
   let y: number, mo: number, d: number
   let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(v)
   if (m) {
     ;[y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])]
-  } else if ((m = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/.exec(v))) {
-    // Indian/European day-first: 23/08/2026 or 23-08-2026
-    ;[d, mo, y] = [Number(m[1]), Number(m[2]), Number(m[3])]
+  } else if ((m = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4}|\d{2})(?!\d)/.exec(v))) {
+    // Indian/European day-first: 23/08/2026, 23-08-2026, or HDFC's 23/08/26
+    ;[d, mo, y] = [Number(m[1]), Number(m[2]), fullYear(m[3])]
+  } else if ((m = /^(\d{1,2})[\s/-]*([A-Za-z]{3,})\.?[\s/,-]*(\d{4}|\d{2})(?!\d)/.exec(v))) {
+    // the month in words, as SBI and most card statements write it: 1 Nov 2026, 01-Nov-26
+    ;[d, mo, y] = [Number(m[1]), MONTH_NAMES.indexOf(m[2].slice(0, 3).toLowerCase()) + 1, fullYear(m[3])]
   } else {
     return null
   }
@@ -175,8 +183,16 @@ export function planImportFromGrid(
     defaultCurrency: string
   }
 ): ImportPlan | null {
-  if (grid.length < 2) return null
-  const header = grid[0].map((h) => HEADER_ALIASES[h.trim().toLowerCase()] ?? '')
+  // a bank's export often starts with the account's details (name, number, period) and only then the
+  // table: its header is the first row that names a date and an amount, or debit and credit columns
+  const headerOf = (row: string[]) => row.map((h) => HEADER_ALIASES[h.trim().toLowerCase()] ?? '')
+  const at = grid.slice(0, 40).findIndex((row) => {
+    const h = headerOf(row)
+    return h.includes('date') && (h.includes('amount') || h.includes('debit') || h.includes('credit'))
+  })
+  if (at < 0 || grid.length - at < 2) return null
+  const header = headerOf(grid[at])
+  const body = grid.slice(at + 1)
   const col = (name: string) => header.indexOf(name)
   const debitCreditMode = col('amount') < 0 && (col('debit') >= 0 || col('credit') >= 0)
   if (col('date') < 0 || (col('amount') < 0 && !debitCreditMode)) return null
@@ -194,9 +210,9 @@ export function planImportFromGrid(
   const hasNegatives =
     !debitCreditMode &&
     kindCol < 0 &&
-    grid.slice(1).some((r) => parseFloat((r[col('amount')] ?? '').replace(/[^0-9.\-]/g, '')) < 0)
+    body.some((r) => parseFloat((r[col('amount')] ?? '').replace(/[^0-9.\-]/g, '')) < 0)
 
-  for (const r of grid.slice(1)) {
+  for (const r of body) {
     const cell = (name: string) => {
       const i = col(name)
       return i >= 0 ? (r[i] ?? '').trim() : ''
