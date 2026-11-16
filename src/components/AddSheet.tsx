@@ -343,6 +343,29 @@ export function AddSheet({
     onClose()
   }
 
+  // an entry of your own, logged again today as the sheet shows it: two taps for the bill that comes back now and
+  // then, too rarely to be a chip. Not a trip share, an automatic payment or savings, as the chips (the goal's own
+  // button adds to the goal), and not while the sheet is moving it into a trip
+  const canLogAgain =
+    editTxn !== null &&
+    !editTxn.tripEntryId &&
+    editTxn.source !== 'recurring' &&
+    editTxn.categoryId !== 'savings' &&
+    selectedCat !== 'savings' &&
+    !goesInTrip
+
+  async function logAgain() {
+    if (!editTxn || !canSave || !canLogAgain) return
+    // the account it was paid from, unless that one's gone since
+    const from = activeAccounts.some((a) => a.id === account) ? account : (guessAccount(accounts, recent) ?? account)
+    const txn = await addTxn({ amountMinor, currency, categoryId: selectedCat, accountId: from, kind, note: note.trim() })
+    haptic('success')
+    showToast(`Logged ${kind === 'in' ? '+' : ''}${formatMinor(amountMinor, currency)} again today`, () => {
+      void removeTxnPermanently(txn.id)
+    })
+    onClose()
+  }
+
   async function deleteEdit() {
     if (editEntry) {
       await softDeleteTripEntry(editEntry)
@@ -674,9 +697,22 @@ export function AddSheet({
 
             <div className="sheet-cta">
               {isEdit ? (
-                <button className="btn" onClick={() => void saveEdit()} disabled={!canSave}>
-                  Save changes
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {canLogAgain && (
+                    <button
+                      className="btn ghost"
+                      style={{ width: 'auto', flexShrink: 0, paddingInline: 16 }}
+                      onClick={() => void logAgain()}
+                      disabled={!canSave}
+                      aria-label="Log again today"
+                    >
+                      Log again
+                    </button>
+                  )}
+                  <button className="btn" style={{ flex: 1, minWidth: 0 }} onClick={() => void saveEdit()} disabled={!canSave}>
+                    Save changes
+                  </button>
+                </div>
               ) : (
                 <button className="btn" onClick={() => void saveNew(selectedCat)} disabled={!canSave}>
                   {canSave
