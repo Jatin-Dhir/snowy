@@ -28,12 +28,18 @@ export function goalSaved(g: Pick<Goal, 'savedMinor'>): number {
   return Math.max(0, g.savedMinor)
 }
 
-/** delta may be negative (taking money back out). The running total isn't floored here: goalSaved floors it */
+/**
+ * The goal's own Add and Take out, and Home's tuck-away: delta may be negative (taking money back out). The running
+ * total isn't floored here, goalSaved floors it; but money put into a goal that's below nothing starts it again from
+ * nothing. A deposit deleted after a take-out leaves a gap no one can see, and the ₹500 just put in has to show as
+ * ₹500, not fill that gap and leave the goal at ₹0
+ */
 export async function addToGoal(id: string, deltaMinor: number): Promise<void> {
   const g = await db.goals.get(id)
   if (!g) return
+  const from = deltaMinor > 0 ? goalSaved(g) : g.savedMinor
   await db.goals.update(id, {
-    savedMinor: g.savedMinor + deltaMinor,
+    savedMinor: from + deltaMinor,
     baseSavedMinor: null,
     updatedAt: Date.now()
   })
