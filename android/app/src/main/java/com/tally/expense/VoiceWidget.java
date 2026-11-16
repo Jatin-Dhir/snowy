@@ -207,11 +207,25 @@ public class VoiceWidget extends AppWidgetProvider {
                     // two cells cut "Spent today" short; three have room for it
                     : kind == Kind.SMALL ? R.string.widget_short_spent : R.string.widget_label_spent)
             : (over ? R.string.widget_label_over : money.hasBudget ? R.string.widget_label_room : R.string.widget_label_spent));
-    String caption = !money.hasBudget
-        ? (money.entries == 0
-            ? res.getString(R.string.widget_caption_fresh)
-            : res.getQuantityString(R.plurals.widget_caption_entries, money.entries, money.entries))
-        : res.getString(over ? R.string.widget_caption_over : R.string.widget_caption_room, data.money(money.allowance));
+    // only the four-by-two has room for it; it's the spoken description on every size
+    String caption;
+    switch (money.caption()) {
+      case OVER:
+        caption = res.getString(R.string.widget_caption_over, data.money(money.allowance));
+        break;
+      case ROOM:
+        caption = res.getString(R.string.widget_caption_room, data.money(money.allowance));
+        break;
+      case MONTH:
+        // no budget: today's spend, and under it the month so far, as Home's month strip has it
+        caption = res.getString(R.string.widget_caption_month, data.money(money.month));
+        break;
+      case ENTRIES:
+        caption = res.getQuantityString(R.plurals.widget_caption_entries, money.entries, money.entries);
+        break;
+      default:
+        caption = res.getString(R.string.widget_caption_fresh);
+    }
 
     v.setTextViewText(R.id.widget_label, label);
     v.setViewVisibility(R.id.widget_status, View.GONE);

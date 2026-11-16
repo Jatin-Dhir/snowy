@@ -117,6 +117,73 @@ public class TodayMoneyTest {
   }
 
   @Test
+  public void withoutABudgetTheBigWidgetSaysTheMonth() {
+    // ₹5,000 spent before the 16th and ₹320 today: Home's month strip says ₹5,320
+    TodayMoney m = TodayMoney.compute(0, 500_000, days("2026-11-16", 32_000), counts("2026-11-16", 2), "2026-11-16", "2026-11-16");
+    assertEquals(532_000, m.month);
+    assertEquals(32_000, m.figure());
+    assertEquals(TodayMoney.Caption.MONTH, m.caption());
+  }
+
+  @Test
+  public void theMonthCountsADayDatedLaterInItAsHomeDoes() {
+    TodayMoney m = TodayMoney.compute(0, 500_000, days("2026-11-16", 32_000, "2026-11-20", 10_000), counts(), "2026-11-16", "2026-11-16");
+    assertEquals(542_000, m.month);
+    assertEquals(32_000, m.spent);
+  }
+
+  @Test
+  public void theNextDayKeepsTheMonth() {
+    // the 17th, Taily not opened since the 16th: nothing today, the month as it was
+    TodayMoney m = TodayMoney.compute(0, 500_000, days("2026-11-16", 32_000), counts("2026-11-16", 2), "2026-11-16", "2026-11-17");
+    assertEquals(532_000, m.month);
+    assertEquals(0, m.spent);
+    assertEquals(TodayMoney.Caption.MONTH, m.caption());
+  }
+
+  @Test
+  public void aNewMonthHasNothingInItYet() {
+    TodayMoney m = TodayMoney.compute(0, 2_900_000, days("2026-11-30", 50_000), counts("2026-11-30", 2), "2026-11-30", "2026-12-01");
+    assertEquals(0, m.month);
+    assertEquals(TodayMoney.Caption.FRESH, m.caption());
+  }
+
+  @Test
+  public void onlyMoneyInSoFarCountsEntriesNotTheMonth() {
+    // the 1st, a salary in and nothing spent: no month to show yet, so the entries today
+    TodayMoney m = TodayMoney.compute(0, 0, days(), counts("2026-11-01", 1), "2026-11-01", "2026-11-01");
+    assertEquals(0, m.month);
+    assertEquals(TodayMoney.Caption.ENTRIES, m.caption());
+  }
+
+  @Test
+  public void aMonthWithNothingAtAllIsAFreshDay() {
+    TodayMoney m = TodayMoney.compute(0, 0, days(), counts(), "2026-11-01", "2026-11-01");
+    assertEquals(TodayMoney.Caption.FRESH, m.caption());
+  }
+
+  @Test
+  public void withABudgetTheCaptionIsTodaysShareAsBefore() {
+    TodayMoney under = TodayMoney.compute(3_000_000, 1_200_000, days("2026-11-16", 45_000), counts(), "2026-11-16", "2026-11-16");
+    assertEquals(TodayMoney.Caption.ROOM, under.caption());
+    assertEquals(1_245_000, under.month);
+    TodayMoney over = TodayMoney.compute(3_000_000, 1_200_000, days("2026-11-16", 150_000), counts(), "2026-11-16", "2026-11-16");
+    assertEquals(TodayMoney.Caption.OVER, over.caption());
+  }
+
+  @Test
+  public void aClockThatWentBackKeepsTheSummarysMonth() {
+    TodayMoney m = TodayMoney.compute(0, 500_000, days("2026-11-16", 32_000), counts(), "2026-11-16", "2026-11-15");
+    assertEquals(532_000, m.month);
+  }
+
+  @Test
+  public void aDayFromAnotherMonthStaysOutOfTheMonth() {
+    TodayMoney m = TodayMoney.compute(0, 500_000, days("2026-11-16", 32_000, "2026-12-01", 99_000), counts(), "2026-11-16", "2026-11-16");
+    assertEquals(532_000, m.month);
+  }
+
+  @Test
   public void februaryKnowsLeapYears() {
     assertEquals(29, TodayMoney.daysInMonth(2028, 2));
     assertEquals(28, TodayMoney.daysInMonth(2026, 2));
