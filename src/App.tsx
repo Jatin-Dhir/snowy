@@ -4,6 +4,7 @@ import { db, DEFAULT_SETTINGS, type Settings, type TripEntry, type Txn } from '.
 import { ensureSeeded } from './db/seed'
 import { runDueRules } from './db/recurring'
 import { formatMinor } from './lib/money'
+import { todayISO } from './lib/dates'
 import { checkForUpdate, type UpdateInfo } from './lib/updater'
 import { DISTRIBUTION } from './lib/distribution'
 import { checkSharedFile, clearLeftoverFiles, type SharedFile } from './lib/shareIntent'
@@ -81,6 +82,57 @@ export default function App() {
       showToast(`Logged ${logged.length} recurring expenses`)
     }
   }
+
+  // The day on screen. Android keeps Taily alive in the background, often overnight, so the day can change
+  // without a restart: back in the morning, Home went on calling yesterday "today", and a payment due today
+  // waited for the next cold start to be logged. Checked whenever Taily comes back, and at midnight while it's
+  // open; a new day re-renders every screen (each reads today as it renders) and logs what fell due.
+  const [day, setDay] = useState(todayISO)
+  useEffect(() => {
+    let timer = 0
+    const check = () => {
+      setDay(todayISO())
+      window.clearTimeout(timer)
+      const midnight = new Date()
+      midnight.setHours(24, 0, 1, 0)
+      timer = window.setTimeout(check, midnight.getTime() - Date.now())
+    }
+    check()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') check()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', check)
+    // the WebView's own visibility isn't reliable on every Android version (as for the lock below)
+    let sub: { remove(): void } | undefined
+    let disposed = false
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) return
+        const { App: CapApp } = await import('@capacitor/app')
+        const handle = await CapApp.addListener('appStateChange', ({ isActive }) => isActive && check())
+        if (disposed) void handle.remove()
+        else sub = handle
+      } catch {
+        /* not native */
+      }
+    })()
+    return () => {
+      disposed = true
+      window.clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', check)
+      sub?.remove()
+    }
+  }, [])
+  const dayShown = useRef(day)
+  useEffect(() => {
+    if (day === dayShown.current) return
+    dayShown.current = day
+    if (ready && settings.initialized) void logDueRules(settings.currency)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [day])
 
   useEffect(() => {
     void (async () => {
