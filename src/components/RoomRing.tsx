@@ -55,10 +55,9 @@ export function RoomRing({ left, over, size = 92 }: { left: number; over: boolea
         ) : (
           <>
             {/* the happy face turned over, so it's the same cat: its ^ eyes close downward and its ω mouth
-                becomes a pout, with one small tear. No brows: slanted brows are what reads as cross */}
+                becomes a pout. No brows: slanted brows are what reads as cross */}
             <path className="stroke" d="M37 53.2 Q41 57.4 45 53.2" />
             <path className="stroke" d="M55 53.2 Q59 57.4 63 53.2" />
-            <path className="tear" d="M41 58.4 Q38.9 61.9 41 63.3 Q43.1 61.9 41 58.4 Z" />
             <path className="stroke" d="M44.5 65.6 Q47.25 62 50 65.2 Q52.75 62 55.5 65.6" />
           </>
         )}

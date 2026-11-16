@@ -243,11 +243,11 @@ export function Budgets({ currency, onOpenSettings }: { currency: string; onOpen
   }
 
   function stateColor(state: 'ok' | 'warn' | 'over', fallback: string): string {
-    return state === 'over' ? 'var(--red)' : state === 'warn' ? 'var(--amber)' : fallback
+    return state === 'over' ? 'var(--over-fill)' : state === 'warn' ? 'var(--amber)' : fallback
   }
 
   function stateText(state: 'ok' | 'warn' | 'over', fallback: string): string {
-    return state === 'over' ? 'var(--red)' : state === 'warn' ? 'var(--amber-text)' : fallback
+    return state === 'over' ? 'var(--over-text)' : state === 'warn' ? 'var(--amber-text)' : fallback
   }
 
   const overallPace = overall ? pace(spent, overall.amountMinor, today) : null

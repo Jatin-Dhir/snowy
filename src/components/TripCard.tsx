@@ -40,7 +40,7 @@ export function TripCard({ currency, onOpen }: { currency: string; onOpen: () =>
         <span className="mono" style={{ fontWeight: 700, fontSize: 16 }}>{formatMinor(summary.total, currency)}</span>
       </span>
       {budget !== null && (
-        <Progress fraction={budget > 0 ? summary.total / budget : 0} color={summary.total > budget ? 'var(--red)' : 'var(--pos)'} height={5} />
+        <Progress fraction={budget > 0 ? summary.total / budget : 0} color={summary.total > budget ? 'var(--over-fill)' : 'var(--pos)'} height={5} />
       )}
     </button>
   )

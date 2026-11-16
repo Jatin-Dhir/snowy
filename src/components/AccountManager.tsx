@@ -177,7 +177,7 @@ export function AccountManager({ open, currency, onClose }: { open: boolean; cur
                 onClick={() => startEditBalance(a.id, bal)}
                 aria-label={`Set balance for ${a.name}`}
               >
-                <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: bal < 0 ? 'var(--red)' : 'var(--muted)' }}>
+                <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: bal < 0 ? 'var(--over-text)' : 'var(--muted)' }}>
                   {formatMinor(bal, currency)}
                 </span>
               </button>

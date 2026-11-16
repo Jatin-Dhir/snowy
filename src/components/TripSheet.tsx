@@ -286,10 +286,10 @@ function TripDetail({
           <>
             <Progress
               fraction={trip.budgetMinor > 0 ? summary.total / trip.budgetMinor : 0}
-              color={left < 0 ? 'var(--red)' : 'var(--pos)'}
+              color={left < 0 ? 'var(--over-fill)' : 'var(--pos)'}
               height={5}
             />
-            <span className="caption" style={left < 0 ? { color: 'var(--red)', fontWeight: 600 } : undefined}>
+            <span className="caption" style={left < 0 ? { color: 'var(--over-text)', fontWeight: 600 } : undefined}>
               {left < 0
                 ? `${formatMinor(-left, currency)} over the ${formatMinor(trip.budgetMinor, currency)} budget`
                 : `${formatMinor(left, currency)} left of ${formatMinor(trip.budgetMinor, currency)}`}

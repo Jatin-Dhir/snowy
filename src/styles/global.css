@@ -30,6 +30,9 @@
   --amber: #b0651f;
   --amber-text: #9a5518;
   --red: #b3453d;
+  /* money past a limit or below zero: red here; a special theme keeps its own colour (below) */
+  --over-text: var(--red);
+  --over-fill: var(--red);
   --bar-idle: #d9dfe8;
   --bar-empty: #e4e8ef;
   --faint-future: #a7b0bc;
@@ -438,6 +441,10 @@
 /* the kit every special theme shares */
 [data-special] {
   --font-display: 'Baloo 2', 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  /* over budget or below zero stays in the theme's own colour: red clashed with pink, green and blue. The sad
+     cat and the words already say it's over. Red is kept for errors and deleting */
+  --over-text: var(--accent-text);
+  --over-fill: var(--accent);
   --r-lg: 26px;
   --r-md: 21px;
   --r-sm: 17px;
@@ -757,10 +764,10 @@ button.pill:active {
   stroke-opacity: 0.28;
 }
 
-/* a special theme's cat has ears behind the ring, and a see-through ring showed them through it. Its cards are
-   one solid colour, so the same tint is mixed in solid instead */
+/* a special theme's ring stays in the theme's own colour when the day is over: a deeper tint than an empty
+   ring, and solid, since the cat's ears sit behind it (a see-through ring showed them through) */
 [data-special] .room-ring.is-over .ring-track {
-  stroke: color-mix(in srgb, var(--red) 28%, var(--card));
+  stroke: color-mix(in srgb, var(--accent) 60%, var(--card));
   stroke-opacity: 1;
 }
 
@@ -784,11 +791,6 @@ button.pill:active {
 
 .room-ring .eye {
   fill: var(--ink);
-}
-
-/* a sad cat's one tear: the same soft blue in every theme, light or dark, as tears always are */
-.room-ring .tear {
-  fill: #9fd0ff;
 }
 
 /* a special theme's cat has ears and rosy cheeks; everywhere else it's just a face */
@@ -1031,7 +1033,7 @@ button.pill:active {
 }
 
 .note-dot.over {
-  background: var(--red);
+  background: var(--over-fill);
 }
 
 .note-dot.warn,

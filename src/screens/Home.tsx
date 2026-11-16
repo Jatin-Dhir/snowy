@@ -274,8 +274,8 @@ export function Home({
       : monthPace.state === 'warn'
         ? `${formatMinor(Math.max(0, monthSpent - budgetMinor * monthPace.dayFraction), currency)} ahead of pace`
         : 'On pace'
-  const paceColor = !monthPace ? '' : monthPace.state === 'over' ? 'var(--red)' : monthPace.state === 'warn' ? 'var(--amber)' : 'var(--pos)'
-  const paceText = !monthPace ? '' : monthPace.state === 'over' ? 'var(--red)' : monthPace.state === 'warn' ? 'var(--amber-text)' : 'var(--pos-text)'
+  const paceColor = !monthPace ? '' : monthPace.state === 'over' ? 'var(--over-fill)' : monthPace.state === 'warn' ? 'var(--amber)' : 'var(--pos)'
+  const paceText = !monthPace ? '' : monthPace.state === 'over' ? 'var(--over-text)' : monthPace.state === 'warn' ? 'var(--amber-text)' : 'var(--pos-text)'
 
   // the week, against the budget's even daily share. The line only joins the bars when some day came near
   // it: drawn far above them it would squash the week to stubs, and "all under" says the same thing in words
@@ -339,7 +339,7 @@ export function Home({
                 setHeroPop((p) => p + 1)
               }}
               // and on a narrow phone it shrinks with the screen, so it never runs into the ring
-              style={{ fontSize: `min(${heroSize}px, ${(82 / heroFinal.length).toFixed(2)}vw)`, color: over ? 'var(--red)' : 'var(--ink)' }}
+              style={{ fontSize: `min(${heroSize}px, ${(82 / heroFinal.length).toFixed(2)}vw)`, color: over ? 'var(--over-text)' : 'var(--ink)' }}
             >
               {formatMinor(heroAnimated, currency)}
             </button>
@@ -398,7 +398,7 @@ export function Home({
             <Icon name="wallet" size={17} />
           </span>
           <span className="tile-name">Balance</span>
-          <span className="mono tile-value" style={balance < 0 ? { color: 'var(--red)' } : undefined}>
+          <span className="mono tile-value" style={balance < 0 ? { color: 'var(--over-text)' } : undefined}>
             {formatMinor(balance, currency)}
           </span>
         </span>
@@ -409,7 +409,7 @@ export function Home({
               return (
                 <span key={a.id} className="mini-chip">
                   {a.name}
-                  <span className="mono" style={b < 0 ? { color: 'var(--red)' } : undefined}>
+                  <span className="mono" style={b < 0 ? { color: 'var(--over-text)' } : undefined}>
                     {formatMinor(b, currency)}
                   </span>
                 </span>
@@ -479,7 +479,7 @@ export function Home({
           {notes.map((n) => (
             <div key={n.key} className="note-row">
               <span className={`note-dot ${n.level}`} />
-              <span className="note-text" style={n.level === 'over' ? { color: 'var(--red)' } : undefined}>
+              <span className="note-text" style={n.level === 'over' ? { color: 'var(--over-text)' } : undefined}>
                 {n.text}
               </span>
               <button className="note-x" aria-label={`Dismiss: ${n.text}`} onClick={n.dismiss}>
@@ -650,7 +650,7 @@ export function Home({
           </div>
           <div className="well" style={{ alignItems: 'center' }}>
             <span className="label" style={{ fontSize: 9.5 }}>Total, across every account</span>
-            <span className="well-num" style={{ color: balance < 0 ? 'var(--red)' : undefined }}>
+            <span className="well-num" style={{ color: balance < 0 ? 'var(--over-text)' : undefined }}>
               {formatMinor(balance, currency)}
             </span>
           </div>
@@ -676,7 +676,7 @@ export function Home({
                         onClick={() => startEditBalance(a.id, acctBalance)}
                         aria-label={`Edit balance for ${a.name}, ${formatMinor(acctBalance, currency)}`}
                       >
-                        <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: acctBalance < 0 ? 'var(--red)' : 'var(--ink)' }}>
+                        <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: acctBalance < 0 ? 'var(--over-text)' : 'var(--ink)' }}>
                           {formatMinor(acctBalance, currency)}
                         </span>
                         <Icon name="pencil" size={12} />
