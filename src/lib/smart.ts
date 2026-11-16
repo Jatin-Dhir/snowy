@@ -1,7 +1,7 @@
 // On-device intelligence: note-memory categorization, anomaly detection,
 // and generated insight notes. Deterministic, instant, fully offline.
 import type { Account, Category, Txn } from '../db/db'
-import { isOut, isRealSpend, sum } from '../db/stats'
+import { isOut, isRealSpend, projectMonth, sum, type DueBill } from '../db/stats'
 import { addDaysISO, daysInMonth, fromISO, todayISO, weekDaysOf } from './dates'
 import { formatMinor } from './money'
 
@@ -126,11 +126,13 @@ export interface AdviceInput {
   categories: Category[]
   budgets: { id: string; amountMinor: number }[]
   rulesMonthly: number
+  /** the month's recurring payments still due (stillDue), for where it lands */
+  due?: DueBill[]
   currency: string
 }
 
 /** Personalised, rule-based "how to improve" tips — all computed on-device. */
-export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonthly, currency }: AdviceInput): string[] {
+export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonthly, due = [], currency }: AdviceInput): string[] {
   const outs = monthTxns.filter(isOut)
   const spent = sum(outs) // includes savings — what the budget/pace actually tracks
   if (spent <= 0) return ['Log a few expenses first — the more Taily sees, the sharper the advice gets.']
@@ -166,8 +168,9 @@ export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonth
     if (isCurrentMonth) {
       const day = Math.max(1, parseInt(today.slice(8, 10), 10))
       const dim = daysInMonth(monthKey)
-      // whole rupees, like projectMonth: "around ₹73,849", not "₹73,848.75"
-      const projected = Math.round(((spent / day) * dim) / 100) * 100
+      // where Budgets and Insights say it lands: recurring payments once each, the rest at its pace so far, in whole
+      // rupees ("around ₹61,425", not "₹61,424.63")
+      const projected = projectMonth(monthTxns, monthKey, today, due)
       const daysLeft = Math.max(1, dim - day + 1)
       if (projected > overall.amountMinor) {
         tips.push(

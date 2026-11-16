@@ -1,4 +1,4 @@
-import type { Account, Txn } from './db'
+import type { Account, Rule, Txn } from './db'
 import { daysInMonth, todayISO, weekDaysOf } from '../lib/dates'
 
 export function isOut(t: Txn): boolean {
@@ -14,6 +14,52 @@ export function isOut(t: Txn): boolean {
  */
 export function isRealSpend(t: Txn): boolean {
   return isOut(t) && t.categoryId !== 'savings'
+}
+
+/**
+ * A payment a recurring rule logged (recurring.ts): rent, an EMI, a subscription. A fixed cost, known ahead and paid
+ * in one go on its day, so it says nothing about how fast the rest of the month is going.
+ */
+export function isRecurring(t: Txn): boolean {
+  return t.source === 'recurring'
+}
+
+/** One of the month's recurring payments its rule hasn't logged yet. */
+export interface DueBill {
+  dateISO: string
+  amountMinor: number
+  categoryId: string | null
+}
+
+/**
+ * The month's recurring payments still due: each active rule's day in the month that it hasn't logged yet. A rule
+ * logs its payment on its day (or the first time Taily is opened after) and moves its next run on past it, so the
+ * day is still to come while the next run isn't past it. A paused rule logs nothing.
+ */
+export function stillDue(rules: Rule[], monthKey: string): DueBill[] {
+  const dim = daysInMonth(monthKey)
+  const due: DueBill[] = []
+  for (const r of rules) {
+    if (r.paused) continue
+    // the day as the rule runs it: its 31st is a 30-day month's 30th (nextMonthlyOccurrence)
+    const iso = `${monthKey}-${String(Math.min(Math.max(1, r.dayOfMonth), dim)).padStart(2, '0')}`
+    if (r.nextRunISO <= iso) due.push({ dateISO: iso, amountMinor: r.amountMinor, categoryId: r.categoryId })
+  }
+  return due
+}
+
+/** The month's recurring payments, all of them or one tag's: what's logged so far, and what's still due. */
+export interface Fixed {
+  logged: number
+  due: number
+}
+
+export function fixedOf(monthTxns: Txn[], due: DueBill[], categoryId?: string): Fixed {
+  const mine = (c: string | null) => categoryId === undefined || c === categoryId
+  return {
+    logged: sum(monthTxns.filter((t) => isRecurring(t) && mine(t.categoryId))),
+    due: due.reduce((a, b) => (mine(b.categoryId) ? a + b.amountMinor : a), 0)
+  }
 }
 
 /** Same, split by account — what's actually in each wallet, including any manual starting balance. */
@@ -154,13 +200,17 @@ export function saveSuggestion(
   }
 }
 
-/** Straight-line end-of-month projection from spend so far. */
-export function projectMonth(monthTxns: Txn[], monthKey: string, todayIso = todayISO()): number {
+/**
+ * Where the month will land: its recurring payments as they are (logged, and still due), and the rest of the spending
+ * so far in a straight line to the month's end. Rent paid on the 1st is paid once, not every day.
+ */
+export function projectMonth(monthTxns: Txn[], monthKey: string, todayIso = todayISO(), due: DueBill[] = []): number {
   const spent = sum(monthTxns)
   if (!todayIso.startsWith(monthKey)) return spent
   const day = parseInt(todayIso.slice(8, 10), 10)
   if (day === 0) return spent
-  return Math.round(((spent / day) * daysInMonth(monthKey)) / 100) * 100
+  const fixed = fixedOf(monthTxns, due)
+  return Math.round((fixed.logged + fixed.due + ((spent - fixed.logged) / day) * daysInMonth(monthKey)) / 100) * 100
 }
 
 export function groupByDay(txns: Txn[]): { iso: string; total: number; txns: Txn[] }[] {

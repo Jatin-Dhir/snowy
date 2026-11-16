@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Goal, type Txn } from '../db/db'
 import { addGoal, addToGoal, deleteGoal, restoreGoal, updateGoal } from '../db/goals'
 import { addTxn, recentTxns, txnsForMonth } from '../db/repo'
-import { byCategory, pace, projectMonth, sum } from '../db/stats'
+import { byCategory, pace, projectMonth, stillDue, sum } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
 import { guessAccount } from '../lib/smart'
@@ -200,7 +200,9 @@ export function Budgets({
   const overall = budgets.find((b) => b.id === 'overall') ?? null
   const catBudgets = budgets.filter((b) => b.id !== 'overall')
   const dayFraction = parseInt(today.slice(8, 10), 10) / daysInMonth(monthKey)
-  const projected = projectMonth(monthTxns, monthKey, today)
+  // the month's recurring payments still to come: counted once each in where the month lands
+  const due = useMemo(() => stillDue(rules, monthKey), [rules, monthKey])
+  const projected = projectMonth(monthTxns, monthKey, today, due)
   const bills = upcomingRules(rules, 14)
   const budgetless = categories.filter((c) => !c.archived && !catBudgets.some((b) => b.id === c.id))
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Txn } from '../db/db'
 import { txnsBetween } from '../db/repo'
-import { byCategory, incomeSum, isRealSpend, pace, projectMonth, sum } from '../db/stats'
+import { byCategory, incomeSum, isRealSpend, pace, projectMonth, stillDue, sum } from '../db/stats'
 import { formatCompact, formatMinor } from '../lib/money'
 import { adviceFor, smartNotes } from '../lib/smart'
 import { LoansSheet } from '../components/LoansSheet'
@@ -81,7 +81,9 @@ export function Insights({
   const monthTxns = useMemo(() => windowTxns.filter((t) => monthKeyOf(t.dateISO) === monthKey), [windowTxns, monthKey])
   const spent = sum(monthTxns)
   const received = incomeSum(monthTxns)
-  const projected = isCurrent ? projectMonth(monthTxns, monthKey, today) : spent
+  // this month's recurring payments still to come, counted once each in where it lands
+  const due = useMemo(() => (isCurrent ? stillDue(rules, monthKey) : []), [rules, monthKey, isCurrent])
+  const projected = isCurrent ? projectMonth(monthTxns, monthKey, today, due) : spent
 
   const prevKey = addMonths(monthKey, -1)
   const vsPrev = useMemo(() => {
@@ -599,7 +601,7 @@ export function Insights({
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span className="label" style={{ fontSize: 10.5 }}>Do better</span>
-            {adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonthly, currency })
+            {adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonthly, due, currency })
               .slice(0, 3)
               .map((tip, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
