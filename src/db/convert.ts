@@ -23,7 +23,7 @@ export async function convertEverything(rate: number, oldCurrency: string, newCu
   }
 
   let count = 0
-  await db.transaction('rw', [db.txns, db.budgets, db.rules, db.loans, db.goals, db.trips, db.tripEntries, db.tripPayments], async () => {
+  await db.transaction('rw', [db.txns, db.budgets, db.rules, db.loans, db.goals, db.accounts, db.trips, db.tripEntries, db.tripPayments], async () => {
     const txns = await db.txns.toArray()
     await db.txns.bulkPut(
       txns.map((t) => {
@@ -59,6 +59,15 @@ export async function convertEverything(rate: number, oldCurrency: string, newCu
         const [targetMinor, baseTargetMinor, baseCurrency] = step(g.targetMinor, g.baseTargetMinor, g.baseCurrency, oldCurrency)
         const [savedMinor, baseSavedMinor] = step(g.savedMinor, g.baseSavedMinor, g.baseCurrency, oldCurrency)
         return { ...g, targetMinor, savedMinor, baseTargetMinor, baseSavedMinor, baseCurrency }
+      })
+    )
+    // the money an account started with is money too: left behind, the balance mixes two currencies
+    const accounts = await db.accounts.toArray()
+    await db.accounts.bulkPut(
+      accounts.map((a) => {
+        if (!a.openingBalanceMinor && a.baseOpeningMinor == null) return a
+        const [openingBalanceMinor, baseOpeningMinor, baseCurrency] = step(a.openingBalanceMinor ?? 0, a.baseOpeningMinor, a.baseCurrency, oldCurrency)
+        return { ...a, openingBalanceMinor, baseOpeningMinor, baseCurrency }
       })
     )
     const trips = await db.trips.toArray()

@@ -34,5 +34,6 @@ export async function setAccountBalance(id: string, targetMinor: number, current
   const a = await db.accounts.get(id)
   if (!a) return
   const delta = targetMinor - currentComputedMinor
-  await db.accounts.update(id, { openingBalanceMinor: (a.openingBalanceMinor ?? 0) + delta })
+  // a balance typed in is a new fact in today's currency: its pre-conversion original no longer describes it
+  await db.accounts.update(id, { openingBalanceMinor: (a.openingBalanceMinor ?? 0) + delta, baseOpeningMinor: null, baseCurrency: null })
 }

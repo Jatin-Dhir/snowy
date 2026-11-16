@@ -33,6 +33,9 @@ export interface Account {
   archived?: 0 | 1
   /** manual correction so balance can start from what you actually have, not just what's been logged since */
   openingBalanceMinor?: number
+  /** the opening balance before any currency conversion, restored exactly when converting back */
+  baseOpeningMinor?: number | null
+  baseCurrency?: string | null
 }
 
 export interface Category {
