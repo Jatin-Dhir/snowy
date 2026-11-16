@@ -1,1 +1,1 @@
-Fixes: a double tap on an entry no longer changes it in the edit screen, Clear all data now clears the home-screen widget at once, very large amounts fit on the add screen, search keeps up with thousands of entries, and trips handle double taps. Tips and alerts use everyday amounts in every currency.
+New: a minus key on the keypad, so 500 - 50 saves 450. Tap a month's name to jump straight to any month. Home's month strip and Insights' Spent card open the month day by day. Set a budget for a tag right from Insights, and pick your own time for the daily reminder.
