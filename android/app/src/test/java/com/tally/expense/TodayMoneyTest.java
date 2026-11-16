@@ -175,6 +175,27 @@ public class TodayMoneyTest {
   }
 
   @Test
+  public void aMonthThatHasSpentItsBudgetSaysSo() {
+    // ₹30,000 for November and ₹30,500 spent before today: "Budget's all spent", not "of your ₹0 for today"
+    TodayMoney quiet = TodayMoney.compute(3_000_000, 3_050_000, days(), counts(), "2026-11-16", "2026-11-16");
+    assertEquals(0, quiet.allowance);
+    assertFalse(quiet.over());
+    assertEquals(TodayMoney.Caption.ALL_SPENT, quiet.caption());
+    // ₹200 today on top: over today by ₹200, and the line says the month is done, not "past today's ₹0"
+    TodayMoney spent = TodayMoney.compute(3_000_000, 3_050_000, days("2026-11-16", 20_000), counts(), "2026-11-16", "2026-11-16");
+    assertTrue(spent.over());
+    assertEquals(20_000, spent.figure());
+    assertEquals(TodayMoney.Caption.ALL_SPENT, spent.caption());
+    // ₹29,000 before and ₹2,000 today: today's share was ₹66, but the month is past its budget now
+    TodayMoney today = TodayMoney.compute(3_000_000, 2_900_000, days("2026-11-16", 200_000), counts(), "2026-11-16", "2026-11-16");
+    assertEquals(6_600, today.allowance);
+    assertEquals(TodayMoney.Caption.ALL_SPENT, today.caption());
+    // exactly the budget, nothing over: spent all the same
+    TodayMoney exact = TodayMoney.compute(3_000_000, 3_000_000, days(), counts(), "2026-11-16", "2026-11-16");
+    assertEquals(TodayMoney.Caption.ALL_SPENT, exact.caption());
+  }
+
+  @Test
   public void aClockThatWentBackKeepsTheSummarysMonth() {
     TodayMoney m = TodayMoney.compute(0, 500_000, days("2026-11-16", 32_000), counts(), "2026-11-16", "2026-11-15");
     assertEquals(532_000, m.month);

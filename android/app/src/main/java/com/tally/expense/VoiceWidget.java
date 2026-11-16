@@ -266,6 +266,9 @@ public class VoiceWidget extends AppWidgetProvider {
       case ROOM:
         caption = res.getString(R.string.widget_caption_room, data.money(money.allowance));
         break;
+      case ALL_SPENT:
+        caption = res.getString(R.string.widget_caption_spent);
+        break;
       case MONTH:
         // no budget: today's spend, and under it the month so far, as Home's month strip has it
         caption = res.getString(R.string.widget_caption_month, data.money(money.month));

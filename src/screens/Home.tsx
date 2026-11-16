@@ -401,9 +401,13 @@ export function Home({
                 ? todayTxns.length === 0
                   ? 'A fresh day'
                   : `${todayTxns.length} ${todayTxns.length === 1 ? 'entry' : 'entries'} so far today`
-                : over
-                  ? `past today's ${formatMinor(sts.dayAllowance, currency)}. Tomorrow adjusts`
-                  : `of your ${formatMinor(sts.dayAllowance, currency)} for today`}
+                : monthSpent >= budgetMinor
+                  ? // the month has spent its budget: "of your ₹0 for today" said nothing, and "Tomorrow adjusts"
+                    // wasn't so. As the widget says it
+                    "Budget's all spent"
+                  : over
+                    ? `past today's ${formatMinor(sts.dayAllowance, currency)}. Tomorrow adjusts`
+                    : `of your ${formatMinor(sts.dayAllowance, currency)} for today`}
             </span>
           </div>
           {sts.hasBudget && <RoomRing left={left} over={over} />}

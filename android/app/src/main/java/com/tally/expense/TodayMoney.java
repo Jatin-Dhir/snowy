@@ -36,6 +36,11 @@ final class TodayMoney {
     ROOM,
     /** "past today's ₹1,200" */
     OVER,
+    /**
+     * "Budget's all spent": the month has spent its budget, today included. "of your ₹0 for today" said nothing, and
+     * "past today's ₹70" left out that tomorrow's share is nothing too
+     */
+    ALL_SPENT,
     /** no budget: "₹12,340 this month", Home's month figure */
     MONTH,
     /** no budget and nothing spent this month yet, but entries today: "2 entries so far today" */
@@ -110,7 +115,7 @@ final class TodayMoney {
    * Home's month strip shows it beside the day, until there's something in the month to show.
    */
   Caption caption() {
-    if (hasBudget) return over() ? Caption.OVER : Caption.ROOM;
+    if (hasBudget) return month >= budget ? Caption.ALL_SPENT : over() ? Caption.OVER : Caption.ROOM;
     if (month > 0) return Caption.MONTH;
     return entries > 0 ? Caption.ENTRIES : Caption.FRESH;
   }

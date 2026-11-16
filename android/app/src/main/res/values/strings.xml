@@ -29,6 +29,8 @@
     <string name="widget_short_spent">Spent</string>
     <string name="widget_caption_room">of your %1$s for today</string>
     <string name="widget_caption_over">past today\'s %1$s</string>
+    <!-- the month has spent its budget: short, to fit beside the ring at a large text size -->
+    <string name="widget_caption_spent">Budget\'s all spent</string>
     <string name="widget_caption_fresh">A fresh day</string>
     <!-- no budget: the month so far, under today's spend -->
     <string name="widget_caption_month">%1$s this month</string>
