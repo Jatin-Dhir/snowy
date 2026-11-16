@@ -2269,6 +2269,24 @@ button.tag-row:active {
   }
 }
 
+/* The narrowest phones on their side (568px): the keys' column is a third of the sheet, and the corner's ". + −" were
+   21px wide each. Up to 640px the corner takes half the bottom row and 0 and backspace a quarter each, on a grid of
+   twelve where every digit still spans four: the three come to 33px at 568px, and 0 is still wider than tall */
+@media (max-height: 555px) and (min-width: 560px) and (max-width: 639px) {
+  .add-sheet > .numpad {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+  .add-sheet > .numpad > .key {
+    grid-column: span 4;
+  }
+  .add-sheet > .numpad > .key-trio {
+    grid-column: span 6;
+  }
+  .add-sheet > .numpad > .key-trio ~ .key {
+    grid-column: span 3;
+  }
+}
+
 /* segmented spent/received toggle */
 .seg {
   display: inline-flex;
