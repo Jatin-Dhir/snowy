@@ -2,9 +2,9 @@
 
 ## What is ready
 
-- A signed release bundle: `releases/taily-play-v2.20.1.aab` (package `com.jatindhir.taily`, version 36 / 2.20.1,
+- A signed release bundle: `releases/taily-play-v2.20.2.aab` (package `com.jatindhir.taily`, version 37 / 2.20.2,
   targets Android 16 / API 36)
-- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.20.1.apk`
+- The same build as an installable APK for a smoke test on your own phone: `releases/taily-play-v2.20.2.apk`
 - A privacy policy at https://jatin-dhir.github.io/snowy/privacy.html (also linked from Settings in the app)
 - Listing copy (`listing.md`), data-safety answers (`data-safety.md`), release notes (`whats-new.txt`)
 - Graphics in `graphics/` (icon, feature graphic, eight captioned 1080 x 1920 screenshots)
@@ -21,7 +21,7 @@ signed in to Chrome, `/u/2/` in Play Console addresses).
   declaration (no ads; sign-in details with the review code below; content rating PEGI 3 / ESRB Everyone with in-app
   purchases; target age 18+ only; data safety "no data collected or shared"; no advertising ID; not a government app;
   no financial features; no health features).
-- Live: internal testing, release 36 (2.20.1) since 17 November, to the "Internal testers" email list. Opt-in link:
+- Live: internal testing, release 37 (2.20.2) since 17 November, to the "Internal testers" email list. Opt-in link:
   https://play.google.com/apps/internaltest/4700958214368746059
 - Reviewed and published on 11 November (14 changes, approved within minutes): the store listing, the App content
   above, and closed testing ("Closed testing - Alpha"): release 24 (2.13.1), every country, testers from the "Internal
@@ -40,7 +40,8 @@ signed in to Chrome, `/u/2/` in Play Console addresses).
 - Reviewed and published on 16 November (submission 11): closed testing release 33 (2.18.2).
 - Reviewed and published on 16 November (submission 12): closed testing release 34 (2.19.0).
 - Reviewed and published on 16 November (submission 13): closed testing release 35 (2.20.0).
-- Sent for review on 17 November (submission 14): closed testing release 36 (2.20.1) at full roll-out, notes from `whats-new.txt`.
+- Reviewed and published on 17 November (submission 14): closed testing release 36 (2.20.1).
+- Sent for review on 17 November (submission 15): closed testing release 37 (2.20.2) at full roll-out, notes from `whats-new.txt`.
 - **Before Taily can go public**, Play requires the closed test to have **at least 12 testers opted in for 14 days in
   a row**, then an application for production access (questions about the test), then a production review.
   Testers count only if their Google account is on the test's tester list, they opt in through the test's link and
