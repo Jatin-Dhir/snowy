@@ -1,7 +1,7 @@
 // On-device intelligence: note-memory categorization, anomaly detection,
 // and generated insight notes. Deterministic, instant, fully offline.
 import type { Account, Category, Txn } from '../db/db'
-import { isOut, isRealSpend, isRecurring, projectMonth, sum, type DueBill } from '../db/stats'
+import { incomeSum, isOut, isRealSpend, isRecurring, projectMonth, sum, type DueBill } from '../db/stats'
 import { addDaysISO, daysInMonth, fromISO, todayISO, weekDaysOf } from './dates'
 import { formatMinor } from './money'
 
@@ -216,10 +216,15 @@ export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonth
     tips.push(`${untagged} expenses are untagged, which blurs every chart here. A quick pass in Activity fixes it.`)
   }
 
-  const income = sum(monthTxns.filter((t) => !isOut(t)))
+  // what came in: pay, a refund, money paid back. Not money taken back out of a goal, which was yours already, as
+  // money put into one isn't spent (realSpend)
+  const income = incomeSum(monthTxns.filter((t) => t.categoryId !== 'savings'))
   if (income > realSpend) {
     const kept = Math.round(((income - realSpend) / income) * 100)
-    tips.push(`You kept ${kept}% of what came in this month. Move it somewhere it can't be spent by accident.`)
+    // a month still going hasn't kept it yet, only so far
+    tips.push(
+      `${isCurrentMonth ? "So far you've" : 'You'} kept ${kept}% of what came in this month. Move it somewhere it can't be spent by accident.`
+    )
   }
 
   return tips.slice(0, 5)
