@@ -4,9 +4,9 @@
 // wrong password fails cleanly (GCM authenticates) instead of restoring
 // garbage. The password never leaves the phone and isn't kept anywhere, so a
 // forgotten one can't be recovered.
-import { db, getSettings, saveSettings, type Settings } from '../db/db'
+import { db, getSettings, saveSettings, type Rule, type Settings } from '../db/db'
 import { currentProfile, profileSlug } from './profiles'
-import { todayISO } from './dates'
+import { daysInMonth, todayISO } from './dates'
 
 const TABLES = ['txns', 'categories', 'budgets', 'rules', 'loans', 'goals', 'accounts', 'trips', 'tripEntries', 'tripPayments'] as const
 type TableName = (typeof TABLES)[number]
@@ -139,6 +139,22 @@ export async function restoreConflict(c: BackupContents): Promise<{ backup: stri
 }
 
 /**
+ * A backup's monthly payments as they go back in. One the profile has moved on since keeps the month it's up to: the
+ * payments it logged since the backup are entries that stay, and the backup's older next run would log them again
+ * (rent logged on the 1st, a second time at the next start). It takes the backup's day in that month.
+ */
+async function laterRuns(rules: Rule[] | undefined): Promise<Rule[] | undefined> {
+  if (!rules?.length) return rules
+  const here = new Map((await db.rules.toArray()).map((r) => [r.id, r]))
+  return rules.map((r) => {
+    const mine = here.get(r.id)
+    const month = mine?.nextRunISO.slice(0, 7)
+    if (!month || month <= r.nextRunISO.slice(0, 7)) return r
+    return { ...r, nextRunISO: `${month}-${String(Math.min(Math.max(1, r.dayOfMonth), daysInMonth(month))).padStart(2, '0')}` }
+  })
+}
+
+/**
  * Adds a backup into the profile that's open now. Records are matched by id, so
  * restoring the same backup twice changes nothing, and entries made since the
  * backup stay. The PIN set on this phone stays as it is.
@@ -147,7 +163,7 @@ export async function restoreBackup(c: BackupContents): Promise<void> {
   if (await restoreConflict(c)) throw new Error('The backup is in another currency than this profile')
   await db.transaction('rw', TABLES.map((t) => db.table(t)), async () => {
     for (const t of TABLES) {
-      const rows = c.tables[t]
+      const rows = t === 'rules' ? await laterRuns(c.tables.rules as Rule[] | undefined) : c.tables[t]
       if (rows?.length) await db.table(t).bulkPut(rows)
     }
   })
