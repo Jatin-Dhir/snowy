@@ -208,11 +208,18 @@ function parseAmount(raw: string): number | null {
 /**
  * An amount, and the currency written into it if there is one: "USD 15.00", "15.00 USD", "₹450". Taken off before the
  * number is read, or "Rs. 1,260.00" became ₹0.13 (its dot read as the decimal point). Money out often has its minus
- * in front of the currency, "-USD 15.00" or "-Rs. 1,260.00": the minus stays with the number.
+ * in front of the currency, "-USD 15.00" or "-Rs. 1,260.00": the minus stays with the number. A typographic minus
+ * ("−450", as spreadsheets and PDFs write it) is a minus too, and brackets are money out the accountant's way, the
+ * currency inside them kept: "(USD 15.00)", "(₹1,260.00)". Both used to be read as money in.
  */
 function readAmount(raw: string): { minor: number | null; cur: string | null } {
-  const v = raw.trim()
-  const lead = /^([-−]?) ?(US\$|S\$|Rs\.?|[₹€£]|[A-Za-z]{3}(?![A-Za-z]))/i.exec(v)
+  const v = raw.trim().replace(/−/g, '-')
+  const bracketed = /^\((.*)\)$/.exec(v)
+  if (bracketed) {
+    const inner = readAmount(bracketed[1])
+    return { minor: inner.minor === null ? null : -Math.abs(inner.minor), cur: inner.cur }
+  }
+  const lead = /^(-?) ?(US\$|S\$|Rs\.?|[₹€£]|[A-Za-z]{3}(?![A-Za-z]))/i.exec(v)
   const leadCur = lead && currencyCode(lead[2])
   if (leadCur && lead) return { minor: parseAmount((lead[1] ? '-' : '') + v.slice(lead[0].length)), cur: leadCur }
   const trail = /(?:^|[^A-Za-z])(Rs\.?|[A-Za-z]{3})$/i.exec(v)
