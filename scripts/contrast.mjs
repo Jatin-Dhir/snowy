@@ -486,7 +486,7 @@ async function walkApp() {
   await open('Month view', record, () => click('button.month-pill'))
   await open('Month picker', record, async () => {
     const did = await inTop('button.month-pick')
-    if (did) await browser.waitFor(`!!document.querySelector('.month-cell')`, 5000)
+    if (did) await browser.waitFor(`!!document.querySelector('.pick-key')`, 5000)
     return did
   })
   await closeTop()

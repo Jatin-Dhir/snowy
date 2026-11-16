@@ -89,6 +89,12 @@ export function fmtTime(ts: number): string {
   return `${h % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`
 }
 
+/** "21:00" → "9 pm", "19:30" → "7:30 pm": a time of day ("HH:MM", 24-hour) as fmtTime says it, on the hour without ":00" */
+export function fmtClock(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number)
+  return `${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''} ${h < 12 ? 'am' : 'pm'}`
+}
+
 /** "20:10", for exports a spreadsheet reads */
 export function fmtTime24(ts: number): string {
   const d = new Date(ts)

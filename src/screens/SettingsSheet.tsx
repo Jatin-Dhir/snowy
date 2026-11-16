@@ -13,7 +13,7 @@ import { APP_VERSION, checkForUpdate, type UpdateCheck } from '../lib/updater'
 import { PRIVACY_URL, SELF_UPDATE } from '../lib/distribution'
 import { applyCustomAccent, SPECIAL_THEMES } from '../lib/theme'
 import { clearPinFailures, hashPin, recordPinFailure, verifyPin } from '../lib/pin'
-import { fullDate, todayISO } from '../lib/dates'
+import { fmtClock, fullDate, todayISO } from '../lib/dates'
 import { currentProfile, profileSlug } from '../lib/profiles'
 import { addVoiceTile, pinVoiceWidget, VOICE_LANGUAGES, voiceAvailable, voiceShortcuts } from '../lib/voice'
 import { canNotify } from '../lib/notify'
@@ -24,6 +24,7 @@ import { BackupSheet } from '../components/BackupSheet'
 import { EraseSheet } from '../components/EraseSheet'
 import { Icon } from '../components/Icon'
 import { PinPad } from '../components/PinPad'
+import { ReminderTimeSheet } from '../components/ReminderTimeSheet'
 import { Sheet } from '../components/Sheet'
 import { haptic, useUi } from '../state/ui'
 
@@ -34,6 +35,9 @@ const BASE_COLORS = [
   { id: 'green', name: 'Mint', swatch: 'hsl(150 45% 58%)' },
   { id: 'mono', name: 'Black', swatch: '#222A35' }
 ]
+
+/** The daily reminder's own times; Custom has any other (ReminderTimeSheet) */
+const PRESET_REMINDERS = ['20:00', '21:00', '22:00']
 
 // set/confirm create or replace a PIN; verify gates the manage view for an existing one
 type PinMode = 'set' | 'confirm' | 'verify' | 'manage' | null
@@ -128,6 +132,9 @@ export function SettingsSheet({
   const [canListen, setCanListen] = useState(false)
   // the Android app only: it can post the daily nudge to log
   const [native, setNative] = useState(false)
+  // a time of your own for it, past the three set ones
+  const [pickingTime, setPickingTime] = useState(false)
+  const customReminder = settings.reminder && !PRESET_REMINDERS.includes(settings.reminder) ? settings.reminder : null
   useEffect(() => {
     void import('@capacitor/core')
       .then(({ Capacitor }) => setNative(Capacitor.isNativePlatform()))
@@ -175,6 +182,7 @@ export function SettingsSheet({
     setAccountsOpen(false)
     setProfilesOpen(false)
     setBackupOpen(false)
+    setPickingTime(false)
     setImportPlan(null)
     setPdfPassword(null)
     setPdfPasswordValue('')
@@ -661,7 +669,7 @@ export function SettingsSheet({
               Daily reminder
             </h3>
             <div role="group" aria-labelledby="daily-reminder" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-              {[null, '20:00', '21:00', '22:00'].map((time) => (
+              {[null, ...PRESET_REMINDERS].map((time) => (
                 <button
                   key={time ?? 'off'}
                   className={`pill${settings.reminder === time ? ' active' : ''}`}
@@ -669,14 +677,35 @@ export function SettingsSheet({
                   aria-pressed={settings.reminder === time}
                   onClick={() => void setReminder(time)}
                 >
-                  {time ? `${parseInt(time, 10) - 12} pm` : 'Off'}
+                  {time ? fmtClock(time) : 'Off'}
                 </button>
               ))}
+              {/* any other time: under the four and as wide as them all. Once picked it shows that time, and changes it */}
+              <button
+                className={`pill${customReminder ? ' active' : ''}`}
+                style={{ gridColumn: '1 / -1', justifyContent: 'center' }}
+                aria-pressed={!!customReminder}
+                aria-haspopup="dialog"
+                aria-label={customReminder ? `Custom time, ${fmtClock(customReminder)}. Change it` : 'Custom time'}
+                onClick={() => {
+                  haptic('selection')
+                  setPickingTime(true)
+                }}
+              >
+                {customReminder ? (
+                  <>
+                    {fmtClock(customReminder)}
+                    <Icon name="pencil" size={12} />
+                  </>
+                ) : (
+                  'Custom time'
+                )}
+              </button>
             </div>
             <span className="caption" style={{ fontSize: 11.5 }}>
               {settings.reminder
                 ? // Android may hold an alarm Taily can't make exact for up to an hour
-                  `A nudge around ${parseInt(settings.reminder, 10) - 12} pm, only on days nothing's logged by then`
+                  `A nudge around ${fmtClock(settings.reminder)}, only on days nothing's logged by then`
                 : "A nudge in the evening, only on days nothing's logged yet"}
             </span>
           </div>
@@ -881,6 +910,16 @@ export function SettingsSheet({
           </a>
         </span>
 
+        {pickingTime && (
+          <ReminderTimeSheet
+            value={settings.reminder}
+            onSave={(time) => {
+              setPickingTime(false)
+              void setReminder(time)
+            }}
+            onClose={() => setPickingTime(false)}
+          />
+        )}
         <AccountManager open={accountsOpen} currency={settings.currency} onClose={() => setAccountsOpen(false)} />
         <ProfilesSheet open={profilesOpen} onClose={() => setProfilesOpen(false)} />
         <BackupSheet open={backupOpen} onClose={() => setBackupOpen(false)} />

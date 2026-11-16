@@ -60,7 +60,7 @@ export function MonthPicker({
             <h3 className="label" id={`month-year-${year}`}>
               {year}
             </h3>
-            <div className="month-grid">
+            <div className="pick-grid">
               {MONTH_NUMBERS.map((mm) => {
                 const key = `${year}-${mm}`
                 const spent = totals.get(key)
@@ -71,7 +71,7 @@ export function MonthPicker({
                 return (
                   <button
                     key={key}
-                    className={`month-cell${shown ? ' on' : ''}${isNow ? ' now' : ''}`}
+                    className={`pick-key${shown ? ' on' : ''}${isNow ? ' now' : ''}`}
                     disabled={!open}
                     aria-pressed={shown}
                     aria-label={
@@ -85,8 +85,8 @@ export function MonthPicker({
                     autoFocus={shown}
                     onClick={() => pick(key)}
                   >
-                    <span className="month-cell-name">{monthShort(key)}</span>
-                    <span className="month-cell-sum mono">{spent !== undefined ? formatCompact(spent, currency) : ''}</span>
+                    <span className="pick-key-name">{monthShort(key)}</span>
+                    <span className="pick-key-sum mono">{spent !== undefined ? formatCompact(spent, currency) : ''}</span>
                   </button>
                 )
               })}

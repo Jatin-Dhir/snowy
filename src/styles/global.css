@@ -617,22 +617,24 @@ select {
   transition-duration: 0ms;
 }
 
-/* the months to jump to, a year to a grid: raised like keys, the month showing filled in the accent, and a month
-   with nothing in it (or still to come) flat on the sheet, out of reach */
-.month-year {
+/* Picking from a grid of keys: the months to jump to (MonthPicker), a year to a grid, and the hours and minutes of
+   the daily reminder (ReminderTimeSheet). Raised like the keypad's keys, the one picked filled in the accent, and
+   one out of reach (a month with nothing in it, or still to come) flat on the sheet and dimmed */
+.month-year,
+.pick-set {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.month-grid {
+.pick-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   padding-bottom: 4px;
 }
 
-.month-cell {
+.pick-key {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -649,19 +651,19 @@ select {
   transition: box-shadow 150ms var(--ease-soft), transform 150ms var(--ease-soft);
 }
 
-.month-cell:active:not(:disabled) {
+.pick-key:active:not(:disabled) {
   box-shadow: var(--btn-shadow-active);
   transform: scale(0.96);
   transition-duration: 0ms, 0ms;
 }
 
-.month-cell-name {
+.pick-key-name {
   font-weight: 700;
   font-size: 14px;
   line-height: 18px;
 }
 
-.month-cell-sum {
+.pick-key-sum {
   max-width: 100%;
   min-height: 15px;
   font-size: 11.5px;
@@ -674,22 +676,57 @@ select {
 }
 
 /* this month, as the week chart marks today */
-.month-cell.now .month-cell-name {
+.pick-key.now .pick-key-name {
   color: var(--accent-text);
 }
 
-.month-cell.on {
+.pick-key.on {
   background: var(--accent);
   box-shadow: var(--raise-sm);
 }
 
-.month-cell.on .month-cell-name,
-.month-cell.on .month-cell-sum {
+.pick-key.on,
+.pick-key.on .pick-key-name,
+.pick-key.on .pick-key-sum {
   color: var(--on-accent);
 }
 
+/* a number on its own: an hour or the minutes */
+.pick-key.pick-num {
+  min-height: 46px;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 17px;
+}
+
+/* the time a choice makes, in big numbers, as the add sheet shows an amount */
+.time-readout {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  padding: 2px 0 4px;
+}
+
+.time-readout-num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 46px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.time-readout-half {
+  font-family: var(--font-num);
+  font-weight: 600;
+  font-size: 22px;
+  color: var(--faint);
+}
+
 /* out of reach, dimmed the way every unavailable control in Taily is: the months that can be picked stand out */
-.month-cell:disabled {
+.pick-key:disabled {
   background: none;
   border-color: transparent;
   box-shadow: none;
@@ -697,7 +734,7 @@ select {
   cursor: default;
 }
 
-.month-cell:disabled .month-cell-name {
+.pick-key:disabled .pick-key-name {
   font-weight: 600;
   color: var(--muted);
 }
