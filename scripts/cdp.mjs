@@ -4,7 +4,7 @@
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { constants, tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 
 const CANDIDATES = [
   process.env.BROWSER,
@@ -31,15 +31,62 @@ const QUIET = [
 const OFF = '--disable-features='
 const SIGNALS = ['SIGINT', 'SIGTERM']
 
-export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+// An app-compat layer reaches child processes through the __COMPAT_LAYER environment variable (Node run from the
+// Claude app's bash carries DetectorsAppHealth). Edge that finds one restarts itself without it and quits, so the
+// process spawned here was gone within milliseconds and the real browser ran on as an orphan that a taskkill /T on a
+// dead pid never reached. Start Edge as that restart leaves it: without the layer, and with the flag the restart
+// adds so that it doesn't restart again
+const COMPAT_LAYER = '__COMPAT_LAYER'
+const NO_RELAUNCH = '--edge-skip-compat-layer-relaunch'
 
-const answers = async (port) => {
+// Windows only: stops every process of the browser's exe whose command line carries this launch's profile path. The
+// browser and all its helpers carry it, whoever their parent is, and the path is unique to the launch, so your own
+// Edge and other scripts' browsers never match. Browser first, so it can't start new helpers; each one only while
+// it is still the process that was listed (a pid can be reused the moment its process ends); a few rounds, for
+// helpers started while the list was taken. Name and path come in through the environment, where no quoting can
+// break them
+const SWEEP = Buffer.from(
+  `$n = $env:TAILY_CDP_EXE; $p = $env:TAILY_CDP_PROFILE
+for ($i = 0; $i -lt 5; $i++) {
+  $left = @(Get-CimInstance Win32_Process | Where-Object { $_.Name -eq $n -and $_.CommandLine -and $_.CommandLine.IndexOf($p, [StringComparison]::OrdinalIgnoreCase) -ge 0 })
+  if (!$left.Count) { break }
+  foreach ($w in ($left | Sort-Object { $_.CommandLine -match '--type=' })) {
+    $q = Get-Process -Id $w.ProcessId -ErrorAction SilentlyContinue
+    try { if ($q -and [Math]::Abs(($q.StartTime - $w.CreationDate).TotalMilliseconds) -lt 1) { $q.Kill() } } catch {}
+  }
+  Start-Sleep -Milliseconds 200
+}`,
+  'utf16le'
+).toString('base64')
+
+export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+// close() can't wait on the event loop: it also runs in the 'exit' handler, where the loop never turns again
+const block = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+const alive = (pid) => {
   try {
-    return (await fetch(`http://127.0.0.1:${port}/json/version`)).ok
-  } catch {
-    return false
+    process.kill(pid, 0)
+    return true
+  } catch (e) {
+    return e.code === 'EPERM'
   }
 }
+
+/** What the browser on `port` says about itself, its browser-level socket among it; null if nothing answers. */
+const version = async (port) => {
+  try {
+    const r = await fetch(`http://127.0.0.1:${port}/json/version`)
+    return r.ok ? await r.json() : null
+  } catch {
+    return null
+  }
+}
+
+const connect = (url) =>
+  new Promise((resolve, reject) => {
+    const s = new WebSocket(url)
+    s.onopen = () => resolve(s)
+    s.onerror = () => reject(new Error('Could not open the DevTools socket.'))
+  })
 
 /**
  * `args`: extra browser flags, after the defaults. A `--disable-features` list joins the one here rather than
@@ -50,7 +97,7 @@ const answers = async (port) => {
 export async function launch({ port = 0, args = [] } = {}) {
   const exe = CANDIDATES.find((p) => existsSync(p))
   if (!exe) throw new Error('No Edge or Chrome found. Set BROWSER to its full path.')
-  if (port && (await answers(port))) throw new Error(`Port ${port} already has a browser on it; pick another or leave it to 0.`)
+  if (port && (await version(port))) throw new Error(`Port ${port} already has a browser on it; pick another or leave it to 0.`)
   const profile = mkdtempSync(join(tmpdir(), 'taily-cdp-'))
   // msImplicitSignin is Edge signing itself in to the Windows account
   const off = ['msImplicitSignin', ...args.filter((a) => a.startsWith(OFF)).map((a) => a.slice(OFF.length))]
@@ -65,14 +112,16 @@ export async function launch({ port = 0, args = [] } = {}) {
       '--hide-scrollbars',
       '--mute-audio',
       ...QUIET,
+      NO_RELAUNCH,
       OFF + off.join(','),
       ...args.filter((a) => !a.startsWith(OFF)),
       'about:blank'
     ],
-    { stdio: 'ignore' }
+    { stdio: 'ignore', env: Object.fromEntries(Object.entries(process.env).filter(([k]) => k.toUpperCase() !== COMPAT_LAYER)) }
   )
 
   let ws
+  let browserWs
   let closed = false
   const interrupted = (signal) => process.exit(128 + constants.signals[signal])
   const close = () => {
@@ -80,20 +129,44 @@ export async function launch({ port = 0, args = [] } = {}) {
     closed = true
     process.off('exit', close)
     for (const s of SIGNALS) process.off(s, interrupted)
+    // Ask the browser itself to quit: it takes all its processes down and lets go of the profile. The message is
+    // written to the socket at once, so it gets there from the 'exit' handler too
+    let asked = false
     try {
-      ws?.close()
+      if (browserWs?.readyState === WebSocket.OPEN) {
+        browserWs.send(JSON.stringify({ id: 0, method: 'Browser.close' }))
+        asked = true
+      }
     } catch {
-      /* already closed */
+      /* already going */
     }
-    if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore' })
-    else proc.kill()
+    for (const s of [ws, browserWs]) {
+      try {
+        s?.close()
+      } catch {
+        /* already closed */
+      }
+    }
+    if (process.platform === 'win32') {
+      // proc.pid is still this browser's while Node hasn't seen it exit; after that Windows may give it to anything.
+      // Quitting takes about 0.2 s: allow 3, then end its tree, then whatever still carries this profile
+      const ours = proc.pid !== undefined && proc.exitCode === null && proc.signalCode === null
+      if (ours && asked) for (let i = 0; i < 60 && alive(proc.pid); i++) block(50)
+      if (ours && alive(proc.pid)) spawnSync('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true })
+      spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', SWEEP], {
+        stdio: 'ignore',
+        windowsHide: true,
+        timeout: 15000,
+        env: { ...process.env, TAILY_CDP_EXE: basename(exe), TAILY_CDP_PROFILE: profile }
+      })
+    } else proc.kill()
     // Edge lets go of its profile a moment after it is killed: keep trying for a few seconds, or every run
     // leaves its profile and disk cache behind in the temp folder
     for (let i = 0; i < 24 && existsSync(profile); i++) {
       try {
         rmSync(profile, { recursive: true, force: true })
       } catch {
-        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250)
+        block(250)
       }
     }
   }
@@ -104,8 +177,8 @@ export async function launch({ port = 0, args = [] } = {}) {
   try {
     // a busy machine can take a while to bring the browser up; with port 0 it writes the port it chose
     // into DevToolsActivePort in its profile
-    let up = false
-    for (let i = 0; i < 240 && !up; i++) {
+    let info = null
+    for (let i = 0; i < 240 && !info; i++) {
       if (!port) {
         try {
           port = Number(readFileSync(join(profile, 'DevToolsActivePort'), 'utf8').split('\n')[0]) || 0
@@ -113,17 +186,15 @@ export async function launch({ port = 0, args = [] } = {}) {
           /* not written yet */
         }
       }
-      up = !!port && (await answers(port))
-      if (!up) await sleep(150)
+      info = port ? await version(port) : null
+      if (!info) await sleep(150)
     }
-    if (!up) throw new Error('The browser did not expose its DevTools endpoint.')
+    if (!info) throw new Error('The browser did not expose its DevTools endpoint.')
 
     const target = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: 'PUT' })).json()
-    ws = new WebSocket(target.webSocketDebuggerUrl)
-    await new Promise((resolve, reject) => {
-      ws.onopen = resolve
-      ws.onerror = () => reject(new Error('Could not open the DevTools socket.'))
-    })
+    ws = await connect(target.webSocketDebuggerUrl)
+    // the browser's own socket, held open so close() can ask the browser to quit
+    browserWs = await connect(info.webSocketDebuggerUrl)
   } catch (e) {
     close()
     throw e
