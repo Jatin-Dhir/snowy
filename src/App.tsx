@@ -483,7 +483,12 @@ export default function App() {
         )}
         {tab === 'budgets' && <Budgets currency={settings.currency} onOpenSettings={() => setSettingsOpen(true)} />}
         {tab === 'insights' && (
-          <Insights currency={settings.currency} onAdd={openAdd} onOpenSettings={() => setSettingsOpen(true)} />
+          <Insights
+            currency={settings.currency}
+            onAdd={openAdd}
+            onEdit={openEdit}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
         )}
       </main>
 

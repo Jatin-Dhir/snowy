@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../db/db'
+import { db, type Txn } from '../db/db'
 import { txnsBetween } from '../db/repo'
 import { byCategory, incomeSum, isRealSpend, pace, projectMonth, sum } from '../db/stats'
 import { currencySymbol, formatMinor } from '../lib/money'
@@ -19,6 +19,7 @@ import {
   todayISO
 } from '../lib/dates'
 import { Icon } from '../components/Icon'
+import { TagEntriesSheet, type TagPick } from '../components/TagEntriesSheet'
 
 /** ₹850 · ₹2.1k · ₹1.4L — tight labels that fit on top of chart bars. */
 function fmtCompact(minor: number, currency: string): string {
@@ -37,20 +38,27 @@ function fmtCompact(minor: number, currency: string): string {
 export function Insights({
   currency,
   onAdd,
+  onEdit,
   onOpenSettings
 }: {
   currency: string
   onAdd: () => void
+  onEdit: (t: Txn) => void
   onOpenSettings: () => void
 }) {
   const nowKey = currentMonthKey()
   const [monthKey, setMonthKey] = useState(nowKey)
   const [reportOpen, setReportOpen] = useState(false)
   const [showRest, setShowRest] = useState(false)
+  // a "Where it went" row, opened to show what's in it
+  const [openTag, setOpenTag] = useState<TagPick | null>(null)
   const today = todayISO()
   const isCurrent = monthKey === nowKey
 
-  useEffect(() => setShowRest(false), [monthKey])
+  useEffect(() => {
+    setShowRest(false)
+    setOpenTag(null)
+  }, [monthKey])
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
@@ -179,6 +187,13 @@ export function Insights({
     </div>
   )
 
+  // a row that opens: the same quiet chevron as "Everything else", after the name so the figures stay in line
+  const opens = (
+    <span className="faint" aria-hidden="true" style={{ display: 'inline-flex', marginLeft: 4, verticalAlign: '-2px' }}>
+      <Icon name="chevronRight" size={13} />
+    </span>
+  )
+
   const W = 318
   const H = 102
   const base = 82
@@ -269,15 +284,21 @@ export function Insights({
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 13, padding: '15px 20px' }}>
             <h2 className="label">Where it went</h2>
             {breakdown.top.map((r) => (
-              <div key={String(r.id)} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {catRow(r)}
+              <button
+                key={String(r.id)}
+                className="tag-row"
+                style={{ display: 'flex', flexDirection: 'column', gap: 5 }}
+                onClick={() => setOpenTag(r)}
+                aria-label={`${r.name}: ${formatMinor(r.total, currency)}, ${Math.round((r.total / spent) * 100)}%. Show its entries`}
+              >
+                {catRow(r, opens)}
                 <div className="bar-track" style={{ height: 6 }}>
                   <div
                     className="bar-fill"
                     style={{ width: `${Math.max(2, (r.total / spent) * 100)}%`, background: r.color }}
                   />
                 </div>
-              </div>
+              </button>
             ))}
             {breakdown.restTotal > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -311,7 +332,13 @@ export function Insights({
                 {showRest && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 18, paddingTop: 2 }}>
                     {breakdown.all.slice(4).map((r) => (
-                      <div key={String(r.id)} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <button
+                        key={String(r.id)}
+                        className="tag-row"
+                        style={{ display: 'flex', alignItems: 'center', gap: 10 }}
+                        onClick={() => setOpenTag(r)}
+                        aria-label={`${r.name}: ${formatMinor(r.total, currency)}. Show its entries`}
+                      >
                         <span style={{ width: 6, height: 6, borderRadius: 3, background: r.color, flexShrink: 0 }} />
                         <span
                           style={{
@@ -326,11 +353,12 @@ export function Insights({
                           }}
                         >
                           {r.name}
+                          {opens}
                         </span>
                         <span className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)' }}>
                           {formatMinor(r.total, currency)}
                         </span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -538,6 +566,21 @@ export function Insights({
       )}
 
       <LoansSheet open={loansOpen} currency={currency} onClose={() => setLoansOpen(false)} />
+
+      {openTag && (
+        <TagEntriesSheet
+          tag={openTag}
+          monthKey={monthKey}
+          isCurrent={isCurrent}
+          monthTxns={monthTxns}
+          monthSpent={spent}
+          budgetMinor={openTag.id ? (budgets.find((b) => b.id === openTag.id)?.amountMinor ?? null) : null}
+          categories={categories}
+          currency={currency}
+          onEdit={onEdit}
+          onClose={() => setOpenTag(null)}
+        />
+      )}
 
       {activeRules.length > 0 && (
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '13px 20px' }}>

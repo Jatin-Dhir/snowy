@@ -1273,6 +1273,20 @@ button.txn-row:active {
   transition-duration: 0ms, 0ms;
 }
 
+/* Insights' "Where it went" rows open what's in each tag, and press like an entry row */
+.tag-row {
+  width: 100%;
+  text-align: left;
+  border-radius: 10px;
+  transition: transform 150ms var(--ease-soft), opacity 150ms ease;
+}
+
+button.tag-row:active {
+  transform: scale(0.985);
+  opacity: 0.8;
+  transition-duration: 0ms, 0ms;
+}
+
 .txn-new {
   animation: row-in 380ms var(--ease-soft);
 }
