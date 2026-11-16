@@ -17,7 +17,7 @@ import { safeToSpend, saveSuggestion, weekBars, sum, onDay, byCategory, totalBal
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
 import { guessAccount, weeklyAnomalies } from '../lib/smart'
-import { notifyAlerts, syncLoanReminders } from '../lib/notify'
+import { notifyAlerts } from '../lib/notify'
 import { currentDbName, dbNameFor } from '../lib/profiles'
 import { LoansSheet } from '../components/LoansSheet'
 import { TripCard, TripsRow } from '../components/TripCard'
@@ -251,10 +251,6 @@ export function Home({
     const urgent = alerts.filter((a) => a.level === 'over')
     if (urgent.length > 0) void notifyAlerts(urgent)
   }, [alerts])
-
-  useEffect(() => {
-    void syncLoanReminders(loans)
-  }, [loans])
 
   function dismissAlert(key: string) {
     setDismissedAlerts((prev) => {

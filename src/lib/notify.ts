@@ -190,9 +190,11 @@ export async function forgetLoanReminders(dbName: string): Promise<void> {
 /**
  * Keeps scheduled loan reminders in sync with the ledger (native app only):
  * every outstanding loan with a future reminder gets a system notification
- * at 10:00 that day; settled or deleted loans get theirs cancelled.
+ * at 10:00 that day; settled or deleted loans get theirs cancelled. Without
+ * `ask`, notifications that aren't allowed aren't asked for (Taily coming back
+ * to the front isn't a reason to ask).
  */
-export async function syncLoanReminders(loans: Loan[]): Promise<void> {
+export async function syncLoanReminders(loans: Loan[], { ask = true }: { ask?: boolean } = {}): Promise<void> {
   try {
     const { Capacitor } = await import('@capacitor/core')
     if (!Capacitor.isNativePlatform()) return
@@ -206,6 +208,7 @@ export async function syncLoanReminders(loans: Loan[]): Promise<void> {
     if (wanted.length > 0) {
       let perm = await LocalNotifications.checkPermissions()
       if (perm.display !== 'granted') {
+        if (!ask) return
         perm = await LocalNotifications.requestPermissions()
         if (perm.display !== 'granted') return
       }
