@@ -305,90 +305,93 @@ export function Insights({
             <span className="sr-only">Show {monthLabel(monthKey)} day by day</span>
           </button>
 
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 13, padding: '15px 20px' }}>
-            <h2 className="label">Where it went</h2>
-            {breakdown.top.map((r) => (
-              <button
-                key={String(r.id)}
-                className="tag-row"
-                style={{ display: 'flex', flexDirection: 'column', gap: 5 }}
-                onClick={() => setOpenTag(r)}
-                aria-label={`${r.name}: ${formatMinor(r.total, currency)}, ${Math.round((r.total / spent) * 100)}%. Show its entries`}
-              >
-                {catRow(r, opens)}
-                <div className="bar-track" style={{ height: 6 }}>
-                  <div
-                    className="bar-fill"
-                    style={{ width: `${Math.max(2, (r.total / spent) * 100)}%`, background: r.color }}
-                  />
-                </div>
-              </button>
-            ))}
-            {breakdown.restTotal > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {/* a month with only money received in it (pay day, before anything is spent) has nothing to show here */}
+          {spent > 0 && (
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 13, padding: '15px 20px' }}>
+              <h2 className="label">Where it went</h2>
+              {breakdown.top.map((r) => (
                 <button
-                  style={{ display: 'flex', flexDirection: 'column', gap: 5, width: '100%', textAlign: 'start' }}
-                  onClick={() => setShowRest((v) => !v)}
-                  aria-expanded={showRest}
+                  key={String(r.id)}
+                  className="tag-row"
+                  style={{ display: 'flex', flexDirection: 'column', gap: 5 }}
+                  onClick={() => setOpenTag(r)}
+                  aria-label={`${r.name}: ${formatMinor(r.total, currency)}, ${Math.round((r.total / spent) * 100)}%. Show its entries`}
                 >
-                  {catRow(
-                    { total: breakdown.restTotal, name: 'Everything else', color: 'var(--faint-future)' },
-                    <span
-                      className="faint"
-                      style={{
-                        display: 'inline-flex',
-                        marginLeft: 4,
-                        verticalAlign: '-2px',
-                        transform: showRest ? 'rotate(90deg)' : undefined,
-                        transition: 'transform .15s'
-                      }}
-                    >
-                      <Icon name="chevronRight" size={13} />
-                    </span>
-                  )}
+                  {catRow(r, opens)}
                   <div className="bar-track" style={{ height: 6 }}>
                     <div
                       className="bar-fill"
-                      style={{ width: `${Math.max(2, (breakdown.restTotal / spent) * 100)}%`, background: 'var(--faint-future)' }}
+                      style={{ width: `${Math.max(2, (r.total / spent) * 100)}%`, background: r.color }}
                     />
                   </div>
                 </button>
-                {showRest && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 18, paddingTop: 2 }}>
-                    {breakdown.all.slice(4).map((r) => (
-                      <button
-                        key={String(r.id)}
-                        className="tag-row"
-                        style={{ display: 'flex', alignItems: 'center', gap: 10 }}
-                        onClick={() => setOpenTag(r)}
-                        aria-label={`${r.name}: ${formatMinor(r.total, currency)}. Show its entries`}
+              ))}
+              {breakdown.restTotal > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <button
+                    style={{ display: 'flex', flexDirection: 'column', gap: 5, width: '100%', textAlign: 'start' }}
+                    onClick={() => setShowRest((v) => !v)}
+                    aria-expanded={showRest}
+                  >
+                    {catRow(
+                      { total: breakdown.restTotal, name: 'Everything else', color: 'var(--faint-future)' },
+                      <span
+                        className="faint"
+                        style={{
+                          display: 'inline-flex',
+                          marginLeft: 4,
+                          verticalAlign: '-2px',
+                          transform: showRest ? 'rotate(90deg)' : undefined,
+                          transition: 'transform .15s'
+                        }}
                       >
-                        <span style={{ width: 6, height: 6, borderRadius: 3, background: r.color, flexShrink: 0 }} />
-                        <span
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                            fontSize: 13,
-                            fontWeight: 500,
-                            color: 'var(--muted)',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}
+                        <Icon name="chevronRight" size={13} />
+                      </span>
+                    )}
+                    <div className="bar-track" style={{ height: 6 }}>
+                      <div
+                        className="bar-fill"
+                        style={{ width: `${Math.max(2, (breakdown.restTotal / spent) * 100)}%`, background: 'var(--faint-future)' }}
+                      />
+                    </div>
+                  </button>
+                  {showRest && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 18, paddingTop: 2 }}>
+                      {breakdown.all.slice(4).map((r) => (
+                        <button
+                          key={String(r.id)}
+                          className="tag-row"
+                          style={{ display: 'flex', alignItems: 'center', gap: 10 }}
+                          onClick={() => setOpenTag(r)}
+                          aria-label={`${r.name}: ${formatMinor(r.total, currency)}. Show its entries`}
                         >
-                          {r.name}
-                          {opens}
-                        </span>
-                        <span className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)' }}>
-                          {formatMinor(r.total, currency)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                          <span style={{ width: 6, height: 6, borderRadius: 3, background: r.color, flexShrink: 0 }} />
+                          <span
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              fontSize: 13,
+                              fontWeight: 500,
+                              color: 'var(--muted)',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                          >
+                            {r.name}
+                            {opens}
+                          </span>
+                          <span className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)' }}>
+                            {formatMinor(r.total, currency)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {notes.length > 0 && (
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '13px 20px' }}>
