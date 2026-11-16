@@ -72,6 +72,16 @@ export default function App() {
   const settings: Settings = { ...DEFAULT_SETTINGS, ...((settingsRow?.value as Partial<Settings>) ?? {}) }
   const settingsLoaded = settingsRow !== undefined || ready
 
+  /** Logs the monthly payments that have fallen due, and says so. */
+  async function logDueRules(currency: string) {
+    const logged = await runDueRules(currency)
+    if (logged.length === 1) {
+      showToast(`Logged ${logged[0].name} — ${formatMinor(logged[0].amountMinor, currency)} (recurring)`)
+    } else if (logged.length > 1) {
+      showToast(`Logged ${logged.length} recurring expenses`)
+    }
+  }
+
   useEffect(() => {
     void (async () => {
       // local setup and the update check run together so a slow network
@@ -82,14 +92,7 @@ export default function App() {
           const row = await db.kv.get('settings')
           const s: Settings = { ...DEFAULT_SETTINGS, ...((row?.value as Partial<Settings>) ?? {}) }
           if (s.initialized && s.pinHash) setLocked(true)
-          if (s.initialized) {
-            const logged = await runDueRules(s.currency)
-            if (logged.length === 1) {
-              showToast(`Logged ${logged[0].name} — ${formatMinor(logged[0].amountMinor, s.currency)} (recurring)`)
-            } else if (logged.length > 1) {
-              showToast(`Logged ${logged.length} recurring expenses`)
-            }
-          }
+          if (s.initialized) await logDueRules(s.currency)
         })(),
         checkForUpdate()
       ])
@@ -276,6 +279,45 @@ export default function App() {
       sub?.remove()
     }
   }, [settings.pinHash])
+
+  // A phone keeps Taily in the background for days, and the start-up catch-up only runs on a cold
+  // start: a payment that fell due meanwhile is logged when Taily comes back to the front
+  useEffect(() => {
+    if (!ready || !settings.initialized) return
+    const currency = settings.currency
+    let hidden = false
+    const away = () => {
+      hidden = true
+    }
+    const back = () => {
+      if (!hidden) return
+      hidden = false
+      void logDueRules(currency)
+    }
+    const onVisibility = () => (document.visibilityState === 'hidden' ? away() : back())
+    document.addEventListener('visibilitychange', onVisibility)
+    // the WebView's visibility isn't reliable on every Android version: the activity says it too
+    let sub: { remove(): void } | undefined
+    let disposed = false
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) return
+        const { App: CapApp } = await import('@capacitor/app')
+        const handle = await CapApp.addListener('appStateChange', ({ isActive }) => (isActive ? back() : away()))
+        if (disposed) void handle.remove()
+        else sub = handle
+      } catch {
+        /* not native */
+      }
+    })()
+    return () => {
+      disposed = true
+      document.removeEventListener('visibilitychange', onVisibility)
+      sub?.remove()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, settings.initialized, settings.currency])
 
   useEffect(() => {
     if (settingsRow !== undefined) void syncPrivacyScreen(!!settings.pinHash)
