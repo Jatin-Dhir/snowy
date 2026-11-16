@@ -19,17 +19,12 @@ export function RoomRing({ left, over, size = 92 }: { left: number; over: boolea
   const c = 2 * Math.PI * r
   return (
     <svg className={`room-ring mood-${mood}${over ? ' is-over' : ''}`} viewBox="0 0 100 100" width={size} height={size} aria-hidden="true">
-      {/* each ear is a group so a sad cat can lower it: it turns about the ring's centre, so its base stays
-          hidden under the ring */}
+      {/* the ears never move with the mood: only the face does, the way cat emoji are drawn */}
       <g className="ring-ears">
-        <g className="ear-l">
-          <path className="ear" d="M21 36 L22 9 L41 22 Z" />
-          <path className="ear-in" d="M26 29 L26.5 16 L35 22.5 Z" />
-        </g>
-        <g className="ear-r">
-          <path className="ear" d="M79 36 L78 9 L59 22 Z" />
-          <path className="ear-in" d="M74 29 L73.5 16 L65 22.5 Z" />
-        </g>
+        <path className="ear" d="M21 36 L22 9 L41 22 Z" />
+        <path className="ear" d="M79 36 L78 9 L59 22 Z" />
+        <path className="ear-in" d="M26 29 L26.5 16 L35 22.5 Z" />
+        <path className="ear-in" d="M74 29 L73.5 16 L65 22.5 Z" />
       </g>
       <circle className="ring-track" cx="50" cy="56" r={r} />
       <circle
@@ -59,14 +54,12 @@ export function RoomRing({ left, over, size = 92 }: { left: number; over: boolea
           </>
         ) : (
           <>
-            {/* brows rise toward the middle, which reads as sad; sloping down toward it read as cross */}
-            <path className="stroke brow" d="M36.5 48.4 L43 45.9" />
-            <path className="stroke brow" d="M63.5 48.4 L57 45.9" />
-            <circle className="eye" cx="41" cy="54.6" r="3.3" />
-            <circle className="eye" cx="59" cy="54.6" r="3.3" />
-            <circle className="shine" cx="42.2" cy="53.3" r="1.15" />
-            <circle className="shine" cx="60.2" cy="53.3" r="1.15" />
-            <path className="stroke" d="M46.2 65.4 Q50 62.2 53.8 65.4" />
+            {/* the happy face turned over, so it's the same cat: its ^ eyes close downward and its ω mouth
+                becomes a pout, with one small tear. No brows: slanted brows are what reads as cross */}
+            <path className="stroke" d="M37 53.2 Q41 57.4 45 53.2" />
+            <path className="stroke" d="M55 53.2 Q59 57.4 63 53.2" />
+            <path className="tear" d="M41 58.4 Q38.9 61.9 41 63.3 Q43.1 61.9 41 58.4 Z" />
+            <path className="stroke" d="M44.5 65.6 Q47.25 62 50 65.2 Q52.75 62 55.5 65.6" />
           </>
         )}
       </g>

@@ -5,7 +5,7 @@ import { Icon } from './Icon'
 import { Sheet } from './Sheet'
 
 /**
- * Settings ▸ Erase everything. It can't be undone, so the sheet says exactly what goes, offers a CSV copy first,
+ * Settings ▸ Clear all data. It can't be undone, so the sheet says exactly what goes, offers a CSV copy first,
  * and points to a new profile for someone who wants a clean start without losing what they have.
  */
 export function EraseSheet({
@@ -40,9 +40,9 @@ export function EraseSheet({
   }
 
   return (
-    <Sheet open={open} onClose={() => !busy && onClose()} label="Erase everything" style={{ gap: 14 }}>
+    <Sheet open={open} onClose={() => !busy && onClose()} label="Clear all data" style={{ gap: 14 }}>
       <div className="row-between">
-        <span className="label" style={{ letterSpacing: '0.14em' }}>Erase everything</span>
+        <span className="label" style={{ letterSpacing: '0.14em' }}>Clear all data</span>
         <button className="icon-btn" onClick={onClose} disabled={busy} aria-label="Close">
           <Icon name="x" size={14} strokeWidth={2.2} />
         </button>
@@ -57,7 +57,7 @@ export function EraseSheet({
       </p>
       {failed && (
         <p role="alert" style={{ margin: 0, fontSize: 12.5, color: 'var(--red)' }}>
-          Taily couldn't erase everything. Close the app fully, open it again and try once more.
+          Taily couldn't clear everything. Close the app fully, open it again and try once more.
         </p>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 4 }}>
@@ -65,7 +65,7 @@ export function EraseSheet({
           <Icon name="download" size={16} /> Save a CSV copy first
         </button>
         <button className="btn danger" onClick={() => void erase()} disabled={busy}>
-          <Icon name="trash" size={16} /> {busy ? 'Erasing…' : 'Erase everything'}
+          <Icon name="trash" size={16} /> {busy ? 'Clearing…' : 'Clear all data'}
         </button>
       </div>
       {canStartProfile && (

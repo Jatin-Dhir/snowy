@@ -748,8 +748,8 @@ export function SettingsSheet({
           <ActionRow
             icon="trash"
             tint="#C2453D"
-            title="Erase everything"
-            sub="Delete all of Taily's data on this phone and start over"
+            title="Clear all data"
+            sub="Delete everything on this phone and start fresh"
             danger
             onClick={() => setEraseOpen(true)}
           />

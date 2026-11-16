@@ -786,29 +786,9 @@ button.pill:active {
   fill: var(--ink);
 }
 
-.room-ring .brow {
-  stroke-width: 2.2;
-}
-
-/* the glint in a sad cat's eyes, in the card's own colour */
-.room-ring .shine {
-  fill: var(--card);
-}
-
-/* a sad cat lowers its ears: each turns about the ring's centre, so its base stays under the ring */
-.room-ring .ear-l,
-.room-ring .ear-r {
-  transform-box: view-box;
-  transform-origin: 50px 56px;
-  transition: transform 520ms var(--ease-spring);
-}
-
-.room-ring.mood-sad .ear-l {
-  transform: rotate(-15deg);
-}
-
-.room-ring.mood-sad .ear-r {
-  transform: rotate(15deg);
+/* a sad cat's one tear: the same soft blue in every theme, light or dark, as tears always are */
+.room-ring .tear {
+  fill: #9fd0ff;
 }
 
 /* a special theme's cat has ears and rosy cheeks; everywhere else it's just a face */
