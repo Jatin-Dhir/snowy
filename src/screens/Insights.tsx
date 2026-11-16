@@ -153,7 +153,8 @@ export function Insights({
       return { ...r, delta: prev > 0 ? Math.round(((r.total - prev) / prev) * 100) : null }
     })
     return {
-      dailyAvg: Math.round(spent / daysElapsed),
+      // an average, so whole rupees, like Home's week
+      dailyAvg: Math.round(spent / daysElapsed / 100) * 100,
       biggestDay,
       noSpendDays: Math.max(0, daysElapsed - byDay.size),
       topTags

@@ -282,7 +282,8 @@ export function Home({
     : monthPace.state === 'over'
       ? `${formatMinor(monthSpent - budgetMinor, currency)} over budget`
       : monthPace.state === 'warn'
-        ? `${formatMinor(Math.max(0, monthSpent - budgetMinor * monthPace.dayFraction), currency)} ahead of pace`
+        ? // an estimate, so whole rupees like the projection: "₹12,719", never "₹12,719.33"
+          `${formatMinor(Math.max(0, Math.round((monthSpent - budgetMinor * monthPace.dayFraction) / 100) * 100), currency)} ahead of pace`
         : 'On pace'
   const paceColor = !monthPace ? '' : monthPace.state === 'over' ? 'var(--over-fill)' : monthPace.state === 'warn' ? 'var(--amber)' : 'var(--pos)'
   const paceText = !monthPace ? '' : monthPace.state === 'over' ? 'var(--over-text)' : monthPace.state === 'warn' ? 'var(--amber-text)' : 'var(--pos-text)'

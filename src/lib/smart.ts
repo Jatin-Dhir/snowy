@@ -150,7 +150,8 @@ export function adviceFor({ monthTxns, monthKey, categories, budgets, rulesMonth
     if (isCurrentMonth) {
       const day = Math.max(1, parseInt(today.slice(8, 10), 10))
       const dim = daysInMonth(monthKey)
-      const projected = Math.round((spent / day) * dim)
+      // whole rupees, like projectMonth: "around ₹73,849", not "₹73,848.75"
+      const projected = Math.round(((spent / day) * dim) / 100) * 100
       const daysLeft = Math.max(1, dim - day + 1)
       if (projected > overall.amountMinor) {
         tips.push(
