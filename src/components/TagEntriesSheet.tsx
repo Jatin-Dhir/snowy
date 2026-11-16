@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import type { Category, Txn } from '../db/db'
-import { groupByDay, pace, sum } from '../db/stats'
+import { sum } from '../db/stats'
 import { formatMinor } from '../lib/money'
-import { fmtDayHeading, monthLabel } from '../lib/dates'
+import { monthLabel } from '../lib/dates'
+import { BudgetLine } from './BudgetLine'
+import { DayList } from './DayList'
 import { Icon } from './Icon'
-import { Progress } from './Progress'
 import { Sheet } from './Sheet'
-import { TransactionRow } from './TransactionRow'
 
 export interface TagPick {
   /** null for spends without a tag */
@@ -49,11 +49,8 @@ export function TagEntriesSheet({
     [monthTxns, tag.id]
   )
   const total = sum(txns)
-  const days = useMemo(() => groupByDay(txns), [txns])
   const month = monthLabel(monthKey)
   const share = monthSpent > 0 ? Math.round((total / monthSpent) * 100) : 0
-  const tagPace = budgetMinor ? pace(total, budgetMinor) : null
-  const left = budgetMinor ? budgetMinor - total : 0
 
   return (
     <Sheet open onClose={onClose} label={`${tag.name} in ${month}`} style={{ gap: 10 }}>
@@ -83,41 +80,11 @@ export function TagEntriesSheet({
         </span>
       </div>
 
-      {budgetMinor !== null && tagPace && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '2px 2px 0' }}>
-          <Progress
-            fraction={tagPace.fraction}
-            color={tagPace.state === 'over' ? 'var(--over-fill)' : isCurrent && tagPace.state === 'warn' ? 'var(--amber)' : tag.color}
-            tickFraction={isCurrent ? tagPace.dayFraction : undefined}
-          />
-          <span
-            className="caption"
-            style={{ fontSize: 12, color: left < 0 ? 'var(--over-text)' : undefined, fontWeight: left < 0 ? 600 : undefined }}
-          >
-            {left >= 0
-              ? `${formatMinor(left, currency)} left of its ${formatMinor(budgetMinor, currency)} budget`
-              : `${formatMinor(-left, currency)} over its ${formatMinor(budgetMinor, currency)} budget`}
-          </span>
-        </div>
+      {budgetMinor !== null && budgetMinor > 0 && (
+        <BudgetLine spent={total} budgetMinor={budgetMinor} isCurrent={isCurrent} color={tag.color} owner="its" currency={currency} />
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {days.map((d) => (
-          <div key={d.iso}>
-            <div className="day-heading">
-              <h3 className="label" style={{ fontSize: 10.5 }}>
-                {fmtDayHeading(d.iso)}
-              </h3>
-              <span className="mono faint" style={{ fontWeight: 600, fontSize: 12 }}>
-                {formatMinor(d.total, currency)}
-              </span>
-            </div>
-            {d.txns.map((t) => (
-              <TransactionRow key={t.id} txn={t} categories={categories} onClick={() => onEdit(t)} />
-            ))}
-          </div>
-        ))}
-      </div>
+      <DayList txns={txns} categories={categories} currency={currency} onEdit={onEdit} />
     </Sheet>
   )
 }

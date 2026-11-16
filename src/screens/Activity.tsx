@@ -4,9 +4,10 @@ import { db, type Txn } from '../db/db'
 import { allLiveTxns, softDeleteTxn, restoreTxn } from '../db/repo'
 import { groupByDay, sum } from '../db/stats'
 import { formatMinor } from '../lib/money'
-import { currentMonthKey, fmtDayHeading, monthShort, shortDate, todayISO } from '../lib/dates'
+import { currentMonthKey, fmtDayHeading, monthLabel, monthShort, shortDate, todayISO } from '../lib/dates'
 import { TransactionRow } from '../components/TransactionRow'
 import { Icon } from '../components/Icon'
+import { MonthSheet } from '../components/MonthSheet'
 import { haptic, useUi } from '../state/ui'
 
 function matchesQuery(t: Txn, catName: string, accountName: string, q: string): boolean {
@@ -49,6 +50,8 @@ export function Activity({
   const [limit, setLimit] = useState(120)
   const [selecting, setSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // the month read back day by day, from this month's total in the header
+  const [monthOpen, setMonthOpen] = useState(false)
 
   function enterSelect(id: string) {
     // already picking: a hold picks that row too (or lets it go), as a tap does, rather than start over
@@ -168,14 +171,23 @@ export function Activity({
           </span>
         </div>
       ) : (
-        <div className="row-between">
+        // wraps on the narrowest phones rather than pushing Settings off the screen, as in Insights
+        <div className="row-between" style={{ flexWrap: 'wrap', rowGap: 8 }}>
           <h1 className="screen-title">Activity</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="mono faint" style={{ fontWeight: 600, fontSize: 12 }}>
-              {hasFilters
-                ? `${filtered.length} shown · ${formatMinor(filteredTotal, currency)}`
-                : `${monthShort(monthKey)} · ${formatMinor(monthTotal, currency)}`}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
+            {hasFilters ? (
+              <span className="mono faint" style={{ fontWeight: 600, fontSize: 12 }}>
+                {`${filtered.length} shown · ${formatMinor(filteredTotal, currency)}`}
+              </span>
+            ) : (
+              // this month's total opens the month, day by day, and the months before it. Its name starts with the
+              // words on it, so a voice command saying them finds it
+              <button className="pill mono month-pill" onClick={() => setMonthOpen(true)}>
+                {monthShort(monthKey)} · {formatMinor(monthTotal, currency)}
+                <span className="sr-only">. Show {monthLabel(monthKey)} day by day</span>
+                <Icon name="chevronRight" size={13} />
+              </button>
+            )}
             <button
               className="icon-btn"
               style={{ width: 36, height: 36, borderRadius: 18 }}
@@ -350,6 +362,8 @@ export function Activity({
           </button>
         )}
       </div>
+
+      {monthOpen && <MonthSheet currency={currency} onEdit={onEdit} onClose={() => setMonthOpen(false)} />}
     </div>
   )
 }

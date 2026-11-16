@@ -585,6 +585,23 @@ select {
   white-space: nowrap;
 }
 
+/* Activity's total for the month, in its header: a pill, as it opens the month day by day */
+.pill.month-pill {
+  gap: 3px;
+  padding: 7px 9px 7px 13px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+/* a month read back (MonthSheet): the way to this month, beside the total. Its padding reaches for a finger
+   without making the line any taller */
+.link-btn.month-now {
+  font-size: 12.5px;
+  padding: 6px 2px;
+  margin: -6px 0;
+  white-space: nowrap;
+}
+
 .row-between {
   display: flex;
   align-items: center;
