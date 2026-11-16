@@ -99,17 +99,21 @@ function GoalDialog({
 
   async function move(sign: 1 | -1) {
     if (!goal || amountMinor <= 0) return
+    // only what's in the goal can come out of it: any more would land in the balance from nowhere
+    const held = (await db.goals.get(goal.id))?.savedMinor ?? 0
+    const moved = sign === 1 ? amountMinor : Math.min(amountMinor, held)
+    if (moved <= 0) return
     // a real transaction, same as the Home nudge — money into savings comes
     // off what's left to spend; money back out shows up as available again
     await addTxn({
-      amountMinor,
+      amountMinor: moved,
       currency,
       categoryId: 'savings',
       accountId: guessAccount(accounts, recent) ?? 'upi',
       kind: sign === 1 ? 'out' : 'in',
       note: goal.name
     })
-    await addToGoal(goal.id, sign * amountMinor)
+    await addToGoal(goal.id, sign * moved)
     haptic('success')
     const g = await db.goals.get(goal.id)
     if (g && sign === 1) {
@@ -119,7 +123,7 @@ function GoalDialog({
           : `Added — ${formatMinor(Math.max(0, g.targetMinor - g.savedMinor), currency)} to go`
       )
     } else if (g) {
-      showToast(`Took out ${formatMinor(amountMinor, currency)}`)
+      showToast(moved < amountMinor ? `Took out ${formatMinor(moved, currency)}, all ${g.name} had` : `Took out ${formatMinor(moved, currency)}`)
     }
     setAmount('')
     onClose()
