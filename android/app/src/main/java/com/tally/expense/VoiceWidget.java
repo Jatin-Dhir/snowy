@@ -10,11 +10,14 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.ArrayMap;
 import android.util.SizeF;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
 import java.text.DateFormatSymbols;
@@ -126,14 +129,30 @@ public class VoiceWidget extends AppWidgetProvider {
   static RemoteViews views(Context context, Bundle options) {
     WidgetData data = WidgetData.load(context);
     float fontScale = context.getResources().getConfiguration().fontScale;
+    float widthDp = widthDp(context, options);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
       // the launcher picks the closest of these that fits, re-picks as the widget is resized, and swaps
       // light and dark by itself when the phone changes theme
       Map<SizeF, RemoteViews> sizes = new ArrayMap<>();
-      for (Kind kind : Kind.values()) sizes.put(new SizeF(kind.width, kind.heightAt(fontScale)), build(context, data, kind, true));
+      for (Kind kind : Kind.values()) sizes.put(new SizeF(kind.width, kind.heightAt(fontScale)), build(context, data, kind, true, widthDp));
       return new RemoteViews(sizes);
     }
-    return build(context, data, pick(context, options, fontScale), false);
+    return build(context, data, pick(context, options, fontScale), false, widthDp);
+  }
+
+  /** The widget's width (dp) in the phone's current orientation, as its launcher says; 0 when it doesn't say. */
+  private static float widthDp(Context context, Bundle options) {
+    if (options == null) return 0;
+    boolean portrait = context.getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE;
+    return options.getInt(portrait ? AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH : AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0);
+  }
+
+  /** How wide {@code text} draws at {@code sp} and the phone's text size, in the two-by-two's fonts. */
+  private static float textWidth(Context context, String text, boolean medium, float sp) {
+    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    paint.setTypeface(medium ? Typeface.create("sans-serif-medium", Typeface.NORMAL) : Typeface.DEFAULT);
+    paint.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, context.getResources().getDisplayMetrics()));
+    return paint.measureText(text);
   }
 
   /** Before Android 12, one layout for the size the launcher reports. */
@@ -150,7 +169,7 @@ public class VoiceWidget extends AppWidgetProvider {
     return best;
   }
 
-  private static RemoteViews build(Context context, WidgetData data, Kind kind, boolean dual) {
+  private static RemoteViews build(Context context, WidgetData data, Kind kind, boolean dual, float widthDp) {
     // the four-by-two, with the month under today when it's tall enough
     boolean large = kind == Kind.LARGE || kind == Kind.TALL;
     int layout = kind == Kind.MIC
@@ -187,6 +206,11 @@ public class VoiceWidget extends AppWidgetProvider {
     float density = res.getDisplayMetrics().density;
     // two and three cells have no room for the long words
     boolean narrow = kind == Kind.SMALL || kind == Kind.MEDIUM;
+    // the two-by-two's words have its width less the card's padding and the figure's (10 + 4 dp a side). At a large
+    // text size "Safe to spend today" runs past two cells, and the month's figures too: it takes the narrow rows'
+    // short words, and the figures shrink just enough to fit, rather than either being cut short. 0: not known
+    boolean twoByTwo = kind == Kind.SQUARE || kind == Kind.SQUARE_TALL;
+    float room = twoByTwo && widthDp > 0 ? (widthDp - 28) * density : 0;
     if (data.state == WidgetData.State.LOCKED) {
       // app lock is on: the figure's place stays, masked, like a bank app's balance; Taily shows it after the PIN
       String label = res.getString(R.string.widget_locked_label);
@@ -230,6 +254,9 @@ public class VoiceWidget extends AppWidgetProvider {
                     // two cells cut "Spent today" short; three have room for it
                     : kind == Kind.SMALL ? R.string.widget_short_spent : R.string.widget_label_spent)
             : (over ? R.string.widget_label_over : money.hasBudget ? R.string.widget_label_room : R.string.widget_label_spent));
+    if (room > 0 && textWidth(context, label, true, 12) > room) {
+      label = res.getString(over ? R.string.widget_short_over : money.hasBudget ? R.string.widget_short_room : R.string.widget_short_spent);
+    }
     // only the four-by-two has room for it; it's the spoken description on every size
     String caption;
     switch (money.caption()) {
@@ -279,8 +306,20 @@ public class VoiceWidget extends AppWidgetProvider {
       }
       // the two-by-two has room for the figures only, in whole rupees: "₹16,096.01 of ₹50,000" runs past a 2-cell
       // widget, "₹16,096 of ₹50,000" fits. What it says aloud keeps the paise
-      v.setTextViewText(R.id.widget_month_spent, square ? data.money(wholeUnits(money.month)) : spentText);
-      v.setTextViewText(R.id.widget_month_of, res.getString(R.string.widget_month_of, square ? data.money(wholeUnits(money.budget)) : budgetText));
+      String spentShown = square ? data.money(wholeUnits(money.month)) : spentText;
+      String ofShown = res.getString(R.string.widget_month_of, square ? data.money(wholeUnits(money.budget)) : budgetText);
+      v.setTextViewText(R.id.widget_month_spent, spentShown);
+      v.setTextViewText(R.id.widget_month_of, ofShown);
+      if (square) {
+        // both figures at 12sp and the 3 dp between them; too wide, both shrink together by what's too much (a hair
+        // more, for the font's rounding), down to two thirds of their size at the least. Set every time, as the
+        // launcher keeps a size from an earlier update otherwise; in sp, so a text size turned back down before the
+        // next update leaves them smaller, never cut
+        float need = textWidth(context, spentShown, true, 12) + 3 * density + textWidth(context, ofShown, false, 12);
+        float sp = room > 0 && need > room ? Math.max(8f, 12f * room / need * 0.97f) : 12f;
+        v.setTextViewTextSize(R.id.widget_month_spent, TypedValue.COMPLEX_UNIT_SP, sp);
+        v.setTextViewTextSize(R.id.widget_month_of, TypedValue.COMPLEX_UNIT_SP, sp);
+      }
       textColor(v, R.id.widget_month_spent, monthOver ? day.over : day.ink, monthOver ? night.over : night.ink, dual);
       textColor(v, R.id.widget_month_of, day.muted, night.muted, dual);
       tint(v, R.id.widget_month_track, monthOver ? day.overTrack : day.track, monthOver ? night.overTrack : night.track, dual);
