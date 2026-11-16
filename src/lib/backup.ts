@@ -154,16 +154,33 @@ async function laterRuns(rules: Rule[] | undefined): Promise<Rule[] | undefined>
   })
 }
 
+/** The tables whose records say when they last changed (updatedAt) */
+const STAMPED: ReadonlySet<TableName> = new Set<TableName>(['txns', 'loans', 'goals', 'trips', 'tripEntries'])
+
+/**
+ * A backup's records of a STAMPED table as they go back in: one changed here since the backup's copy stays as it is,
+ * one missing here is added. Put back over the newer one, a goal's older total stood beside the savings entries made
+ * since, and an entry deleted here since came back without the money it had taken out of its goal.
+ */
+async function newerKept(t: TableName, rows: unknown[] | undefined): Promise<unknown[] | undefined> {
+  if (!rows?.length) return rows
+  const theirs = rows as { id: string; updatedAt?: number }[]
+  const here = (await db.table(t).bulkGet(theirs.map((r) => r.id))) as ({ updatedAt?: number } | undefined)[]
+  return theirs.filter((r, i) => !here[i] || (here[i]?.updatedAt ?? 0) <= (r.updatedAt ?? 0))
+}
+
 /**
  * Adds a backup into the profile that's open now. Records are matched by id, so
  * restoring the same backup twice changes nothing, and entries made since the
- * backup stay. The PIN set on this phone stays as it is.
+ * backup stay; so does a record changed here since (newerKept). The PIN set on
+ * this phone stays as it is.
  */
 export async function restoreBackup(c: BackupContents): Promise<void> {
   if (await restoreConflict(c)) throw new Error('The backup is in another currency than this profile')
   await db.transaction('rw', TABLES.map((t) => db.table(t)), async () => {
     for (const t of TABLES) {
-      const rows = t === 'rules' ? await laterRuns(c.tables.rules as Rule[] | undefined) : c.tables[t]
+      const rows =
+        t === 'rules' ? await laterRuns(c.tables.rules as Rule[] | undefined) : STAMPED.has(t) ? await newerKept(t, c.tables[t]) : c.tables[t]
       if (rows?.length) await db.table(t).bulkPut(rows)
     }
   })
