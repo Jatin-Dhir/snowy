@@ -24,7 +24,8 @@ import {
   balanceByAccount,
   pace,
   stillDue,
-  fixedOf
+  fixedOf,
+  isRecurring
 } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
 import { formatMinor } from '../lib/money'
@@ -319,7 +320,10 @@ export function Home({
   const showLine = dailyBudget > 0 && dailyBudget <= maxBar * 1.5
   const weekScale = showLine ? Math.max(maxBar, dailyBudget) * 1.1 : Math.max(maxBar, 1)
   const daysSoFar = bars.filter((b) => !b.isFuture).length
-  const weekAvg = daysSoFar > 0 ? Math.round(weekTotal / daysSoFar / 100) * 100 : 0
+  // a day's usual spend: the bars and the total are everything spent, but rent paid on Monday was paid once, so the
+  // week's recurring payments stay out of its average ("₹14,200 a day" on rent day)
+  const weekEveryday = sum(weekTxns.filter((t) => t.dateISO <= today && !isRecurring(t)))
+  const weekAvg = daysSoFar > 0 ? Math.round(weekEveryday / daysSoFar / 100) * 100 : 0
   const BAR_MAX = 64
 
   const liveAccounts = accounts.filter((a) => !a.archived).sort((a, b) => a.sort - b.sort)
