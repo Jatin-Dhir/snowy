@@ -151,6 +151,33 @@ function parseAmount(raw: string): number | null {
   return Math.round(n * 100)
 }
 
+/** cyrb53: a quick, well-spread 53-bit hash of a string, in base 36 */
+function hash53(s: string): string {
+  let h1 = 0xdeadbeef
+  let h2 = 0x41c6ce57
+  for (let i = 0; i < s.length; i++) {
+    const ch = s.charCodeAt(i)
+    h1 = Math.imul(h1 ^ ch, 2654435761)
+    h2 = Math.imul(h2 ^ ch, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36)
+}
+
+/**
+ * A statement's rows carry no id of their own. One made from what the row says, and how many times
+ * the file has said it before, comes out the same whenever the same row is read again (the same file
+ * twice, or two statements that overlap), so it's skipped like any entry already here, while two
+ * identical payments on one day stay two.
+ */
+function statementRowId(parts: (string | number)[], repeats: Map<string, number>): string {
+  const key = parts.map((p) => String(p).trim().toLowerCase().replace(/\s+/g, ' ')).join('|')
+  const n = repeats.get(key) ?? 0
+  repeats.set(key, n + 1)
+  return `stmt-${hash53(`${key}|${n}`)}`
+}
+
 /**
  * Read any reasonable CSV into a ready-to-apply plan. Understands our own
  * export fully; for other files it maps common column names, treats negative
@@ -202,6 +229,7 @@ export function planImportFromGrid(
   const newCategories = new Map<string, string>()
   const newAccounts = new Map<string, string>()
   const seenIds = new Set<string>()
+  const repeats = new Map<string, number>()
   const txns: ImportTxn[] = []
   let duplicates = 0
   let badRows = 0
@@ -243,17 +271,20 @@ export function planImportFromGrid(
       badRows++
       continue
     }
-    const id = cell('id')
-    if (id && (ctx.existingIds.has(id) || seenIds.has(id))) {
-      duplicates++
-      continue
-    }
-    if (id) seenIds.add(id)
 
     // statements mark the direction "Cr" / "Dr" as often as they spell it out
     const kindRaw = cell('kind').toLowerCase().replace(/\.$/, '')
     if (kindRaw) kind = ['in', 'income', 'received', 'credit', 'credited', 'deposit', 'cr'].includes(kindRaw) ? 'in' : 'out'
     else if (hasNegatives) kind = amountRaw < 0 ? 'out' : 'in'
+
+    const note = cell('note')
+    const accRaw = cell('account') || 'Cash'
+    const id = cell('id') || statementRowId([dateISO, kind, Math.abs(amountRaw), note, accRaw], repeats)
+    if (ctx.existingIds.has(id) || seenIds.has(id)) {
+      duplicates++
+      continue
+    }
+    seenIds.add(id)
 
     const catRaw = cell('category')
     let categoryName: string | null = null
@@ -266,7 +297,6 @@ export function planImportFromGrid(
       }
     }
 
-    const accRaw = cell('account') || 'Cash'
     let accountName = accByName.get(accRaw.toLowerCase()) ?? newAccounts.get(accRaw.toLowerCase()) ?? ''
     if (!accountName) {
       newAccounts.set(accRaw.toLowerCase(), accRaw)
@@ -281,13 +311,13 @@ export function planImportFromGrid(
         : new Date(`${dateISO}T12:00:00`).getTime()
 
     txns.push({
-      id: id || crypto.randomUUID(),
+      id,
       amountMinor: Math.abs(amountRaw),
       currency: cell('currency').toUpperCase() || ctx.defaultCurrency,
       categoryName,
       accountName,
       kind,
-      note: cell('note'),
+      note,
       dateISO,
       ts,
       source: cell('source') === 'recurring' ? 'recurring' : 'manual'
