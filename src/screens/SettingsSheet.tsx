@@ -16,6 +16,7 @@ import { clearPinFailures, hashPin, recordPinFailure, verifyPin } from '../lib/p
 import { fullDate, todayISO } from '../lib/dates'
 import { currentProfile, profileSlug } from '../lib/profiles'
 import { addVoiceTile, pinVoiceWidget, VOICE_LANGUAGES, voiceAvailable, voiceShortcuts } from '../lib/voice'
+import { canNotify } from '../lib/notify'
 import { TAG_COLORS, TAG_ICONS } from '../db/seed'
 import { AccountManager } from '../components/AccountManager'
 import { ProfilesSheet } from '../components/ProfilesSheet'
@@ -125,6 +126,23 @@ export function SettingsSheet({
   const [voiceExtras, setVoiceExtras] = useState<{ widget: boolean; tile: boolean } | null>(null)
   // whether this phone or browser can listen at all: the voice language is no use where it can't
   const [canListen, setCanListen] = useState(false)
+  // the Android app only: it can post the daily nudge to log
+  const [native, setNative] = useState(false)
+  useEffect(() => {
+    void import('@capacitor/core')
+      .then(({ Capacitor }) => setNative(Capacitor.isNativePlatform()))
+      .catch(() => undefined)
+  }, [])
+
+  async function setReminder(time: string | null) {
+    haptic('selection')
+    // asked when it's picked, so the question comes with its reason
+    if (time && !(await canNotify())) {
+      showToast("Taily can't send notifications. Allow them in Android's settings for Taily")
+      return
+    }
+    await saveSettings({ reminder: time })
+  }
 
   useEffect(() => {
     if (open) void voiceShortcuts().then(setVoiceExtras)
@@ -633,6 +651,33 @@ export function SettingsSheet({
             </button>
           </div>
         </div>
+
+        {native && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <h3 className="label" style={{ fontSize: 10.5 }} id="daily-reminder">
+              Daily reminder
+            </h3>
+            <div role="group" aria-labelledby="daily-reminder" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+              {[null, '20:00', '21:00', '22:00'].map((time) => (
+                <button
+                  key={time ?? 'off'}
+                  className={`pill${settings.reminder === time ? ' active' : ''}`}
+                  style={{ justifyContent: 'center', paddingLeft: 6, paddingRight: 6 }}
+                  aria-pressed={settings.reminder === time}
+                  onClick={() => void setReminder(time)}
+                >
+                  {time ? `${parseInt(time, 10) - 12} pm` : 'Off'}
+                </button>
+              ))}
+            </div>
+            <span className="caption" style={{ fontSize: 11.5 }}>
+              {settings.reminder
+                ? // Android may hold an alarm Taily can't make exact for up to an hour
+                  `A nudge around ${parseInt(settings.reminder, 10) - 12} pm, only on days nothing's logged by then`
+                : "A nudge in the evening, only on days nothing's logged yet"}
+            </span>
+          </div>
+        )}
 
         <h2 className="settings-head">Money</h2>
 

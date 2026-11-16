@@ -22,6 +22,8 @@ import { TripSheet } from './components/TripSheet'
 import { VoiceOverlay, type VoiceDraft, type VoiceRequest } from './components/VoiceOverlay'
 import { UpdateGate } from './components/UpdateGate'
 import { WidgetSync } from './components/WidgetSync'
+import { ReminderSync } from './components/ReminderSync'
+import { DAILY_EXTRA } from './lib/notify'
 import { Home } from './screens/Home'
 import { Activity } from './screens/Activity'
 import { Budgets } from './screens/Budgets'
@@ -218,6 +220,30 @@ export default function App() {
       }
     })()
     return () => sub?.remove()
+  }, [])
+
+  // a tap on the daily nudge to log (Settings, Daily reminder) opens the add sheet, once Taily is unlocked
+  useEffect(() => {
+    let sub: { remove(): void } | undefined
+    let disposed = false
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) return
+        const { LocalNotifications } = await import('@capacitor/local-notifications')
+        const handle = await LocalNotifications.addListener('localNotificationActionPerformed', (a) => {
+          if (a.notification.extra?.taily === DAILY_EXTRA) setPendingAdd(true)
+        })
+        if (disposed) void handle.remove()
+        else sub = handle
+      } catch {
+        /* not native */
+      }
+    })()
+    return () => {
+      disposed = true
+      sub?.remove()
+    }
   }, [])
 
   // a CSV statement shared in from another app (Files, Gmail, Drive) —
@@ -462,6 +488,7 @@ export default function App() {
   return (
     <div className="app">
       {widgetSync}
+      <ReminderSync settings={settings} today={day} />
       <main key={tab} className={`tab-host ${slideDir}`}>
         {tab === 'home' && (
           <Home

@@ -37,6 +37,70 @@ export async function notifyAlerts(alerts: { key: string; text: string }[]): Pro
   }
 }
 
+/** Whether Taily may post notifications, asking once if Android hasn't been asked yet (native app only). */
+export async function canNotify(): Promise<boolean> {
+  try {
+    const { Capacitor } = await import('@capacitor/core')
+    if (!Capacitor.isNativePlatform()) return false
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    let perm = await LocalNotifications.checkPermissions()
+    if (perm.display !== 'granted') perm = await LocalNotifications.requestPermissions()
+    return perm.display === 'granted'
+  } catch {
+    return false
+  }
+}
+
+// a week of daily nudges, one id per day ahead
+const DAILY_DAYS = 7
+const dailyIds = () => Array.from({ length: DAILY_DAYS }, (_, i) => numericId(`daily|${i}`))
+/** What a tap on the daily nudge carries: App opens the add sheet for it. */
+export const DAILY_EXTRA = 'log-today'
+
+/**
+ * The daily nudge to log (native app only): at `time` ("21:00") on each of the next seven days, skipping today
+ * once something's logged or the time has gone. Run again whenever today's entries, the time or the day change,
+ * so a day with an entry never gets nudged. Seven days ahead means a week away from Taily ends in silence.
+ */
+export async function syncDailyReminder(time: string | null, loggedToday: boolean): Promise<void> {
+  try {
+    const { Capacitor } = await import('@capacitor/core')
+    if (!Capacitor.isNativePlatform()) return
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+
+    const ids = dailyIds()
+    const pending = await LocalNotifications.getPending()
+    const ours = pending.notifications.filter((n) => ids.includes(n.id))
+    if (ours.length > 0) await LocalNotifications.cancel({ notifications: ours.map((n) => ({ id: n.id })) })
+    if (!time || !/^\d{2}:\d{2}$/.test(time)) return
+    if ((await LocalNotifications.checkPermissions()).display !== 'granted') return
+
+    const [hh, mm] = time.split(':').map(Number)
+    const now = new Date()
+    const days: Date[] = []
+    for (let d = 0; days.length < DAILY_DAYS; d++) {
+      const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, hh, mm)
+      if (d === 0 && (loggedToday || at.getTime() <= now.getTime())) continue
+      days.push(at)
+    }
+    // exact only where Android allows it without asking (see syncLoanReminders); a nudge a few minutes late is fine
+    const { exact_alarm } = await LocalNotifications.checkExactNotificationSetting().catch(() => ({ exact_alarm: 'denied' }))
+    await LocalNotifications.schedule({
+      notifications: days.map((at, i) => ({
+        id: ids[i],
+        // the app's name already heads the notification: the title says what it's about
+        title: 'Anything to log today?',
+        body: "Nothing's in Taily for today yet. Tap and it's three seconds.",
+        schedule: { at, allowWhileIdle: true },
+        extra: { taily: DAILY_EXTRA },
+        isExactNotification: exact_alarm === 'granted'
+      }))
+    })
+  } catch {
+    // notifications unavailable: nothing to nudge with
+  }
+}
+
 function numericId(key: string): number {
   let h = 7
   for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0

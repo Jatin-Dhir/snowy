@@ -176,6 +176,8 @@ export interface Settings {
   voiceLanguage: string
   /** what friends call you, for what a trip shares with them */
   myName: string
+  /** "21:00": a nudge at that time on days nothing's been logged (Android only); null for none */
+  reminder: string | null
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -189,7 +191,8 @@ export const DEFAULT_SETTINGS: Settings = {
   soundPack: 'tap',
   pinHash: null,
   voiceLanguage: 'en-IN',
-  myName: ''
+  myName: '',
+  reminder: null
 }
 
 class TallyDB extends Dexie {
