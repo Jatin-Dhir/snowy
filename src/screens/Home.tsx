@@ -158,6 +158,11 @@ export function Home({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   function enterSelect(id: string) {
+    // already picking: a hold picks that row too (or lets it go), as a tap does, rather than start over
+    if (selecting) {
+      toggleSelect(id)
+      return
+    }
     setSelecting(true)
     setSelectedIds(new Set([id]))
   }
