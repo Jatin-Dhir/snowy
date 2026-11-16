@@ -180,14 +180,19 @@ export function Budgets({
   const [pickingCategory, setPickingCategory] = useState(false)
   const [manageTags, setManageTags] = useState(false)
   const [goalDialog, setGoalDialog] = useState<{ goal: Goal | null } | null>(null)
-  // a budget's card opens what made it up: a tag's entries, or the whole month's for the monthly budget
-  const [openTag, setOpenTag] = useState<TagPick | null>(null)
+  // a budget's card opens what made it up: a tag's entries, or the whole month's for the monthly budget. The tag's
+  // sheet keeps the month it was opened for: open at midnight as a month ends, it would otherwise follow the screen
+  // into a month with nothing in it yet
+  const [openTag, setOpenTag] = useState<(TagPick & { monthKey: string }) | null>(null)
   const [monthOpen, setMonthOpen] = useState(false)
 
   const categories = useLiveQuery(() => db.categories.orderBy('sort').toArray(), []) ?? []
   const budgets = useLiveQuery(() => db.budgets.toArray(), []) ?? []
   const goals = useLiveQuery(() => db.goals.toArray(), []) ?? []
   const monthTxns = useLiveQuery(() => txnsForMonth(monthKey), [monthKey]) ?? []
+  const tagMonthLoaded = useLiveQuery(() => (openTag ? txnsForMonth(openTag.monthKey) : undefined), [openTag?.monthKey])
+  // until it's read, the month on screen is the same month: no flash of an empty sheet as it opens
+  const tagMonthTxns = tagMonthLoaded ?? (openTag?.monthKey === monthKey ? monthTxns : [])
   const rules = useLiveQuery(() => db.rules.toArray(), []) ?? []
 
   const spent = sum(monthTxns)
@@ -299,7 +304,7 @@ export function Budgets({
             key={b.id}
             className="card"
             style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left', borderRadius: 16, padding: '13px 18px' }}
-            onClick={() => setOpenTag({ id: cat.id, name: cat.name, color: cat.color })}
+            onClick={() => setOpenTag({ id: cat.id, name: cat.name, color: cat.color, monthKey })}
           >
             {/* a long name and big figures don't fit side by side on a narrow phone: the figures drop under the name
                 rather than squeeze it, and the name keeps its end */}
@@ -413,10 +418,10 @@ export function Budgets({
       {openTag && (
         <TagEntriesSheet
           tag={openTag}
-          monthKey={monthKey}
-          isCurrent
-          monthTxns={monthTxns}
-          monthSpent={spent}
+          monthKey={openTag.monthKey}
+          isCurrent={openTag.monthKey === monthKey}
+          monthTxns={tagMonthTxns}
+          monthSpent={sum(tagMonthTxns)}
           budgetMinor={catBudgets.find((b) => b.id === openTag.id)?.amountMinor ?? null}
           categories={categories}
           currency={currency}
