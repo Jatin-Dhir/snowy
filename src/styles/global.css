@@ -1366,6 +1366,17 @@ button.month-strip:active {
   border-top: 1.5px dashed var(--line-strong);
 }
 
+/* the week's average and the day's line: side by side where they fit, else one under the other, each whole (a flex
+   line breaks between items before it breaks the text in one). At the largest text sizes, one alone still wraps */
+.week-foot {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+.week-foot > .caption:last-child:not(:first-child) {
+  margin-left: auto;
+}
+
 /* ---------- floating navigation dock ---------- */
 .tabbar {
   position: fixed;

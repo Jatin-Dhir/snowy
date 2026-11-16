@@ -643,7 +643,9 @@ export function Home({
           })}
         </div>
         {weekTotal > 0 && (
-          <div className="row-between">
+          // each says its piece on one line: where the two don't fit side by side (320px), the second goes under the
+          // first, still at the right, rather than both breaking into "₹634 a day on" / "average"
+          <div className="row-between week-foot">
             <span className="caption">{formatMinor(weekAvg, currency)} a day on average</span>
             {showLine ? (
               <span className="caption week-key">
