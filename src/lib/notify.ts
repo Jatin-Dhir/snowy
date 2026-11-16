@@ -1,5 +1,6 @@
 import type { Loan } from '../db/db'
 import { formatMinor } from './money'
+import { currentDbName } from './profiles'
 
 // System notifications (native app only). Each alert key notifies once ever.
 export async function notifyAlerts(alerts: { key: string; text: string }[]): Promise<void> {
@@ -42,6 +43,43 @@ function numericId(key: string): number {
   return 100000000 + (Math.abs(h) % 1000000000)
 }
 
+// The loans a profile has reminders waiting for. A deleted loan is gone from the list of loans, so
+// without this its reminder can't be told apart from another profile's, and it fires anyway
+const scheduledKey = (dbName: string) => `taily.loanReminders.${dbName}`
+
+function scheduledFor(dbName: string): string[] {
+  try {
+    const ids = JSON.parse(localStorage.getItem(scheduledKey(dbName)) ?? '[]')
+    return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function rememberScheduled(dbName: string, ids: string[]): void {
+  try {
+    if (ids.length > 0) localStorage.setItem(scheduledKey(dbName), JSON.stringify(ids))
+    else localStorage.removeItem(scheduledKey(dbName))
+  } catch {
+    /* worst case is the old behaviour: a deleted loan's reminder still fires */
+  }
+}
+
+/** A profile is being deleted: its loans' reminders go with it. */
+export async function forgetLoanReminders(dbName: string): Promise<void> {
+  const ids = scheduledFor(dbName)
+  rememberScheduled(dbName, [])
+  if (ids.length === 0) return
+  try {
+    const { Capacitor } = await import('@capacitor/core')
+    if (!Capacitor.isNativePlatform()) return
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    await LocalNotifications.cancel({ notifications: ids.map((id) => ({ id: numericId(`loan|${id}`) })) })
+  } catch {
+    // native notifications unavailable
+  }
+}
+
 /**
  * Keeps scheduled loan reminders in sync with the ledger (native app only):
  * every outstanding loan with a future reminder gets a system notification
@@ -66,8 +104,9 @@ export async function syncLoanReminders(loans: Loan[]): Promise<void> {
       }
     }
 
-    // cancel anything of ours that is no longer wanted
-    const ourIds = new Set(loans.map((l) => numericId(`loan|${l.id}`)))
+    // cancel anything of ours that is no longer wanted: settled, no reminder any more, or deleted
+    const dbName = currentDbName()
+    const ourIds = new Set([...loans.map((l) => l.id), ...scheduledFor(dbName)].map((id) => numericId(`loan|${id}`)))
     const wantedIds = new Set(wanted.map((l) => numericId(`loan|${l.id}`)))
     const pending = await LocalNotifications.getPending()
     const stale = pending.notifications.filter((n) => ourIds.has(n.id) && !wantedIds.has(n.id))
@@ -93,6 +132,7 @@ export async function syncLoanReminders(loans: Loan[]): Promise<void> {
         }))
       })
     }
+    rememberScheduled(dbName, wanted.map((l) => l.id))
   } catch {
     // native notifications unavailable — Home alerts still cover it
   }

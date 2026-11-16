@@ -97,6 +97,9 @@ export async function deleteProfile(id: string): Promise<void> {
     db.close()
   }
   await Dexie.delete(dbNameFor(id))
+  // its lent & borrowed records are gone, so their reminders go too
+  const { forgetLoanReminders } = await import('./notify')
+  await forgetLoanReminders(dbNameFor(id))
   const list = s.list.filter((p) => p.id !== id)
   const current = s.current === id ? list[0].id : s.current
   save({ current, list })
