@@ -2584,11 +2584,25 @@ select.field {
   align-items: center;
   gap: 10px;
   height: 46px;
+  /* narrower than its field's own width when it has to be: on a 320px phone, typing (and the clear button that
+     comes with it) pushed the calendar button half off the screen */
+  min-width: 0;
   border-radius: var(--r-sm);
   background: var(--sunken);
   border: none;
   box-shadow: var(--inset);
   padding: 0 14px;
+}
+
+/* a fingertip's worth to hit, the × still small in it, reaching into the bar's padding */
+.searchbar-clear {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin: 0 -12px 0 -6px;
+  border-radius: 50%;
 }
 
 .searchbar input {

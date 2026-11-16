@@ -246,7 +246,7 @@ export function Activity({
             inputMode="search"
           />
           {query && (
-            <button className="faint" onClick={() => setQuery('')} aria-label="Clear search">
+            <button className="faint searchbar-clear" onClick={() => setQuery('')} aria-label="Clear search">
               <Icon name="x" size={14} strokeWidth={2.2} />
             </button>
           )}
