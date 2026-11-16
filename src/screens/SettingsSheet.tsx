@@ -350,7 +350,10 @@ export function SettingsSheet({
           source: t.source,
           createdAt: now,
           updatedAt: now,
-          deleted: 0 as const
+          deleted: 0 as const,
+          // an imported row put nothing into a goal, so deleting it takes nothing out, even when its note is a
+          // goal's name
+          goalId: null
         }))
       )
       haptic('success')

@@ -54,7 +54,8 @@ export async function updateTxn(id: string, patch: Partial<Txn>): Promise<void> 
  */
 async function goalOf(t: Txn): Promise<Goal | undefined> {
   if (t.goalId) return db.goals.get(t.goalId)
-  if (t.goalId === null || t.categoryId !== 'savings') return undefined
+  // your share of a trip spend never went into a goal, whatever its tag and note
+  if (t.goalId === null || t.categoryId !== 'savings' || t.tripEntryId) return undefined
   const named = (await db.goals.toArray()).filter((g) => g.name === t.note.trim() && g.createdAt <= t.createdAt)
   return named.length === 1 ? named[0] : undefined
 }
