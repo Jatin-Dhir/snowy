@@ -48,6 +48,8 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   }
 
   return (
+    // the steps sit in the middle (the column below grows to fill), and a short screen, a phone on its side or
+    // with big text, scrolls from the top rather than cutting off the heading and the dots
     <div
       style={{
         position: 'fixed',
@@ -57,7 +59,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        overflowY: 'auto',
         padding: 28
       }}
     >

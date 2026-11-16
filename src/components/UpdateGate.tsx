@@ -30,11 +30,13 @@ export function UpdateGate({ info, onRecheck }: { info: UpdateInfo; onRecheck: (
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        overflowY: 'auto',
         padding: 28
       }}
     >
-      <div style={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+      {/* auto margins centre it, and a short screen (a phone on its side) scrolls to the buttons instead of
+          cutting them off */}
+      <div style={{ width: '100%', maxWidth: 400, margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
         <span
           style={{
             width: 64,
