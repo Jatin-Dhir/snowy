@@ -174,6 +174,20 @@ export function Home({
     () => new Set(JSON.parse(localStorage.getItem('tally.alerts.dismissed') ?? '[]'))
   )
 
+  // a loan's reminder card comes at the reminder's moment, as its notification does, Home open or not: the cards are
+  // worked out again then (and at once if Taily slept through it), not only when something else changes
+  const [reminderDue, setReminderDue] = useState(0)
+  useEffect(() => {
+    const now = Date.now()
+    const next = Math.min(
+      ...loans.filter((l) => !l.settledISO).map((l) => loanReminderAt(l)?.getTime() ?? 0).filter((t) => t > now)
+    )
+    // a later day's is looked at again when the day changes
+    if (!Number.isFinite(next) || next - now > 86400000) return
+    const timer = window.setTimeout(() => setReminderDue((n) => n + 1), next - now + 250)
+    return () => window.clearTimeout(timer)
+  }, [loans, today, reminderDue])
+
   // hold a row in Today to select several, then delete them together
   const [selecting, setSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -261,7 +275,7 @@ export function Home({
       })
     }
     return list
-  }, [budgets, monthTxns, monthSpent, categories, recent, loans, today, monthKey, currency])
+  }, [budgets, monthTxns, monthSpent, categories, recent, loans, today, monthKey, currency, reminderDue])
 
   const visibleAlerts = alerts.filter((a) => !dismissedAlerts.has(a.key)).slice(0, 3)
 
