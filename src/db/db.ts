@@ -23,6 +23,11 @@ export interface Txn {
   /** set on your share of a trip spend: the trip entry it belongs to, and the trip's name to show on the row */
   tripEntryId?: string | null
   tripName?: string | null
+  /**
+   * The goal a savings entry put money into (or took it out of). Null on any other new entry; missing on entries
+   * from before goals were noted, which are matched to a goal by name (see repo.ts goalOf)
+   */
+  goalId?: string | null
 }
 
 /** A money source — bank, wallet, cash jar, someone's card. Not a login. */

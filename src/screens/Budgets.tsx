@@ -67,7 +67,9 @@ function GoalDialog({
       categoryId: 'savings',
       accountId: guessAccount(accounts, recent) ?? 'upi',
       kind: sign === 1 ? 'out' : 'in',
-      note: goal.name
+      note: goal.name,
+      // the entry knows its goal, so deleting it takes the money back out
+      goalId: goal.id
     })
     await addToGoal(goal.id, sign * moved)
     haptic('success')

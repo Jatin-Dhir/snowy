@@ -117,7 +117,8 @@ export function Home({
       categoryId: 'savings',
       accountId: guessAccount(accounts, recent) ?? 'upi',
       kind: 'out',
-      note: saveGoal.name
+      note: saveGoal.name,
+      goalId: saveGoal.id
     })
     await addToGoal(saveGoal.id, amt)
     localStorage.setItem('taily.save.hidden', today)
