@@ -3,6 +3,7 @@ import type { Category, Txn } from '../db/db'
 import { sum } from '../db/stats'
 import { formatMinor } from '../lib/money'
 import { monthLabel } from '../lib/dates'
+import { useBudgetEditor } from './BudgetDialog'
 import { BudgetLine } from './BudgetLine'
 import { DayList } from './DayList'
 import { Icon } from './Icon'
@@ -17,9 +18,9 @@ export interface TagPick {
 
 /**
  * What's behind one of Insights' "Where it went" rows, or a tag's card in Budgets: that tag's spends in the month, by
- * day, with the total, how many and the usual size, and its budget when it has one. A tap opens an entry to change
- * it; this stays open underneath, so a run of mis-tagged entries can be fixed one after another and leave the list as
- * they go. From Budgets the budget line also has "Change", for the amount.
+ * day, with the total, how many and the usual size, and its budget. A tap opens an entry to change it; this stays
+ * open underneath, so a run of mis-tagged entries can be fixed one after another and leave the list as they go. The
+ * budget line has "Change", for the amount; a tag without a budget offers to set one, in the same dialog Budgets uses.
  */
 export function TagEntriesSheet({
   tag,
@@ -31,7 +32,6 @@ export function TagEntriesSheet({
   categories,
   currency,
   onEdit,
-  onEditBudget,
   onClose
 }: {
   tag: TagPick
@@ -44,8 +44,6 @@ export function TagEntriesSheet({
   categories: Category[]
   currency: string
   onEdit: (t: Txn) => void
-  /** change the tag's budget: Budgets, where the budgets are set */
-  onEditBudget?: () => void
   onClose: () => void
 }) {
   const txns = useMemo(
@@ -55,6 +53,13 @@ export function TagEntriesSheet({
   const total = sum(txns)
   const month = monthLabel(monthKey)
   const share = monthSpent > 0 ? Math.round((total / monthSpent) * 100) : 0
+
+  // a tag of yours can have a budget, set right here; not "Untagged", and not a new one for a tag you've put away
+  const budgetEditor = useBudgetEditor()
+  const cat = tag.id ? categories.find((c) => c.id === tag.id) : undefined
+  const hasBudget = budgetMinor !== null && budgetMinor > 0
+  const editBudget = () =>
+    cat && budgetEditor.edit({ id: cat.id, title: `${tag.name} budget`, amount: hasBudget ? budgetMinor : null })
 
   return (
     <Sheet open onClose={onClose} label={`${tag.name} in ${month}`} style={{ gap: 10 }}>
@@ -84,7 +89,7 @@ export function TagEntriesSheet({
         </span>
       </div>
 
-      {budgetMinor !== null && budgetMinor > 0 && (
+      {hasBudget ? (
         <BudgetLine
           spent={total}
           budgetMinor={budgetMinor}
@@ -92,12 +97,28 @@ export function TagEntriesSheet({
           color={tag.color}
           owner="its"
           currency={currency}
-          onChange={onEditBudget}
+          onChange={cat ? editBudget : undefined}
           changeLabel={`Change the ${tag.name} budget`}
         />
+      ) : (
+        cat &&
+        !cat.archived && (
+          // where the budget line would be, laid out as BudgetLine is: the words, then the link that sets one. The
+          // sheet's heading names the tag already, so the words don't, and a long name can't push the link away
+          <div className="row-between" style={{ flexWrap: 'wrap', rowGap: 2, padding: '2px 2px 0' }}>
+            <span className="caption" style={{ fontSize: 12 }}>
+              No budget yet
+            </span>
+            <button className="link-btn line-link" onClick={editBudget} aria-label={`Set a budget for ${tag.name}`}>
+              Set a budget
+            </button>
+          </div>
+        )
       )}
 
       <DayList txns={txns} categories={categories} currency={currency} onEdit={onEdit} />
+
+      {budgetEditor.dialog}
     </Sheet>
   )
 }

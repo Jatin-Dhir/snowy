@@ -419,15 +419,10 @@ export function Budgets({
           categories={categories}
           currency={currency}
           onEdit={onEdit}
-          onEditBudget={() => {
-            const amount = catBudgets.find((b) => b.id === openTag.id)?.amountMinor ?? null
-            budgetEditor.edit({ id: openTag.id ?? '', title: `${openTag.name} budget`, amount })
-          }}
           onClose={() => setOpenTag(null)}
         />
       )}
 
-      {/* "Change" in the tag's sheet above opens this over it: a sheet that opens later lies on top */}
       {budgetEditor.dialog}
 
       {pickingCategory && (
