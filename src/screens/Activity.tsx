@@ -136,6 +136,8 @@ export function Activity({
 
   const shown = filtered.slice(0, limit)
   const groups = useMemo(() => groupByDay(shown), [shown])
+  // a day cut in two by "Show more" still heads with its whole total, not the part above the button
+  const dayTotals = useMemo(() => new Map(groupByDay(filtered).map((g) => [g.iso, g.total])), [filtered])
   const usedCategories = useMemo(() => {
     const used = new Set(txns.map((t) => t.categoryId))
     return categories.filter((c) => used.has(c.id))
@@ -320,7 +322,7 @@ export function Activity({
                   {fmtDayHeading(g.iso)}
                 </h2>
                 <span className="mono faint" style={{ fontWeight: 600, fontSize: 12 }}>
-                  {formatMinor(g.total, currency)}
+                  {formatMinor(dayTotals.get(g.iso) ?? g.total, currency)}
                 </span>
               </div>
               {g.txns.map((t) => (
