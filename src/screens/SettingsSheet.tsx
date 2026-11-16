@@ -16,7 +16,7 @@ import { clearPinFailures, hashPin, recordPinFailure, verifyPin } from '../lib/p
 import { fmtClock, fullDate, todayISO } from '../lib/dates'
 import { currentProfile, profileSlug } from '../lib/profiles'
 import { addVoiceTile, pinVoiceWidget, VOICE_LANGUAGES, voiceAvailable, voiceShortcuts } from '../lib/voice'
-import { canNotify } from '../lib/notify'
+import { canNotify, notificationsAllowed, onReturn } from '../lib/notify'
 import { TAG_COLORS, TAG_ICONS } from '../db/seed'
 import { AccountManager } from '../components/AccountManager'
 import { ProfilesSheet } from '../components/ProfilesSheet'
@@ -141,6 +141,21 @@ export function SettingsSheet({
       .catch(() => undefined)
   }, [])
 
+  // Notifications can be turned off for Taily in Android's settings after a reminder is picked: the choice stays,
+  // and its caption says it can't arrive. Looked at as Settings opens and each time Taily comes back to it
+  const [notifyOff, setNotifyOff] = useState(false)
+  useEffect(() => {
+    if (!open || !native) return
+    let live = true
+    const look = () => void notificationsAllowed().then((ok) => live && setNotifyOff(ok === false))
+    look()
+    const stop = onReturn(look)
+    return () => {
+      live = false
+      stop()
+    }
+  }, [open, native])
+
   async function setReminder(time: string | null) {
     haptic('selection')
     // asked when it's picked, so the question comes with its reason
@@ -148,6 +163,7 @@ export function SettingsSheet({
       showToast("Taily can't send notifications. Allow them in Android's settings for Taily")
       return
     }
+    if (time) setNotifyOff(false)
     await saveSettings({ reminder: time })
   }
 
@@ -702,11 +718,16 @@ export function SettingsSheet({
                 )}
               </button>
             </div>
-            <span className="caption" style={{ fontSize: 11.5 }}>
-              {settings.reminder
-                ? // Android may hold an alarm Taily can't make exact for up to an hour
-                  `A nudge around ${fmtClock(settings.reminder)}, only on days nothing's logged by then`
-                : "A nudge in the evening, only on days nothing's logged yet"}
+            <span
+              className="caption"
+              style={{ fontSize: 11.5, ...(settings.reminder && notifyOff ? { color: 'var(--amber-text)', fontWeight: 600 } : {}) }}
+            >
+              {settings.reminder && notifyOff
+                ? "Notifications are off for Taily in Android settings, so this won't arrive"
+                : settings.reminder
+                  ? // Android may hold an alarm Taily can't make exact for up to an hour
+                    `A nudge around ${fmtClock(settings.reminder)}, only on days nothing's logged by then`
+                  : "A nudge in the evening, only on days nothing's logged yet"}
             </span>
           </div>
         )}

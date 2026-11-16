@@ -51,6 +51,49 @@ export async function canNotify(): Promise<boolean> {
   }
 }
 
+/**
+ * Whether Android lets Taily post notifications right now, without asking: they can be turned off in Android's
+ * settings at any time. Null where there's nothing to ask (the web app).
+ */
+export async function notificationsAllowed(): Promise<boolean | null> {
+  try {
+    const { Capacitor } = await import('@capacitor/core')
+    if (!Capacitor.isNativePlatform()) return null
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    return (await LocalNotifications.checkPermissions()).display === 'granted'
+  } catch {
+    return null
+  }
+}
+
+/** Runs `fn` each time Taily comes back to the front, until the returned function is called. */
+export function onReturn(fn: () => void): () => void {
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') fn()
+  }
+  document.addEventListener('visibilitychange', onVisible)
+  // the WebView's own visibility isn't reliable on every Android version: the activity says it too
+  let sub: { remove(): void } | undefined
+  let disposed = false
+  void (async () => {
+    try {
+      const { Capacitor } = await import('@capacitor/core')
+      if (!Capacitor.isNativePlatform()) return
+      const { App: CapApp } = await import('@capacitor/app')
+      const handle = await CapApp.addListener('appStateChange', ({ isActive }) => isActive && fn())
+      if (disposed) void handle.remove()
+      else sub = handle
+    } catch {
+      /* not native */
+    }
+  })()
+  return () => {
+    disposed = true
+    document.removeEventListener('visibilitychange', onVisible)
+    sub?.remove()
+  }
+}
+
 // a week of daily nudges, one id per day ahead
 const DAILY_DAYS = 7
 const dailyIds = () => Array.from({ length: DAILY_DAYS }, (_, i) => numericId(`daily|${i}`))
