@@ -19,12 +19,21 @@ export async function updateGoal(id: string, patch: Partial<Pick<Goal, 'name' | 
   await db.goals.update(id, { ...patch, ...clearBase, updatedAt: Date.now() })
 }
 
-/** delta may be negative (taking money back out); saved never goes below 0. */
+/**
+ * What a goal holds, as it's shown and used: its running total, never below nothing. The total itself (savedMinor)
+ * may dip below zero, when an entry's edit takes back more than is left in it, so the edit back puts it where it was.
+ * Floored at every move instead, ₹1,000 in, ₹800 out, and the ₹1,000 made ₹100 and back again came to ₹900, not ₹200.
+ */
+export function goalSaved(g: Pick<Goal, 'savedMinor'>): number {
+  return Math.max(0, g.savedMinor)
+}
+
+/** delta may be negative (taking money back out). The running total isn't floored here: goalSaved floors it */
 export async function addToGoal(id: string, deltaMinor: number): Promise<void> {
   const g = await db.goals.get(id)
   if (!g) return
   await db.goals.update(id, {
-    savedMinor: Math.max(0, g.savedMinor + deltaMinor),
+    savedMinor: g.savedMinor + deltaMinor,
     baseSavedMinor: null,
     updatedAt: Date.now()
   })

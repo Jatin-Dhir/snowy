@@ -75,13 +75,16 @@ async function goalOf(t: Txn): Promise<Goal | undefined> {
   return named.length === 1 ? named[0] : undefined
 }
 
-/** What deleting an entry did to its goal, so its Undo puts back exactly that (a goal never goes below nothing) */
+/** What deleting an entry did to its goal, and to which goal, so its Undo puts back exactly that */
 const goalUndo = new Map<string, { goalId: string; deltaMinor: number }>()
 
+/**
+ * Moves a goal's running total by the whole delta, below zero too: floored at every move, an edit and its edit back
+ * left the goal somewhere else (goals.ts goalSaved floors it where it's shown and used). Returns the move made.
+ */
 async function moveGoal(goal: Goal, deltaMinor: number): Promise<number> {
-  const savedMinor = Math.max(0, goal.savedMinor + deltaMinor)
-  await db.goals.update(goal.id, { savedMinor, baseSavedMinor: null, updatedAt: Date.now() })
-  return savedMinor - goal.savedMinor
+  await db.goals.update(goal.id, { savedMinor: goal.savedMinor + deltaMinor, baseSavedMinor: null, updatedAt: Date.now() })
+  return deltaMinor
 }
 
 // your share of a trip spend and the spend itself are one fact: when one goes, so does the other. Money put into a

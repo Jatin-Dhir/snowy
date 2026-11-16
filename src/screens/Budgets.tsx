@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Goal, type Txn } from '../db/db'
-import { addGoal, addToGoal, deleteGoal, restoreGoal, updateGoal } from '../db/goals'
+import { addGoal, addToGoal, deleteGoal, goalSaved, restoreGoal, updateGoal } from '../db/goals'
 import { addTxn, recentTxns, txnsForMonth } from '../db/repo'
 import { byCategory, fixedOf, pace, projectMonth, stillDue, sum } from '../db/stats'
 import { upcomingRules } from '../db/recurring'
@@ -56,7 +56,8 @@ function GoalDialog({
   async function move(sign: 1 | -1) {
     if (!goal || amountMinor <= 0) return
     // only what's in the goal can come out of it: any more would land in the balance from nowhere
-    const held = (await db.goals.get(goal.id))?.savedMinor ?? 0
+    const now = await db.goals.get(goal.id)
+    const held = now ? goalSaved(now) : 0
     const moved = sign === 1 ? amountMinor : Math.min(amountMinor, held)
     if (moved <= 0) return
     // a real transaction, same as the Home nudge — money into savings comes
@@ -76,9 +77,9 @@ function GoalDialog({
     const g = await db.goals.get(goal.id)
     if (g && sign === 1) {
       showToast(
-        g.savedMinor >= g.targetMinor
+        goalSaved(g) >= g.targetMinor
           ? `${g.name} fully funded — you did it!`
-          : `Added — ${formatMinor(Math.max(0, g.targetMinor - g.savedMinor), currency)} to go`
+          : `Added — ${formatMinor(Math.max(0, g.targetMinor - goalSaved(g)), currency)} to go`
       )
     } else if (g) {
       showToast(moved < amountMinor ? `Took out ${formatMinor(moved, currency)}, all ${g.name} had` : `Took out ${formatMinor(moved, currency)}`)
@@ -117,7 +118,7 @@ function GoalDialog({
             <button
               className="btn ghost"
               style={{ width: 96 }}
-              disabled={amountMinor <= 0 || goal.savedMinor <= 0}
+              disabled={amountMinor <= 0 || goalSaved(goal) <= 0}
               onClick={() => void move(-1)}
             >
               Take out
@@ -348,8 +349,9 @@ export function Budgets({
         {[...goals]
           .sort((a, b) => a.createdAt - b.createdAt)
           .map((g) => {
-            const frac = g.targetMinor > 0 ? g.savedMinor / g.targetMinor : 0
-            const done = g.savedMinor >= g.targetMinor
+            const saved = goalSaved(g)
+            const frac = g.targetMinor > 0 ? saved / g.targetMinor : 0
+            const done = saved >= g.targetMinor
             return (
               <button
                 key={g.id}
@@ -373,7 +375,7 @@ export function Budgets({
                   </span>
                   <span style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexShrink: 0 }}>
                     <span className="mono" style={{ fontWeight: 600, fontSize: 15, color: done ? 'var(--pos-text)' : 'var(--ink)' }}>
-                      {formatMinor(g.savedMinor, currency)}
+                      {formatMinor(saved, currency)}
                     </span>
                     <span className="mono faint" style={{ fontSize: 12, fontWeight: 500 }}>
                       / {formatMinor(g.targetMinor, currency)}
@@ -384,7 +386,7 @@ export function Budgets({
                 <span className="caption" style={{ fontSize: 12 }}>
                   {done
                     ? 'Fully funded — go get it'
-                    : `${Math.round(frac * 100)}% there · ${formatMinor(g.targetMinor - g.savedMinor, currency)} to go`}
+                    : `${Math.round(frac * 100)}% there · ${formatMinor(g.targetMinor - saved, currency)} to go`}
                 </span>
               </button>
             )

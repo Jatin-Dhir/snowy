@@ -12,7 +12,7 @@ import {
   softDeleteTxn,
   restoreTxn
 } from '../db/repo'
-import { addToGoal } from '../db/goals'
+import { addToGoal, goalSaved } from '../db/goals'
 import {
   safeToSpend,
   saveSuggestion,
@@ -110,13 +110,13 @@ export function Home({
   const todayTxns = useMemo(() => onDay(monthTxns, today), [monthTxns, today])
   // savings nudge: goals are the "saving is set up" signal; pick the one closest to done
   const saveGoal = useMemo(() => {
-    const open = goals.filter((g) => g.savedMinor < g.targetMinor)
-    return open.sort((a, b) => b.savedMinor / b.targetMinor - a.savedMinor / a.targetMinor)[0] ?? null
+    const open = goals.filter((g) => goalSaved(g) < g.targetMinor)
+    return open.sort((a, b) => goalSaved(b) / b.targetMinor - goalSaved(a) / a.targetMinor)[0] ?? null
   }, [goals])
   const saveIdea = useMemo(() => {
     if (!saveGoal) return null
     // a usual day's spend: rent, and what's gone into goals already, aren't what a day's 10% is taken from
-    return saveSuggestion(sts, recentDailySpend(recent), saveGoal.targetMinor - saveGoal.savedMinor)
+    return saveSuggestion(sts, recentDailySpend(recent), saveGoal.targetMinor - goalSaved(saveGoal))
   }, [saveGoal, recent, sts])
 
   async function tuckAway() {
@@ -523,10 +523,10 @@ export function Home({
             <span className="tile-name">{goal ? goal.name : 'Goals'}</span>
             {goal ? (
               <>
-                <Progress fraction={goal.targetMinor > 0 ? goal.savedMinor / goal.targetMinor : 0} color="var(--pos)" height={5} />
+                <Progress fraction={goal.targetMinor > 0 ? goalSaved(goal) / goal.targetMinor : 0} color="var(--pos)" height={5} />
                 <span className="tile-line">
                   <span className="mono" style={{ fontWeight: 700, color: 'var(--ink)' }}>
-                    {formatMinor(goal.savedMinor, currency)}
+                    {formatMinor(goalSaved(goal), currency)}
                   </span>{' '}
                   of {formatMinor(goal.targetMinor, currency)}
                 </span>
