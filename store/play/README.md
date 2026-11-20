@@ -52,7 +52,9 @@ signed in to Chrome, `/u/2/` in Play Console addresses).
   the 14 days. Attaching that list was itself a change Play sent for review (approved 11 November); adding
   addresses to it later saves straight away, with no review. On 12 November the list held 3 addresses and Play
   counted 0 testers opted in. On 19 November a fourth was added (4 addresses), and the two newest testers were
-  emailed both links from the developer Gmail; Play sends testers no invitation of its own.
+  emailed both links from the developer Gmail; Play sends testers no invitation of its own. On 20 November the
+  other two on the list and the internal tester got the same email. The account's "Consulto" email list (15
+  testers from the paid Testers Community service) is deliberately not invited.
 - Waiting on you: the payments (merchant) profile; then the `taily_pro` product can be created (below).
 - Waiting on you: Play wants the account's trader status declared by 1 February 2027 (Play Console home), or the
   account's apps come down.
